@@ -30,14 +30,18 @@ let totalPrebidAdagioAdUnitsCode = 0;
 let totalAdagioAdUnitsCodes = 0;
 let totalAdagioPbjsAdUnitsCodes = 0;
 let organizationIds = [];
+let siteNames = [];
 // Active tab (from button html element)
 let activeTab = undefined;
 // Variables for draggable iframe
 let isDragging = false;
 // Adagio API key detected
 let adagioApiKeyfound = false;
-let domainResponseRecords = null;
-let orgIdResponseRecord = null;
+// let domainResponseRecords = null;
+// let orgIdResponseRecord = null;
+let matchedDomainRecords = null;
+let matchedSiteNameRecords = null;
+let successRecordItems = null;
 
 /*************************************************************************************************************************************************************************************************************************************
  * Enums
@@ -128,7 +132,7 @@ const ADAGIOPARAMS = {
 
 createOverlay();
 getPrebidWrappers();
-catchBidRequestsOrgIds();
+catchBidRequestsGlobalParams();
 buildOverlayHtml();
 buildAdagioButton();
 createManagerDiv();
@@ -1134,8 +1138,9 @@ function createParametersCheckTable(paragraph, bid) {
     if (paramSite === undefined) appendParametersCheckerTableRow(tbody, STATUSBADGES.KO, '<code>params.site</code>', 'Parameter not found...');
     else {
         if (paramSite.trim() !== paramSite) appendParametersCheckerTableRow(tbody, STATUSBADGES.CHECK, '<code>params.site</code>', `Space character at the beginning or end of the string: <code>${paramSite}</code>`);
-        else if (adagioApiKeyfound && orgIdResponseRecord !== null && paramSite !== orgIdResponseRecord.name) appendParametersCheckerTableRow(tbody, STATUSBADGES.KO, '<code>params.site</code>', `Wrong sitename (<code>${orgIdResponseRecord.name}</code>): <code>${paramSite}</code>`);
-        else appendParametersCheckerTableRow(tbody, STATUSBADGES.OK, '<code>params.site</code>', `<code>${paramSite}</code>`);
+        else if (adagioApiKeyfound && successRecordItems !== null) appendParametersCheckerTableRow(tbody, STATUSBADGES.OK, '<code>params.site</code>', `<code>${paramSite}</code>`);
+        else if (adagioApiKeyfound && successRecordItems === null) appendParametersCheckerTableRow(tbody, STATUSBADGES.KO, '<code>params.site</code>', `No record found, check API log: <code>${paramSite}</code>`);
+        else appendParametersCheckerTableRow(tbody, STATUSBADGES.CHECK, '<code>params.site</code> (no API)', `<code>${paramSite}</code>`);
     }
 
     // AdUnitElementId (1/3): Depending on the Prebid version, we don't expect the same param
@@ -1295,7 +1300,7 @@ function computeBadgeToDisplay(isError, minVersion, maxVersion) {
     }
 }
 
-function catchBidRequestsOrgIds() {
+function catchBidRequestsGlobalParams() {
     // Catch orgIds detected in the Adagio prebid traffic (used by API and adUnits tab)
     if (prebidWrapper !== undefined) {
         // Gets lists of Prebid events
@@ -1313,6 +1318,11 @@ function catchBidRequestsOrgIds() {
             for (const param in prebidAdagioParams) {
                 let paramOrganizationId = prebidAdagioParams[param]?.organizationId;
                 if (paramOrganizationId !== undefined && !organizationIds.includes(paramOrganizationId)) organizationIds.push(paramOrganizationId);
+            }
+            // Get all the siteName parameter value sent to fill siteNames[]
+            for (const param in prebidAdagioParams) {
+                let paramSiteName = prebidAdagioParams[param]?.site;
+                if (paramSiteName !== undefined && !siteNames.includes(paramSiteName)) siteNames.push(paramSiteName);
             }
         }
     }
@@ -1372,17 +1382,27 @@ async function checkAdagioAPI() {
 
     // Launch the API call for the organizationIds
     if (organizationIds.length === 0) {
-        alertTextDiv.innerHTML += `<small>• Adagio API: <code>🔴 No organizationId detected</code></small><br>`;
+        alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No organizationId detected in traffic</code></small><br>`;
     } else if (organizationIds.length > 1) {
-        alertTextDiv.innerHTML += `<small>• Adagio API: <code>🔴 More than one organizationId detected (not supported)</code></small><br>`;
+        alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 More than one organizationId detected in traffic (not supported): ${organizationIds}</code></small><br>`;
     } else {
         queryString = `filter=publisher_id||$eq||${encodeURIComponent(organizationIds[0])}`;
         let orgIdApiDataResponse = await runAdagioAPI(queryString); // => data //.records
+
         if (orgIdApiDataResponse !== null && orgIdApiDataResponse.records !== null) {
-            orgIdResponseRecord = orgIdApiDataResponse.records[0];
-            alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟢 Record fetched for organizationId '${organizationIds[0]}'</code></small><br>`;
-        } else {
-            alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No record fetched for organizationId '${organizationIds[0]}'</code></small><br>`;
+            // Check if the records provides a domain match and a sitename match
+            matchedDomainRecords = orgIdApiDataResponse.records.filter(record => record.domain.includes(window.location.hostname.replace('www.', ''))) || null;
+            matchedSiteNameRecords = orgIdApiDataResponse.records.filter(record => siteNames.includes(record.name)) || null;
+            successRecordItems = matchedDomainRecords.filter(domainRecord => matchedSiteNameRecords.filter(siteNameRecore => domainRecord === siteNameRecore)) || null;
+
+            // Check display API status regarding record results.
+            if (matchedDomainRecords === null) alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No manager domain match: ${window.location.hostname}</code></small><br>`;
+            else if (matchedSiteNameRecords === null) alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No manager sitename match: ${siteNames}</code></small><br>`;
+            else if (successRecordItems === null) alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No manager domain and sitename match: ${window.location.hostname} / ${siteNames}</code></small><br>`;
+            else alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟢 Successfull record(s) fetched</code></small><br>`;
+        } 
+        else {
+            alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No manager organizationId match: ${organizationIds[0]}</code></small><br>`;
         }
     }
 }
@@ -1526,7 +1546,6 @@ function checkRealTimeDataProvider() {
                 // Check if params are well configured
                 if (paramsOrgId === undefined) appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `Missing 'organizationId' parameter: <code>${JSON.stringify(adagioRtdProvider)}</code>`);
                 else if (paramsSite === undefined) appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `Missing 'site' parameter: <code>${JSON.stringify(adagioRtdProvider)}</code>`);
-                else if (adagioApiKeyfound && orgIdResponseRecord !== null && paramSite !== orgIdResponseRecord.name) appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `Wrong sitename (<code>${orgIdResponseRecord.name}</code>): <code>${paramSite}</code>`);
                 else appendCheckerRow(computeBadgeToDisplay(false, 9, null), ADAGIOCHECK.RDTMODULE, `<code>${JSON.stringify(adagioRtdProvider)}</code>`);
             } else {
                 appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `No Adagio RTD provider configured: <code>${JSON.stringify(prebidRtdModule.dataProviders)}</code>`);
@@ -1803,7 +1822,6 @@ async function checkPublisher() {
         } catch (error) {
             // Handle JSON failure here
             adagioSellersJson = null;
-            // console.log(error); BRING BACK
         }
     }
 }
@@ -1972,10 +1990,3 @@ function checkAdagioCMP() {
         }
     });
 }
-
-
-/*
-    if adRequestSiteDomainHostname != siteDomainHostname && !strings.HasSuffix(adRequestSiteDomainHostname, "."+siteDomainHostname) {
-        p.SetFirstError(errors.New("adrequest and manager domains do not match"))
-    }
-*/
