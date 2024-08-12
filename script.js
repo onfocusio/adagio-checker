@@ -1290,7 +1290,13 @@ function computeBadgeToDisplay(isError, minVersion, maxVersion) {
     const min = minVersion === null ? -Infinity : minVersion;
     const max = maxVersion === null ? Infinity : maxVersion;
 
-    if (isError) {
+    if (isError === 'warn') {
+        if (prebidVersion >= min && prebidVersion <= max) {
+            return STATUSBADGES.CHECK;
+        }
+        return STATUSBADGES.INFO;
+    }
+    else if (isError) {
         if (prebidVersion >= min && prebidVersion <= max) {
             return STATUSBADGES.KO;
         }
@@ -1569,13 +1575,13 @@ function checkFirstPartyData() {
             let dataPagetype = prebidOrtb2?.site?.ext?.data?.pagetype;
             let dataCategory = prebidOrtb2?.site?.ext?.data?.category;
 
-            if (dataPagetype !== undefined && dataCategory !== undefined) appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.ORTB2, `Missing 'pagetype'/'category': <code>ortb2.site.ext.data</code>`);
-            else if (dataPagetype === undefined) appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.ORTB2, `Missing 'pagetype': <code>ortb2.site.ext.data.pagetype</code>`);
-            else if (dataCategory === undefined) appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.ORTB2, `Missing 'category': <code>ortb2.site.ext.data.category</code>`);
+            if (dataPagetype === undefined && dataCategory === undefined) appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `Missing 'pagetype'/'category': <code>ortb2.site.ext.data</code>`);
+            else if (dataPagetype === undefined) appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `Missing 'pagetype': <code>ortb2.site.ext.data.pagetype</code>`);
+            else if (dataCategory === undefined) appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `Missing 'category': <code>ortb2.site.ext.data.category</code>`);
             else appendCheckerRow(computeBadgeToDisplay(false, 9, null), ADAGIOCHECK.ORTB2, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${prebidOrtb2}</code>`);
         }
         else {
-            appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.ORTB2, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${prebidOrtb2}</code>`);
+            appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${prebidOrtb2}</code>`);
         }   
     }
 }
