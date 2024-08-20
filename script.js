@@ -215,7 +215,6 @@ function getPrebidWrappers() {
                     }
                 }
             } catch (error) {
-                // console.error(error); BRING BACK
                 // Expected output: ReferenceError: nonExistentFunction is not defined
                 // (Note: the exact output may be browser-dependent)
             }
@@ -810,18 +809,12 @@ function appendAdUnitsRow(bidders, bids) {
         };
     } else alertTextDiv.innerHTML += `<small><kbd> 0</kbd></small>`;
 
-    console.log(bids)
-
     // fill the table section
     bids.forEach(bid => {
 
         const adUnitCode = bid.adUnitCode;
         const mediaTypes = bid.mediaTypes;
         const bidderId = bid.bidder;
-
-        console.log(bid)
-
-        console.log(bidderId + ": " + bidderId.replace(' ', '-'));
 
         // Create the row
         const newRow = overlayFrameDoc.createElement('tr');
@@ -1511,8 +1504,9 @@ function checkPrebidVersion() {
     if (prebidWrapper === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.PREBID, `<code>window._pbjsGlobals</code>: <code>undefined</code>`);
     } else {
-        prebidVersion = parseFloat(prebidObject.version.replace('v', ''));
-        appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.PREBID, `<code>window._pbjsGlobals</code>: <code>${prebidWrapper[0]} (v${prebidVersion})</code>`);
+        prebidVersion = prebidObject.version.replace('v', '').split('-')[0].split('.').slice(0, 2).join('.');
+        console.log(prebidVersion);
+        appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.PREBID, `<code>window._pbjsGlobals</code>: <code>${prebidWrapper[0]} (${prebidObject.version})</code>`);
         if (typeof prebidObject.getEvents === 'function') {
             prebidEvents = prebidObject.getEvents();
         }
