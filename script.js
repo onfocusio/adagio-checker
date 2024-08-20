@@ -810,12 +810,18 @@ function appendAdUnitsRow(bidders, bids) {
         };
     } else alertTextDiv.innerHTML += `<small><kbd> 0</kbd></small>`;
 
+    console.log(bids)
+
     // fill the table section
     bids.forEach(bid => {
 
         const adUnitCode = bid.adUnitCode;
         const mediaTypes = bid.mediaTypes;
         const bidderId = bid.bidder;
+
+        console.log(bid)
+
+        console.log(bidderId + ": " + bidderId.replace(' ', '-'));
 
         // Create the row
         const newRow = overlayFrameDoc.createElement('tr');
@@ -1534,7 +1540,7 @@ function checkRealTimeDataProvider() {
     // Ensure the module is built through ADAGIO
     if (adagioAdapter !== undefined) {
         if (!adagioAdapter.hasRtd) {
-            appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `RTD module or Adagio RTD provider not built`);
+            appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `<code>ADAGIO.hasRtd</code>: <code>${adagioAdapter.hasRtd}</code>`);
             return;
         }
     }
