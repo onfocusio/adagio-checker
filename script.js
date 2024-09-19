@@ -1578,10 +1578,10 @@ function checkFirstPartyData() {
             if (dataPagetype === undefined && dataCategory === undefined) appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `Missing 'pagetype'/'category': <code>ortb2.site.ext.data</code>`);
             else if (dataPagetype === undefined) appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `Missing 'pagetype': <code>ortb2.site.ext.data.pagetype</code>`);
             else if (dataCategory === undefined) appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `Missing 'category': <code>ortb2.site.ext.data.category</code>`);
-            else appendCheckerRow(computeBadgeToDisplay(false, 9, null), ADAGIOCHECK.ORTB2, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`);
+            else appendCheckerRow(computeBadgeToDisplay(false, 9, null), ADAGIOCHECK.ORTB2, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${prebidOrtb2}</code>`);
         }
         else {
-            appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`);
+            appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${prebidOrtb2}</code>`);
         }   
     }
 }
@@ -1640,9 +1640,9 @@ function checkAdagioUserSync() {
             const prebidUserSyncIframe = prebidUserSync?.filterSettings?.iframe;
             const prebidUserSyncAll = prebidUserSync?.filterSettings?.all;
 
-            if (prebidUserSyncIframe !== undefined && (prebidUserSyncIframe?.bidders.includes('*') || (Array.isArray(prebidUserSyncIframe?.bidders) && prebidUserSyncIframe.bidders.some(item => item.toLowerCase().includes('adagio')))) && prebidUserSyncIframe?.filter === 'include') {
+            if (prebidUserSyncIframe !== undefined && (prebidUserSyncIframe?.bidders?.includes('*') || (Array.isArray(prebidUserSyncIframe?.bidders) && prebidUserSyncIframe?.bidders.some(item => item.toLowerCase()?.includes('adagio')))) && prebidUserSyncIframe.filter === 'include') {
                 appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.USERSYNC, `<code>${JSON.stringify(prebidUserSyncIframe)}</code>`);
-            } else if (prebidUserSyncAll !== undefined && (prebidUserSyncAll?.bidders.includes('*') || (Array.isArray(prebidUserSyncAll?.bidders) && prebidUserSyncAll.bidders.some(item => item.toLowerCase().includes('adagio')))) && prebidUserSyncAll?.filter === 'include') {
+            } else if (prebidUserSyncAll !== undefined && (prebidUserSyncAll?.bidders?.includes('*') || (Array.isArray(prebidUserSyncAll?.bidders) && prebidUserSyncAll?.bidders.some(item => item.toLowerCase()?.includes('adagio')))) && prebidUserSyncAll.filter === 'include') {
                 appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.USERSYNC, `<code>${JSON.stringify(prebidUserSyncAll)}</code>`);
             } else {
                 appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.USERSYNC, `<code>${JSON.stringify(prebidUserSync)}</code>`);
