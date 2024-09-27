@@ -1633,25 +1633,23 @@ function catchBidRequestsGlobalParams() {
  ************************************************************************************************************************************************************************************************************************************/
 
 function runCheck() {
+    checkAdagioAdUnitParams();
     checkAdagioAPI();
     checkCurrentLocation();
     checkAdServer();
     checkPrebidVersion();
     checkAdagioModule();
     checkRealTimeDataProvider();
-    // checkTransactionIdentifiers(); // Not needed anymore
     checkDeviceAccess();
     checkFirstPartyData();
     checkAdagioUserSync();
     checkAdagioLocalStorage();
     checkAdagioAnalyticsModule();
     checkUserIds();
-    checkAdagioAdUnitParams();
     checkDuplicatedAdUnitCode();
     checkSupplyChainObject();
     checkCurrencyModule();
     checkConsentMetadata();
-    // checkGgprConsentString();
     checkAdagioCMP();
     checkFloorPriceModule();
     checkPublisher();
@@ -1862,6 +1860,7 @@ function checkAdagioModule() {
 }
 
 function checkRealTimeDataProvider() {
+
     // Since Prebid 9, the RTD module and Adagio provider are necessary for our visibility/repackaging optimization.
     // It requires the module and the Adagio provider module to be installed and configured.
     if (prebidObject === undefined) {
@@ -1910,6 +1909,12 @@ function checkRealTimeDataProvider() {
                         ADAGIOCHECK.RDTMODULE,
                         `Missing 'site' parameter: <code>${JSON.stringify(adagioRtdProvider)}</code>`,
                     );
+                else if (ADAGIOPARAMS.SITE !== paramsSite || ADAGIOPARAMS.ORGANIZATIONID != paramsOrgId)   
+                    appendCheckerRow(
+                        computeBadgeToDisplay(true, 9, null),
+                        ADAGIOCHECK.RDTMODULE,
+                        `Parameters doesn't match with bids.param: <code>${JSON.stringify(adagioRtdProvider)}</code>`,
+                    );  
                 else
                     appendCheckerRow(
                         computeBadgeToDisplay(false, 9, null),
