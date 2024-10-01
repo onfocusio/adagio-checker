@@ -2067,7 +2067,7 @@ function checkDeviceAccess() {
         appendCheckerRow(
             computeBadgeToDisplay(deviceAccess ? false : true, 9, null),
             ADAGIOCHECK.DEVICEACCESS,
-            `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>deviceAccess</code>`,
+            `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`,
         );
     }
 }
