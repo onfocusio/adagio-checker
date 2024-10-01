@@ -2185,7 +2185,7 @@ function checkAdagioAnalyticsModule() {
             appendCheckerRow(
                 STATUSBADGES.CHECK,
                 ADAGIOCHECK.ANALYTICS,
-                `Missing parameters: <code>${prebidObject}.enableAnalytics.options</code> should contain 'organizationId' and 'site'`,
+                `Missing parameters: <code>${prebidWrapper[0]}.enableAnalytics.options</code> should contain 'organizationId' and 'site'`,
             );
         } else {
             appendCheckerRow(
