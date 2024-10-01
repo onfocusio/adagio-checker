@@ -1862,7 +1862,6 @@ function checkAdagioModule() {
 }
 
 function checkRealTimeDataProvider() {
-
     // Since Prebid 9, the RTD module and Adagio provider are necessary for our visibility/repackaging optimization.
     // It requires the module and the Adagio provider module to be installed and configured.
     if (prebidObject === undefined) {
@@ -2613,7 +2612,7 @@ function checkGgprConsentString() {
         appendCheckerRow(
             STATUSBADGES.KO,
             "GDPR consent string",
-            `<code>undefined</code>`,
+            `<code>${prebidBidsRequested}</code>`,
         );
     }
 }
