@@ -2578,13 +2578,13 @@ function checkConsentMetadata() {
             appendCheckerRow(
                 STATUSBADGES.KO,
                 "Consent metadata",
-                `<code>${prebidWrapper[0]}.getConsentMetadata()</code>: <code>${consentMetadata}</code>`,
+                `<code>${prebidWrapper[0]}.getConsentMetadata()</code>: <code>${JSON.stringify(consentMetadata)}</code>`,
             );
     } else {
         appendCheckerRow(
             STATUSBADGES.KO,
             "Consent metadata",
-            `<code>${prebidWrapper[0]}.getConsentMetadata()</code>: <code>${consentMetadata}</code>`,
+            `<code>${prebidWrapper[0]}.getConsentMetadata()</code>: <code>${JSON.stringify(consentMetadata)}</code>`,
         );
     }
 }
