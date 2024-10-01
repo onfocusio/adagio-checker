@@ -1122,6 +1122,7 @@ function base64Decode(base64String) {
 }
 
 function createParametersCheckTable(paragraph, bid) {
+    
     // Create the alert text
     // create the alert article
     const alertContainer = overlayFrameDoc.createElement("article");
@@ -1472,13 +1473,14 @@ function createParametersCheckTable(paragraph, bid) {
                 );
 
             // Check the video playerSize
-            if (mediatypeVideoPlayerSize !== undefined)
+            if (mediatypeVideoPlayerSize !== undefined) {
+                console.log(mediatypeVideoPlayerSize);
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.OK,
                     "<code>mediaTypes.video.playerSize</code>",
                     `<code>${JSON.stringify(mediatypeVideoPlayerSize)}</code>`,
-                );
+                );}
             else
                 appendParametersCheckerTableRow(
                     tbody,
@@ -1981,13 +1983,13 @@ function checkFirstPartyData() {
                 appendCheckerRow(
                     computeBadgeToDisplay(false, 9, null),
                     ADAGIOCHECK.ORTB2,
-                    `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${prebidOrtb2}</code>`,
+                    `<code>${JSON.stringify(prebidOrtb2)}</code>`,
                 );
         } else {
             appendCheckerRow(
                 computeBadgeToDisplay("warn", 9, null),
                 ADAGIOCHECK.ORTB2,
-                `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${prebidOrtb2}</code>`,
+                `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`,
             );
         }
     }
