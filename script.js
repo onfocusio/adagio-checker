@@ -115,6 +115,7 @@ const ADAGIOCHECK = Object.freeze({
     RDTMODULE: "9️⃣ Real time data (RTD)",
     TIDS: "Transaction identifiers (TIDs)",
     ORTB2: "9️⃣ First-party data (ortb2)",
+    DSA: "DSA Transparency",
 });
 
 const ADAGIOERRORS = Object.freeze({
@@ -1654,6 +1655,7 @@ function runCheck() {
     checkConsentMetadata();
     checkAdagioCMP();
     checkFloorPriceModule();
+    checkFirstPartyData();
     checkPublisher();
 }
 
@@ -2695,4 +2697,53 @@ function checkAdagioCMP() {
             );
         }
     });
+}
+
+function checkFirstPartyData() {
+    // Since Prebid 9, the pagetype and category Adagio parameters are to be stored in the first-party data (ortb2).
+    if (prebidObject === undefined) {
+        appendCheckerRow(
+            STATUSBADGES.KO,
+            ADAGIOCHECK.DSA,
+            ADAGIOERRORS.PREBIDNOTFOUND,
+        );
+    } else {
+        const prebidOrtb2 = prebidObject.getConfig("ortb2");
+        if (prebidOrtb2 !== undefined) {
+
+            let dsa = prebidOrtb2?.regs?.dsa;
+            let dsarequired = prebidOrtb2?.regs?.dsa?.dsarequired;
+            let pubrender = prebidOrtb2?.regs?.dsa?.pubrender;
+            let datatopub = prebidOrtb2?.regs?.dsa?.datatopub;
+            let transparency = prebidOrtb2?.regs?.dsa?.transparency;
+
+            if (dsa === undefined)
+                appendCheckerRow(
+                    STATUSBADGES.INFO,
+                    ADAGIOCHECK.DSA,
+                    `No dsa detected: <code>${JSON.stringify(prebidOrtb2)}</code>`,
+                );
+            else {
+                if (dsarequired === undefined || pubrender === undefined || datatopub === undefined || transparency === undefined)
+                    appendCheckerRow(
+                        STATUSBADGES.KO,
+                        ADAGIOCHECK.DSA,
+                        `Wrong dsa configuration: <code>${JSON.stringify(prebidOrtb2.regs)}</code>`,
+                    );
+                else
+                    appendCheckerRow(
+                        STATUSBADGES.OK,
+                        ADAGIOCHECK.DSA,
+                        `<code>${JSON.stringify(prebidOrtb2.regs)}</code>`,
+                    );
+            }
+
+        } else {
+            appendCheckerRow(
+                STATUSBADGES.INFO,
+                ADAGIOCHECK.DSA,
+                `No ortb2 configured: <code>${JSON.stringify(prebidOrtb2)}</code>`,
+            );
+        }
+    }
 }
