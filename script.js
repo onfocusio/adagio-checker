@@ -1655,7 +1655,7 @@ function runCheck() {
     checkConsentMetadata();
     checkAdagioCMP();
     checkFloorPriceModule();
-    checkFirstPartyData();
+    checkDsaTransparency();
     checkPublisher();
 }
 
@@ -2699,7 +2699,7 @@ function checkAdagioCMP() {
     });
 }
 
-function checkFirstPartyData() {
+function checkDsaTransparency() {
     // Since Prebid 9, the pagetype and category Adagio parameters are to be stored in the first-party data (ortb2).
     if (prebidObject === undefined) {
         appendCheckerRow(
@@ -2711,11 +2711,11 @@ function checkFirstPartyData() {
         const prebidOrtb2 = prebidObject.getConfig("ortb2");
         if (prebidOrtb2 !== undefined) {
 
-            let dsa = prebidOrtb2?.regs?.dsa;
-            let dsarequired = prebidOrtb2?.regs?.dsa?.dsarequired;
-            let pubrender = prebidOrtb2?.regs?.dsa?.pubrender;
-            let datatopub = prebidOrtb2?.regs?.dsa?.datatopub;
-            let transparency = prebidOrtb2?.regs?.dsa?.transparency;
+            let dsa = prebidOrtb2?.ext?.dsa;
+            let dsarequired = prebidOrtb2?.ext?.dsa?.dsarequired;
+            let pubrender = prebidOrtb2?.ext?.dsa?.pubrender;
+            let datatopub = prebidOrtb2?.ext?.dsa?.datatopub;
+            let transparency = prebidOrtb2?.ext?.dsa?.transparency;
 
             if (dsa === undefined)
                 appendCheckerRow(
@@ -2728,13 +2728,13 @@ function checkFirstPartyData() {
                     appendCheckerRow(
                         STATUSBADGES.KO,
                         ADAGIOCHECK.DSA,
-                        `Wrong dsa configuration: <code>${JSON.stringify(prebidOrtb2.regs)}</code>`,
+                        `Wrong dsa configuration: <code>${JSON.stringify(dsa)}</code>`,
                     );
                 else
                     appendCheckerRow(
                         STATUSBADGES.OK,
                         ADAGIOCHECK.DSA,
-                        `<code>${JSON.stringify(prebidOrtb2.regs)}</code>`,
+                        `<code>${JSON.stringify(dsa)}</code>`,
                     );
             }
 
