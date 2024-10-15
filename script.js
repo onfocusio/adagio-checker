@@ -841,6 +841,7 @@ function appendAdUnitsRow(bidders, bids) {
 
     // fill the table section
     bids.forEach((bid) => {
+
         const adUnitCode = bid.adUnitCode;
         const mediaTypes = bid.mediaTypes;
         const bidderId = bid.bidder;
@@ -865,11 +866,8 @@ function appendAdUnitsRow(bidders, bids) {
 
         codeCell.innerHTML = `<code>${adUnitCode}</code>`;
         for (const mediaType in mediaTypes) {
-            mediatypesCell.innerHTML += `<code>${mediaType}</code>`;
-            /*for (const size in mediaTypes[mediaType].sizes) {
-                mediatypesCell.innerHTML += `<code>${JSON.stringify(mediaTypes[mediaType].sizes[size])}</code>`;
-                // DEAL WITH PLAYERSIZE for VIDEO
-            }*/
+            if (mediaTypes[mediaType]?.context) mediatypesCell.innerHTML += `<code>${mediaTypes[mediaType].context}</code>`;
+            else mediatypesCell.innerHTML += `<code>${mediaType}</code>`;
         }
         bidderParamButton.innerHTML = `${bidderId}`;
 
@@ -1475,7 +1473,6 @@ function createParametersCheckTable(paragraph, bid) {
 
             // Check the video playerSize
             if (mediatypeVideoPlayerSize !== undefined) {
-                console.log(mediatypeVideoPlayerSize);
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.OK,
@@ -1832,7 +1829,6 @@ function checkPrebidVersion() {
             .split(".")
             .slice(0, 2)
             .join(".");
-        console.log(prebidVersion);
         appendCheckerRow(
             STATUSBADGES.OK,
             ADAGIOCHECK.PREBID,
