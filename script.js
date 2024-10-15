@@ -1449,7 +1449,7 @@ function createParametersCheckTable(paragraph, bid) {
 
             // Check the video context
             if (mediatypeVideoContext !== undefined) {
-                if (mediatypeVideoContext === "outstream")
+                if (mediatypeVideoContext === 'outstream' || mediatypeVideoContext === 'instream')
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.OK,
@@ -1461,7 +1461,7 @@ function createParametersCheckTable(paragraph, bid) {
                         tbody,
                         STATUSBADGES.KO,
                         "<code>mediaTypes.video.context</code>",
-                        `Different of <code>outstream<code>: <code>${JSON.stringify(mediatypeVideoContext)}</code>`,
+                        `Context not supported: <code>${JSON.stringify(mediatypeVideoContext)}</code>`,
                     );
             } else
                 appendParametersCheckerTableRow(
@@ -1490,7 +1490,7 @@ function createParametersCheckTable(paragraph, bid) {
             // Check the video api
             if (mediatypeVideoApi !== undefined) {
                 if (
-                    !mediatypeVideoApi.includes(2) ||
+                    !mediatypeVideoApi.includes(2) &&
                     !mediatypeVideoApi.includes(7)
                 )
                     appendParametersCheckerTableRow(
