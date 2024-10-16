@@ -2699,11 +2699,11 @@ function checkDsaTransparency() {
         const prebidOrtb2 = prebidObject.getConfig("ortb2");
         if (prebidOrtb2 !== undefined) {
 
-            let dsa = prebidOrtb2?.ext?.dsa;
-            let dsarequired = prebidOrtb2?.ext?.dsa?.dsarequired;
-            let pubrender = prebidOrtb2?.ext?.dsa?.pubrender;
-            let datatopub = prebidOrtb2?.ext?.dsa?.datatopub;
-            let transparency = prebidOrtb2?.ext?.dsa?.transparency;
+            let dsa = prebidOrtb2?.regs?.ext?.dsa;
+            let dsarequired = prebidOrtb2?.regs?.ext?.dsa?.dsarequired;
+            let pubrender = prebidOrtb2?.regs?.ext?.dsa?.pubrender;
+            let datatopub = prebidOrtb2?.regs?.ext?.dsa?.datatopub;
+            let transparency = prebidOrtb2?.regs?.ext?.dsa?.transparency;
 
             if (dsa === undefined)
                 appendCheckerRow(
