@@ -1434,33 +1434,80 @@ function createParametersCheckTable(paragraph, bid) {
         }
 
         if (mediatypeVideo !== undefined) {
-            let mediatypeVideoContext = mediatypeVideo?.context;
-            let mediatypeVideoPlayerSize = mediatypeVideo?.playerSize;
-            let mediatypeVideoApi = mediatypeVideo?.api;
-            let mediatypeVideoPlaybackMethod = mediatypeVideo?.playbackmethod;
 
-            // Check the video context
-            if (mediatypeVideoContext !== undefined) {
-                if (mediatypeVideoContext === 'outstream' || mediatypeVideoContext === 'instream')
+            // Required for both instream and outstream
+            let mediatypeVideoContext = mediatypeVideo?.context; // DONE
+            let mediatypeVideoApi = mediatypeVideo?.api; // DONE
+            let mediatypeVideoPlayerSize = mediatypeVideo?.playerSize; // DONE
+            // Required for instream only
+            let mediatypeVideoMimes = mediatypeVideo?.mimes; // DONE
+            let mediatypeVideoPlcmt = mediatypeVideo?.plcmt; // DONE
+            // Highly recommended for instream and outstream
+            let mediatypeVideoPlaybackMethod = mediatypeVideo?.playbackmethod; // DONE
+            // Highly recommended for instream only
+            let mediatypeVideoStartDelay = mediatypeVideo?.startdelay; // DONE
+            let mediatypeVideoStartProtocols = mediatypeVideo?.protocols;
+
+            // For checking purpose
+            let hasOutstreamContext = mediatypeVideoContext ? 'outstream' : false;
+            let hasInstreamContext = mediatypeVideoContext ? 'instream' : false;
+            let videoApiSupported = [1,2,3,4,5];
+            let mimesExpected = ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript'];
+            let plcmtExpected = [1,2];
+            let protocolsExpected = [3, 6, 7, 8];
+
+            // Check the video context: instream or outstream
+            if (hasOutstreamContext || hasInstreamContext) {
+                appendParametersCheckerTableRow(
+                    tbody,
+                    STATUSBADGES.OK,
+                    "<code>mediaTypes.video.context</code>",
+                    `<code>${mediatypeVideoContext}</code>`,
+                );
+            } else {
+                appendParametersCheckerTableRow(
+                    tbody,
+                    STATUSBADGES.KO,
+                    "<code>mediaTypes.video.context</code>",
+                    `<code>${mediatypeVideoContext}</code>`,
+                );
+                // If no context found, we should not check params furthermore
+                return;
+            }
+
+            // Check the video api: [1, 2, 3, 4, 5]
+            if (mediatypeVideoApi !== undefined) {
+                if (!mediatypeVideoApi.includes(2) &&
+                    hasOutstreamContext
+                )
                     appendParametersCheckerTableRow(
                         tbody,
-                        STATUSBADGES.OK,
-                        "<code>mediaTypes.video.context</code>",
-                        `<code>${mediatypeVideoContext}</code>`,
+                        STATUSBADGES.KO,
+                        "<code>mediaTypes.video.api</code>",
+                        `Api value <code>2</code> not found: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                    );
+                else if (!videoApiSupported.some(i => mediatypeVideoApi.includes(i)) && 
+                    hasInstreamContext
+                )
+                    appendParametersCheckerTableRow(
+                        tbody,
+                        STATUSBADGES.KO,
+                        "<code>mediaTypes.video.api</code>",
+                        `Not API value supported found: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
                     );
                 else
                     appendParametersCheckerTableRow(
                         tbody,
-                        STATUSBADGES.KO,
-                        "<code>mediaTypes.video.context</code>",
-                        `Context not supported: <code>${JSON.stringify(mediatypeVideoContext)}</code>`,
+                        STATUSBADGES.OK,
+                        "<code>mediaTypes.video.api</code>",
+                        `<code>${JSON.stringify(mediatypeVideoApi)}</code>`,
                     );
             } else
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.KO,
-                    "<code>mediaTypes.video.context</code>",
-                    `No parameter found...`,
+                    "<code>mediaTypes.video.api</code>",
+                    `<code>${JSON.stringify(mediatypeVideoApi)}</code>`,
                 );
 
             // Check the video playerSize
@@ -1479,56 +1526,106 @@ function createParametersCheckTable(paragraph, bid) {
                     `No parameter found...`,
                 );
 
-            // Check the video api
-            if (mediatypeVideoApi !== undefined) {
-                if (
-                    !mediatypeVideoApi.includes(2) &&
-                    !mediatypeVideoApi.includes(7)
-                )
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.KO,
-                        "<code>mediaTypes.video.api</code>",
-                        `Api <code>[2,7]</code> not found: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
-                    );
-                else
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.OK,
-                        "<code>mediaTypes.video.api</code>",
-                        `<code>${JSON.stringify(mediatypeVideoApi)}</code>`,
-                    );
-            } else
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.KO,
-                    "<code>mediaTypes.video.api</code>",
-                    `No parameter found...`,
-                );
-
             // Check the video playbackmethod
-            if (mediatypeVideoPlaybackMethod !== undefined) {
-                if (!mediatypeVideoPlaybackMethod.includes(6))
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.CHECK,
-                        "<code>mediaTypes.video.playbackmethod</code>",
-                        `playbackmethod <code>6</code> not found: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
-                    );
-                else
+            if (mediatypeVideoPlaybackMethod && mediatypeVideoPlaybackMethod.includes(6))
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.OK,
                         "<code>mediaTypes.video.playbackmethod</code>",
                         `<code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
                     );
-            } else
+            else
+                appendParametersCheckerTableRow(
+                    tbody,
+                    STATUSBADGES.CHECK,
+                    "<code>mediaTypes.video.playbackmethod</code>",
+                    `<code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                );
+
+            // Check the video mimes: ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript']
+            if (mediatypeVideoMimes === undefined) {
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.KO,
-                    "<code>mediaTypes.video.playbackmethod</code>",
-                    `No parameter found...`,
+                    "<code>mediaTypes.video.mimes</code>",
+                    `<code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
                 );
+            }
+            else if (!mimesExpected.every(i => mediatypeVideoApi.includes(i))) {
+                appendParametersCheckerTableRow(
+                    tbody,
+                    STATUSBADGES.CHECK,
+                    "<code>mediaTypes.video.mimes</code>",
+                    `<code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                );
+            }
+            else {
+                appendParametersCheckerTableRow(
+                    tbody,
+                    STATUSBADGES.OK,
+                    "<code>mediaTypes.video.mimes</code>",
+                    `<code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                );
+            }
+
+            // Check the placement (for instream only)
+            if (hasInstreamContext) {
+                if (mediatypeVideoPlcmt && plcmtExpected.includes(mediatypeVideoPlcmt)) {
+                    appendParametersCheckerTableRow(
+                        tbody,
+                        STATUSBADGES.OK,
+                        "<code>mediaTypes.video.plcmt</code>",
+                        `<code>${mediatypeVideoPlcmt}</code>`,
+                    );
+                } else {
+                    appendParametersCheckerTableRow(
+                        tbody,
+                        STATUSBADGES.KO,
+                        "<code>mediaTypes.video.plcmt</code>",
+                        `<code>${mediatypeVideoPlcmt}</code>`,
+                    );
+                }
+            }
+
+            // Check the startdelay (for instream only)
+            if (hasInstreamContext) {
+                if(mediatypeVideoStartDelay) {
+                    appendParametersCheckerTableRow(
+                        tbody,
+                        STATUSBADGES.OK,
+                        "<code>mediaTypes.video.startdelay</code>",
+                        `<code>${mediatypeVideoStartDelay}</code>`,
+                    );
+                }
+                else {
+                    appendParametersCheckerTableRow(
+                        tbody,
+                        STATUSBADGES.CHECK,
+                        "<code>mediaTypes.video.startdelay</code>",
+                        `<code>${mediatypeVideoStartDelay}</code>`,
+                    );
+                }
+            }
+
+            // Check the protocols (for instream only)
+            if (hasInstreamContext) {
+                if(mediatypeVideoStartProtocols && protocolsExpected.every(i => mediatypeVideoStartProtocols.includes(i))) {
+                    appendParametersCheckerTableRow(
+                        tbody,
+                        STATUSBADGES.OK,
+                        "<code>mediaTypes.video.protocols</code>",
+                        `<code>${mediatypeVideoStartProtocols}</code>`,
+                    );
+                }
+                else {
+                    appendParametersCheckerTableRow(
+                        tbody,
+                        STATUSBADGES.CHECK,
+                        "<code>mediaTypes.video.protocols</code>",
+                        `<code>${mediatypeVideoStartProtocols}</code>`,
+                    );
+                }
+            } 
         }
 
         if (mediatypeNative !== undefined) {
