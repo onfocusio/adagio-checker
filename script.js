@@ -1510,37 +1510,22 @@ function createParametersCheckTable(paragraph, bid) {
                     `<code>${JSON.stringify(mediatypeVideoApi)}</code>`,
                 );
 
-            // Check the video playerSize
-            if (mediatypeVideoPlayerSize !== undefined) {
+            // Check the player size
+            if (mediatypeVideoPlayerSize && Array.isArray(mediatypeVideoPlayerSize) && mediatypeVideoPlayerSize.every(subArr => Array.isArray(subArr) && subArr.length === 2 && subArr.every(Number.isInteger))) {
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.OK,
                     "<code>mediaTypes.video.playerSize</code>",
-                    `<code>${JSON.stringify(mediatypeVideoPlayerSize)}</code>`,
+                    `<code>${mediatypeVideoPlayerSize}</code>`,
                 );
-            } else
+            } else {
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.KO,
                     "<code>mediaTypes.video.playerSize</code>",
-                    `No parameter found...`,
+                    `<code>${mediatypeVideoPlayerSize}</code>`,
                 );
-
-            // Check the video playbackmethod
-            if (mediatypeVideoPlaybackMethod && mediatypeVideoPlaybackMethod.includes(6))
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.OK,
-                        "<code>mediaTypes.video.playbackmethod</code>",
-                        `<code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
-                    );
-            else
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.CHECK,
-                    "<code>mediaTypes.video.playbackmethod</code>",
-                    `<code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
-                );
+            }    
 
             // Check the video mimes: ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript']
             if (mediatypeVideoMimes === undefined) {
@@ -1586,6 +1571,22 @@ function createParametersCheckTable(paragraph, bid) {
                     );
                 }
             }
+
+            // Check the video playbackmethod
+            if (mediatypeVideoPlaybackMethod && mediatypeVideoPlaybackMethod.includes(6))
+                appendParametersCheckerTableRow(
+                    tbody,
+                    STATUSBADGES.OK,
+                    "<code>mediaTypes.video.playbackmethod</code>",
+                    `<code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                );
+            else
+                appendParametersCheckerTableRow(
+                    tbody,
+                    STATUSBADGES.CHECK,
+                    "<code>mediaTypes.video.playbackmethod</code>",
+                    `<code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                );
 
             // Check the startdelay (for instream only)
             if (hasInstreamContext) {
