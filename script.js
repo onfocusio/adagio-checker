@@ -1882,7 +1882,9 @@ async function checkCurrentLocation() {
             const countryName = data.country_name;
             // Convert country code to emoji using a function
             const countryEmoji = getFlagEmoji(countryCode);
-            alertTextDiv.innerHTML += `<small>• Current location detected: <code>${countryName}</code> (${countryEmoji})</small><br>`;
+            if (countryName !== 'France') {
+                alertTextDiv.innerHTML += `<small>• Current location detected: <code>${countryName}</code> (${countryEmoji})</small><br>`;
+            }
         })
         .catch((error) => console.error("Error fetching country data:", error));
 
