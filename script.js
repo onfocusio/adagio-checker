@@ -170,8 +170,8 @@ function createOverlay() {
     overlayFrame.style.position = "fixed";
     overlayFrame.style.top = "10px";
     overlayFrame.style.left = "10px";
-    overlayFrame.style.width = "700px";
-    overlayFrame.style.height = "450px";
+    overlayFrame.style.width = "850px";
+    overlayFrame.style.height = "95%";
     overlayFrame.style.zIndex = "2147483647";
     overlayFrame.style.backgroundColor = "transparent";
     overlayFrame.style.border = "none";
@@ -1125,10 +1125,10 @@ function createParametersCheckTable(paragraph, bid) {
     alertContainer.style.color = COLOR.YELLOWTEXT;
     alertContainer.style.backgroundColor = COLOR.YELLOWBACKGROUND;
 
-    const alertTextDiv = overlayFrameDoc.createElement("div");
+    /*const alertTextDiv = overlayFrameDoc.createElement("div");
     alertTextDiv.innerHTML = `<small>Checks if the <code>parameters</code> are <b>found</b>. Not if their string value exists in the data.</small>`;
     alertTextDiv.innerHTML += `<small><br><li><code>ortb2.site.domain</code>: <code>${bid?.ortb2?.site?.domain}</code></li></small>`;
-    alertContainer.appendChild(alertTextDiv);
+    alertContainer.appendChild(alertTextDiv);*/
 
     // Create the parameter checker table
     const table = overlayFrameDoc.createElement("table");
@@ -1167,30 +1167,30 @@ function createParametersCheckTable(paragraph, bid) {
         appendParametersCheckerTableRow(
             tbody,
             STATUSBADGES.KO,
-            "<code>params.organizationId</code>",
-            "Parameter not found...",
+            `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
+            `Parameter not found.`,
         );
     else {
         if (paramOrganizationId.length !== 4)
             appendParametersCheckerTableRow(
                 tbody,
                 STATUSBADGES.CHECK,
-                "<code>params.organizationId</code>",
-                `More than 4 characters: <code>${paramOrganizationId}</code>`,
+                `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
+                `More than 4 characters detected.`,
             );
         else if (/\D/.test(paramOrganizationId) !== false)
             appendParametersCheckerTableRow(
                 tbody,
                 STATUSBADGES.CHECK,
-                "<code>params.organizationId</code>",
-                `Not only numbers:  <code>${paramOrganizationId}</code>`,
+                `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
+                `Contains non-integer caracters.`,
             );
         else
             appendParametersCheckerTableRow(
                 tbody,
                 STATUSBADGES.OK,
-                "<code>params.organizationId</code>",
-                `<code>${paramOrganizationId}</code>`,
+                `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
+                ``,
             );
     }
 
@@ -1199,37 +1199,37 @@ function createParametersCheckTable(paragraph, bid) {
         appendParametersCheckerTableRow(
             tbody,
             STATUSBADGES.KO,
-            "<code>params.site</code>",
-            "Parameter not found...",
+            `<code>params.site</code>: <code>${paramSite}</code>`,
+            "Parameter not found.",
         );
     else {
         if (paramSite.trim() !== paramSite)
             appendParametersCheckerTableRow(
                 tbody,
-                STATUSBADGES.CHECK,
-                "<code>params.site</code>",
-                `Space character at the beginning or end of the string: <code>${paramSite}</code>`,
+                STATUSBADGES.KO,
+                `<code>params.site</code>: <code>${paramSite}</code>`,
+                `Space character detected.`,
             );
         else if (adagioApiKeyfound && successRecordItems !== null)
             appendParametersCheckerTableRow(
                 tbody,
                 STATUSBADGES.OK,
-                "<code>params.site</code>",
-                `<code>${paramSite}</code>`,
+                `<code>params.site</code>: <code>${paramSite}</code>`,
+                ``,
             );
         else if (adagioApiKeyfound && successRecordItems === null)
             appendParametersCheckerTableRow(
                 tbody,
                 STATUSBADGES.KO,
-                "<code>params.site</code>",
-                `No record found, check API log: <code>${paramSite}</code>`,
+                `<code>params.site</code>: <code>${paramSite}</code>`,
+                `No API record found, check logs.`,
             );
         else
             appendParametersCheckerTableRow(
                 tbody,
-                STATUSBADGES.CHECK,
-                "<code>params.site</code> (no API)",
-                `<code>${paramSite}</code>`,
+                STATUSBADGES.INFO,
+                `<code>params.site</code>: <code>${paramSite}</code>`,
+                "No API loaded for checking",
             );
     }
 
@@ -1268,7 +1268,7 @@ function createParametersCheckTable(paragraph, bid) {
         appendParametersCheckerTableRow(
             tbody,
             divIdStatus,
-            `<code>${divIdSetup}</code>`,
+            `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
             `Not defined in the adUnit configuration.`,
         );
     else {
@@ -1277,22 +1277,22 @@ function createParametersCheckTable(paragraph, bid) {
             appendParametersCheckerTableRow(
                 tbody,
                 STATUSBADGES.CHECK,
-                `<code>${divIdSetup}</code>`,
-                `Space character at the beginning or end of the string: <code>${divIdRes}</code>`,
+                `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
+                `Space character detected.`,
             );
         else if (htlmDiv === null)
             appendParametersCheckerTableRow(
                 tbody,
                 STATUSBADGES.CHECK,
-                `<code>${divIdSetup}</code>`,
-                `Id not found: <code>${divIdRes}</code>`,
+                `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
+                `Div id not found in the page.`,
             );
         else
             appendParametersCheckerTableRow(
                 tbody,
                 divIdStatus,
-                `<code>${divIdSetup}</code>`,
-                `<code>${divIdRes}</code>`,
+                `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
+                ``,
             );
     }
 
@@ -1331,15 +1331,15 @@ function createParametersCheckTable(paragraph, bid) {
         appendParametersCheckerTableRow(
             tbody,
             placementStatus,
-            `<code>${placementSetup}</code>`,
+            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
             `Not defined in the adUnit configuration.`,
         );
     else if (placementRes.trim() !== placementRes)
         appendParametersCheckerTableRow(
             tbody,
             STATUSBADGES.CHECK,
-            `<code>${placementSetup}</code>`,
-            `Space character at the beginning or end of the string: <code>${placementRes}</code>`,
+            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
+            `Space character detected.`,
         );
     else if (
         /mobile/i.test(placementRes) ||
@@ -1349,15 +1349,15 @@ function createParametersCheckTable(paragraph, bid) {
         appendParametersCheckerTableRow(
             tbody,
             STATUSBADGES.CHECK,
-            `<code>${placementSetup}</code>`,
-            `Includes reference to an environment: <code>${placementRes}</code>`,
+            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
+            `Should not include reference to an environment`,
         );
     else
         appendParametersCheckerTableRow(
             tbody,
             placementStatus,
-            `<code>${placementSetup}</code>`,
-            `<code>${placementRes}</code>`,
+            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
+            ``,
         );
 
     // Check the mediatypes parameters
@@ -1373,8 +1373,8 @@ function createParametersCheckTable(paragraph, bid) {
         appendParametersCheckerTableRow(
             tbody,
             STATUSBADGES.KO,
-            "<code>mediaTypes</code>",
-            `No mediatype found: <code>${JSON.stringify(bid.mediaTypes)}</code>`,
+            `<code>mediaTypes</code>: <code>${JSON.stringify(bid.mediaTypes)}</code>`,
+            `No mediatype detected.`,
         );
     else {
         if (mediatypeBanner !== undefined) {
@@ -1414,22 +1414,22 @@ function createParametersCheckTable(paragraph, bid) {
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.OK,
-                        "<code>mediaTypes.banner.sizes</code>",
-                        `<code>${JSON.stringify(commonArrays)}</code>`,
+                        `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(commonArrays)}</code>`,
+                        ``,
                     );
                 else
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.KO,
-                        "<code>mediaTypes.banner.sizes</code>",
-                        `No supported size: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`,
+                        `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`,
+                        `No supported size detected.`,
                     );
             } else
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.KO,
-                    "<code>mediaTypes.banner.sizes</code>",
-                    `No parameter found...`,
+                    `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`,
+                    `No parameter found.`,
                 );
         }
 
@@ -1461,15 +1461,15 @@ function createParametersCheckTable(paragraph, bid) {
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.OK,
-                    "<code>mediaTypes.video.context</code>",
-                    `<code>${mediatypeVideoContext}</code>`,
+                    `<code>mediaTypes.video.context</code>: <code>${mediatypeVideoContext}</code>`,
+                    ``,
                 );
             } else {
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.KO,
-                    "<code>mediaTypes.video.context</code>",
-                    `<code>${mediatypeVideoContext}</code>`,
+                    `<code>mediaTypes.video.context</code>: <code>${mediatypeVideoContext}</code>`,
+                    `No supported context found.`,
                 );
                 // If no context found, we should not check params furthermore
                 return;
@@ -1477,37 +1477,33 @@ function createParametersCheckTable(paragraph, bid) {
 
             // Check the video api: [1, 2, 3, 4, 5]
             if (mediatypeVideoApi !== undefined) {
-                if (!mediatypeVideoApi.includes(2) &&
-                    hasOutstreamContext
-                )
+                if (hasOutstreamContext && !mediatypeVideoApi.includes(2))
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.KO,
-                        "<code>mediaTypes.video.api</code>",
-                        `Api value <code>2</code> not found: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                        `<code>mediaTypes.video.api</code>: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                        `Must support api <code>2</code>'`,
                     );
-                else if (!videoApiSupported.some(i => mediatypeVideoApi.includes(i)) && 
-                    hasInstreamContext
-                )
+                else if (!videoApiSupported.some(i => mediatypeVideoApi.includes(i)) && hasInstreamContext)
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.KO,
-                        "<code>mediaTypes.video.api</code>",
-                        `Not API value supported found: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                        `<code>mediaTypes.video.api</code>: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                        `Must support at least one of <code>${JSON.stringify(videoApiSupported)}</code>`,
                     );
                 else
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.OK,
-                        "<code>mediaTypes.video.api</code>",
-                        `<code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                        `<code>mediaTypes.video.api</code>: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                        ``,
                     );
             } else
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.KO,
-                    "<code>mediaTypes.video.api</code>",
-                    `<code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                    `<code>mediaTypes.video.api</code>: <code>${mediatypeVideoApi}</code>`,
+                    `No video api detected.`,
                 );
 
             // Check the player size
@@ -1515,77 +1511,98 @@ function createParametersCheckTable(paragraph, bid) {
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.OK,
-                    "<code>mediaTypes.video.playerSize</code>",
-                    `<code>${mediatypeVideoPlayerSize}</code>`,
+                    `<code>mediaTypes.video.playerSize</code>: <code>${JSON.stringify(mediatypeVideoPlayerSize)}</code>`,
+                    ``,
                 );
             } else {
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.KO,
-                    "<code>mediaTypes.video.playerSize</code>",
-                    `<code>${mediatypeVideoPlayerSize}</code>`,
+                    `<code>mediaTypes.video.playerSize</code>: <code>${JSON.stringify(mediatypeVideoPlayerSize)}</code>`,
+                    `Wrong format or not size detected.`,
                 );
-            }    
+            }
 
             // Check the video mimes: ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript']
             if (mediatypeVideoMimes === undefined) {
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.KO,
-                    "<code>mediaTypes.video.mimes</code>",
-                    `<code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                    `No mimes detected.`,
                 );
             }
             else if (!mimesExpected.every(i => mediatypeVideoApi.includes(i))) {
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.CHECK,
-                    "<code>mediaTypes.video.mimes</code>",
-                    `<code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                    `Missing mimes: <code>${JSON.stringify(mimesExpected.filter(i => !mediatypeVideoMimes.includes(i)))}</code>`,
                 );
             }
             else {
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.OK,
-                    "<code>mediaTypes.video.mimes</code>",
-                    `<code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                    ``,
                 );
             }
 
             // Check the placement (for instream only)
             if (hasInstreamContext) {
-                if (mediatypeVideoPlcmt && plcmtExpected.includes(mediatypeVideoPlcmt)) {
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.OK,
-                        "<code>mediaTypes.video.plcmt</code>",
-                        `<code>${mediatypeVideoPlcmt}</code>`,
-                    );
-                } else {
+                if (mediatypeVideoPlcmt) {
+                    if (plcmtExpected.includes(mediatypeVideoPlcmt)) {
+                        appendParametersCheckerTableRow(
+                            tbody,
+                            STATUSBADGES.OK,
+                            `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
+                            ``,
+                        );
+                    } else {
+                        appendParametersCheckerTableRow(
+                            tbody,
+                            STATUSBADGES.KO,
+                            `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
+                            `Must be one of <code>${JSON.stringify(plcmtExpected)}</code>`,
+                        );
+                    }
+                } 
+                else {
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.KO,
-                        "<code>mediaTypes.video.plcmt</code>",
-                        `<code>${mediatypeVideoPlcmt}</code>`,
+                        `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
+                        `No placement detected.`,
                     );
                 }
             }
 
             // Check the video playbackmethod
-            if (mediatypeVideoPlaybackMethod && mediatypeVideoPlaybackMethod.includes(6))
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.OK,
-                    "<code>mediaTypes.video.playbackmethod</code>",
-                    `<code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
-                );
+            if (mediatypeVideoPlaybackMethod) {
+                if (mediatypeVideoPlaybackMethod.includes(6)) {
+                    appendParametersCheckerTableRow(
+                        tbody,
+                        STATUSBADGES.OK,
+                        `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                        ``,
+                    );
+                }
+                else {
+                    appendParametersCheckerTableRow(
+                        tbody,
+                        STATUSBADGES.CHECK,
+                        `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                        `Must include <code>[6]</code>.`,
+                    );
+                }
+            }
             else
                 appendParametersCheckerTableRow(
                     tbody,
                     STATUSBADGES.CHECK,
-                    "<code>mediaTypes.video.playbackmethod</code>",
-                    `<code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                    `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                    `No playback method detected.`,
                 );
 
             // Check the startdelay (for instream only)
@@ -1594,36 +1611,46 @@ function createParametersCheckTable(paragraph, bid) {
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.OK,
-                        "<code>mediaTypes.video.startdelay</code>",
-                        `<code>${mediatypeVideoStartDelay}</code>`,
+                        `<code>mediaTypes.video.startdelay</code>: <code>${mediatypeVideoStartDelay}</code>`,
+                        ``,
                     );
                 }
                 else {
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.CHECK,
-                        "<code>mediaTypes.video.startdelay</code>",
-                        `<code>${mediatypeVideoStartDelay}</code>`,
+                        `<code>mediaTypes.video.startdelay</code>: <code>${mediatypeVideoStartDelay}</code>`,
+                        `No start delay detected.`,
                     );
                 }
             }
 
             // Check the protocols (for instream only)
             if (hasInstreamContext) {
-                if(mediatypeVideoStartProtocols && protocolsExpected.every(i => mediatypeVideoStartProtocols.includes(i))) {
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.OK,
-                        "<code>mediaTypes.video.protocols</code>",
-                        `<code>${mediatypeVideoStartProtocols}</code>`,
-                    );
+                if(mediatypeVideoStartProtocols) {
+                    if (protocolsExpected.every(i => mediatypeVideoStartProtocols.includes(i))) {
+                        appendParametersCheckerTableRow(
+                            tbody,
+                            STATUSBADGES.OK,
+                            `<code>mediaTypes.video.protocols</code>: <code>${mediatypeVideoStartProtocols}</code>`,
+                            ``,
+                        );
+                    }
+                    else {
+                        appendParametersCheckerTableRow(
+                            tbody,
+                            STATUSBADGES.CHECK,
+                            `<code>mediaTypes.video.protocols</code>: <code>${mediatypeVideoStartProtocols}</code>`,
+                            `Missing protocols: <code>${JSON.stringify(protocolsExpected.filter(i => !mediatypeVideoStartProtocols.includes(i)))}</code>`,
+                        );
+                    }
                 }
                 else {
                     appendParametersCheckerTableRow(
                         tbody,
                         STATUSBADGES.CHECK,
-                        "<code>mediaTypes.video.protocols</code>",
-                        `<code>${mediatypeVideoStartProtocols}</code>`,
+                        `<code>mediaTypes.video.protocols</code>: <code>${mediatypeVideoStartProtocols}</code>`,
+                        `No protocol detected.`,
                     );
                 }
             } 
@@ -1634,7 +1661,7 @@ function createParametersCheckTable(paragraph, bid) {
         }
     }
 
-    paragraph.appendChild(alertContainer);
+    // paragraph.appendChild(alertContainer);
     paragraph.appendChild(table);
 }
 
@@ -1900,7 +1927,7 @@ function checkAdServer() {
     const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(" ", "-");
     const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
     if (stringAdServer !== "")
-        alertTextDiv.innerHTML += `<small>• Adserver(s) detected: ${stringAdServer}</small><br>`;
+        alertTextDiv.innerHTML = `<small>• Adserver(s) detected: ${stringAdServer}</small><br>`;
     // else alertTextDiv.innerHTML = `<small>• No Adserver(s) detected: ${stringAdServer}</small>`;
 }
 
