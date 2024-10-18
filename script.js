@@ -89,6 +89,7 @@ const STATUSBADGES = Object.freeze({
 });
 
 const ADAGIOCHECK = Object.freeze({
+    ADSERVER: "Adserver",
     PREBID: "Prebid.js (wrapper)",
     ADAPTER: "Adagio adapter",
     ANALYTICS: "Adagio analytics",
@@ -1593,7 +1594,7 @@ function createParametersCheckTable(paragraph, bid) {
                         tbody,
                         STATUSBADGES.CHECK,
                         `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
-                        `Must include <code>[6]</code>.`,
+                        `We recommend to include <code>[6]</code>.`,
                     );
                 }
             }
@@ -1925,12 +1926,11 @@ function checkAdServer() {
         }
     }
 
-    // Fill the alert with number of adservers found
-    const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(" ", "-");
-    const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
-    if (stringAdServer !== "")
-        alertTextDiv.innerHTML = `<small>• Adserver(s) detected: ${stringAdServer}</small><br>`;
-    // else alertTextDiv.innerHTML = `<small>• No Adserver(s) detected: ${stringAdServer}</small>`;
+    appendCheckerRow(
+        STATUSBADGES.INFO,
+        ADAGIOCHECK.ADSERVER,
+        `${stringAdServer}`,
+    );
 }
 
 function checkPrebidVersion() {
