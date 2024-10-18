@@ -1770,7 +1770,7 @@ function runCheck() {
     checkAdagioCMP();
     checkFloorPriceModule();
     checkDsaTransparency();
-    checkPublisher();
+    // checkPublisher();
 }
 
 async function checkAdagioAPI() {
