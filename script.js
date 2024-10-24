@@ -2873,20 +2873,20 @@ function checkDsaTransparency() {
                 appendCheckerRow(
                     STATUSBADGES.INFO,
                     ADAGIOCHECK.DSA,
-                    `No dsa detected: <code>${JSON.stringify(prebidOrtb2)}</code>`,
+                    `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`,
                 );
             else {
                 if (dsarequired === undefined || pubrender === undefined || datatopub === undefined || transparency === undefined)
                     appendCheckerRow(
                         STATUSBADGES.KO,
                         ADAGIOCHECK.DSA,
-                        `Wrong dsa configuration: <code>${JSON.stringify(dsa)}</code>`,
+                        `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`,
                     );
                 else
                     appendCheckerRow(
                         STATUSBADGES.OK,
                         ADAGIOCHECK.DSA,
-                        `<code>${JSON.stringify(dsa)}</code>`,
+                        `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`,
                     );
             }
 
@@ -2894,7 +2894,7 @@ function checkDsaTransparency() {
             appendCheckerRow(
                 STATUSBADGES.INFO,
                 ADAGIOCHECK.DSA,
-                `No ortb2 configured: <code>${JSON.stringify(prebidOrtb2)}</code>`,
+                `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`,
             );
         }
     }
