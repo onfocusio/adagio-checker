@@ -59,6 +59,10 @@ const ADAGIOSVG = Object.freeze({
     DEBUGGING: '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M4.6 15c-.9-2.6-.6-4.6-.5-5.4 2.4-1.5 5.3-2 8-1.3.7-.3 1.5-.5 2.3-.6-.1-.3-.2-.5-.3-.8h2l1.2-3.2-.9-.4-1 2.6h-1.8C13 4.8 12.1 4 11.1 3.4l2.1-2.1-.7-.7L10.1 3c-.7 0-1.5 0-2.3.1L5.4.7l-.7.7 2.1 2.1C5.7 4.1 4.9 4.9 4.3 6H2.5l-1-2.6-.9.4L1.8 7h2C3.3 8.3 3 9.6 3 11H1v1h2c0 1 .2 2 .5 3H1.8L.6 18.3l.9.3 1-2.7h1.4c.4.8 2.1 4.5 5.8 3.9-.3-.2-.5-.5-.7-.8-2.9 0-4.4-3.5-4.4-4zM9 3.9c2 0 3.7 1.6 4.4 3.8-2.9-1-6.2-.8-9 .6.7-2.6 2.5-4.4 4.6-4.4zm14.8 19.2l-4.3-4.3c2.1-2.5 1.8-6.3-.7-8.4s-6.3-1.8-8.4.7-1.8 6.3.7 8.4c2.2 1.9 5.4 1.9 7.7 0l4.3 4.3c.2.2.5.2.7 0 .2-.2.2-.5 0-.7zm-8.8-3c-2.8 0-5.1-2.3-5.1-5.1s2.3-5.1 5.1-5.1 5.1 2.3 5.1 5.1-2.3 5.1-5.1 5.1z"/><path fill="none" d="M0 0h24v24H0z"/></svg>',
     REFRESH: '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"></path></svg>',
     INFO: '<svg viewBox="0 0 416.979 416.979" style="height:1.2em;"><path d="M356.004,61.156c-81.37-81.47-213.377-81.551-294.848-0.182c-81.47,81.371-81.552,213.379-0.181,294.85 c81.369,81.47,213.378,81.551,294.849,0.181C437.293,274.636,437.375,142.626,356.004,61.156z M237.6,340.786 c0,3.217-2.607,5.822-5.822,5.822h-46.576c-3.215,0-5.822-2.605-5.822-5.822V167.885c0-3.217,2.607-5.822,5.822-5.822h46.576 c3.215,0,5.822,2.604,5.822,5.822V340.786z M208.49,137.901c-18.618,0-33.766-15.146-33.766-33.765 c0-18.617,15.147-33.766,33.766-33.766c18.619,0,33.766,15.148,33.766,33.766C242.256,122.755,227.107,137.901,208.49,137.901z"></path></svg>',
+    APIGREY: '<svg viewBox="0 0 24 24" style="height:1.2em;"><circle cx="12" cy="12" r="10" fill="grey"/></svg>',
+    APIGREEN: '<svg viewBox="0 0 24 24" style="height:1.2em;"><circle cx="12" cy="12" r="10" fill="green"/></svg>',
+    APIRED: '<svg viewBox="0 0 24 24" style="height:1.2em;"><circle cx="12" cy="12" r="10" fill="red"/></svg>',
+    APIORANGE: '<svg viewBox="0 0 24 24" style="height:1.2em;"><circle cx="12" cy="12" r="10" fill="orange"/></svg>',
 });
 
 const ADAGIOTABSNAME = Object.freeze({
@@ -256,19 +260,18 @@ function buildOverlayHtml() {
     ul.appendChild(
         buildTabButton(ADAGIOTABSNAME.CONSENTS, ADAGIOSVG.CONSENTS, false),
     );
-    // ul.appendChild(buildTabButton(ADAGIOTABSNAME.BUYERUIDS, ADAGIOSVG.CONSENTS, false));
+    ul.appendChild(
+        buildApiButton("API status", ADAGIOSVG.APIGREY, true),
+    );
     ul.appendChild(
         buildPrebidButton("Prebid versions detected", ADAGIOSVG.PREBID, true),
     );
-    // ul.appendChild(buildOverlayButton('Show adunits overlay', ADAGIOSVG.EYECLOSED, false));
     ul.appendChild(
-        buildDebuggingButton(
-            "Enable debbug mode and reload page",
-            ADAGIOSVG.DEBUGGING,
-            true,
-        ),
+        buildDebuggingButton("Enable debbug mode and reload page",ADAGIOSVG.DEBUGGING,true,),
     );
-    ul.appendChild(buildRefreshButton("Refresh", ADAGIOSVG.REFRESH, true));
+    ul.appendChild(
+        buildRefreshButton("Refresh", ADAGIOSVG.REFRESH, true),
+    );
 
     // append unordered lists to navigation
     nav.appendChild(ul);
@@ -463,6 +466,20 @@ function buildDebuggingButton(name, svg, isactive) {
     if (!isactive) button.disabled = true;
     button.innerHTML = svg;
     button.addEventListener("click", () => loadDebuggingMode());
+    button.classList.add("outline");
+    button.style.borderColor = "transparent";
+    button.style.padding = "0.3em";
+    li.appendChild(button);
+    return li;
+}
+
+function buildApiButton(name, svg, isactive) {
+    const li = overlayFrameDoc.createElement("li");
+    const button = overlayFrameDoc.createElement("button");
+    button.setAttribute("id", "apiButton");
+    button.setAttribute("title", name);
+    if (!isactive) button.disabled = true;
+    button.innerHTML = svg;
     button.classList.add("outline");
     button.style.borderColor = "transparent";
     button.style.padding = "0.3em";
@@ -1780,17 +1797,21 @@ function runCheck() {
 
 async function checkAdagioAPI() {
     // Ready to udapte the alert div
-    const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(" ", "-");
-    const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
+    const apiButtonElement = overlayFrameDoc.getElementById(`apiButton`);
+
+    // button.setAttribute("title", name);
+    /// button.innerHTML = svg;
 
     // Ensure user launched the bookmarket with the ADAGIO_KEY declared
     if (typeof ADAGIO_KEY === "undefined") {
         // Ensure the ADAGIO_KEY is defined
-        alertTextDiv.innerHTML += `<small>• Adagio API: <code>🔴 'ADAGIO_KEY' is not defined in the bookmarklet</code></small><br>`;
+        apiButtonElement.innerHTML = ADAGIOSVG.APIRED;
+        apiButtonElement.setAttribute("title", "Adagio API - 'ADAGIO_KEY' is not defined in the bookmarklet.");
         return;
     } else if (ADAGIO_KEY === "") {
         // Ensure the ADAGIO_KEY is not empty ('')
-        alertTextDiv.innerHTML += `<small>• Adagio API: <code>🔴 'ADAGIO_KEY' value is empty in the bookmarklet</code></small><br>`;
+        apiButtonElement.innerHTML = ADAGIOSVG.APIRED;
+        apiButtonElement.setAttribute("title", "Adagio API - 'ADAGIO_KEY' value is empty in the bookmarklet.");
         return;
     } else {
         // Declare the API as found
@@ -1802,9 +1823,11 @@ async function checkAdagioAPI() {
 
     // Launch the API call for the organizationIds
     if (organizationIds.length === 0) {
-        alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No organizationId detected in traffic</code></small><br>`;
+        apiButtonElement.innerHTML = ADAGIOSVG.APIORANGE;
+        apiButtonElement.setAttribute("title", "Adagio API - No organizationId detected in traffic.");
     } else if (organizationIds.length > 1) {
-        alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 More than one organizationId detected in traffic (not supported): ${organizationIds}</code></small><br>`;
+        apiButtonElement.innerHTML = ADAGIOSVG.APIORANGE;
+        apiButtonElement.setAttribute("title", "Adagio API - Multiple organizations detected in traffic (not supported).");
     } else {
         queryString = `filter=publisher_id||$eq||${encodeURIComponent(organizationIds[0])}`;
         let orgIdApiDataResponse = await runAdagioAPI(queryString); // => data //.records
@@ -1832,16 +1855,25 @@ async function checkAdagioAPI() {
                 ) || null;
 
             // Check display API status regarding record results.
-            if (matchedDomainRecords === null)
-                alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No manager domain match: ${window.location.hostname}</code></small><br>`;
-            else if (matchedSiteNameRecords === null)
-                alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No manager sitename match: ${siteNames}</code></small><br>`;
-            else if (successRecordItems === null)
-                alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No manager domain and sitename match: ${window.location.hostname} / ${siteNames}</code></small><br>`;
-            else
-                alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟢 Successfull record(s) fetched</code></small><br>`;
+            if (matchedDomainRecords === null) {
+                apiButtonElement.innerHTML = ADAGIOSVG.APIORANGE;
+                apiButtonElement.setAttribute("title", `Adagio API - No manager domain match: '${window.location.hostname}'.`);
+            }
+            else if (matchedSiteNameRecords === null) {
+                apiButtonElement.innerHTML = ADAGIOSVG.APIORANGE;
+                apiButtonElement.setAttribute("title", `Adagio API - No manager sitename match: ${siteNames}'.`);
+            }
+            else if (successRecordItems === null) {
+                apiButtonElement.innerHTML = ADAGIOSVG.APIORANGE;
+                apiButtonElement.setAttribute("title", `Adagio API - No manager domain and sitename match: '${window.location.hostname}' / '${siteNames}'.`);
+            }
+            else {
+                apiButtonElement.innerHTML = ADAGIOSVG.APIGREEN;
+                apiButtonElement.setAttribute("title", `Adagio API - Successfull record(s) fetched.`);
+            }
         } else {
-            alertTextDiv.innerHTML += `<small>• Adagio API: <code>🟠 No manager organizationId match: ${organizationIds[0]}</code></small><br>`;
+            apiButtonElement.innerHTML = ADAGIOSVG.APIORANGE;
+            apiButtonElement.setAttribute("title", `Adagio API - No manager organizationId match: '${organizationIds[0]}'.`);
         }
     }
 }
@@ -1863,13 +1895,13 @@ async function runAdagioAPI(queryString) {
             },
         });
         if (!response.ok) {
-            alertTextDiv.innerHTML += `<small>• Adagio API: <code>🔴 ${response.status}</code></small><br>`;
+            alertTextDiv.innerHTML += `<small>• Adagio API - <code>🔴 ${response.status}</code></small><br>`;
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
         return data;
     } catch (error) {
-        alertTextDiv.innerHTML += `<small>• Adagio API: <code>🔴 Error fetching from Adagio API: ${error}</code></small><br>`;
+        alertTextDiv.innerHTML += `<small>• Adagio API - <code>🔴 Error fetching from Adagio API - ${error}</code></small><br>`;
         return null;
     }
 }
