@@ -956,9 +956,13 @@ function refreshTables() {
     const checkerconsents = overlayFrameDoc.getElementById(
         `${ADAGIOTABSNAME.CONSENTS.toLowerCase().replace(" ", "-")}-tbody`,
     );
+    const alertTextDiv = overlayFrameDoc.getElementById(
+        `${ADAGIOTABSNAME.CHECKER.toLowerCase().replace(" ", "-")}-alert`,
+    );
     checkertbody.innerHTML = "";
     checkeradunits.innerHTML = "";
     checkerconsents.innerHTML = "";
+    alertTextDiv.innerHTML = ""; 
     runCheck();
 }
 
@@ -1771,7 +1775,7 @@ function runCheck() {
     checkAdagioCMP();
     checkFloorPriceModule();
     checkDsaTransparency();
-    // checkPublisher();
+    checkPublisher();
 }
 
 async function checkAdagioAPI() {
@@ -2394,6 +2398,7 @@ function checkAdagioAdUnitParams() {
         prebidAdagioBidsRequested = prebidBids.filter((e) =>
             e.bidder.toLowerCase().includes("adagio"),
         );
+        
         // Find the params for Adagio adUnits and update manager URL
         prebidAdagioParams = prebidAdagioBidsRequested.map((e) => e.params);
         if (prebidAdagioParams.length !== 0) {
