@@ -1937,36 +1937,36 @@ async function checkCurrentLocation() {
 
 function checkAdServer() {
     // The adserver is a key component of the auction, knowing it help us in our troubleshooting
+    // By default, we support only GAM, SAS and APN for the viewability.
     const adServers = new Map();
-    adServers.set("Google Ad Manager", window.googletag);
-    adServers.set("Kevel", window.kv);
-    adServers.set("Smart (Equativ)", window.smart);
-    adServers.set("Smart Ad Server", window.sas);
-    adServers.set("Xandr Monetize", window.xandr);
-    adServers.set("Appnexus", window.apn);
-    adServers.set("Amazon Advertising", window.a9);
-    adServers.set("Criteo", window.criteo);
-    adServers.set("Media.net", window.medianet);
-    adServers.set("Yieldmo", window.yieldmo);
-    adServers.set("TripleLift", window.triplelift);
-    adServers.set("Moat by Oracle", window.moat);
-    adServers.set("Comscore", window.comscore);
-    adServers.set("Nielsen", window.nielsen);
-    adServers.set("VerifyAds", window.verifyads);
+    adServers.set("Google Ad Manager", typeof window?.googletag?.pubads === 'function');
+    adServers.set("Smart Ad Server", typeof window?.sas?.events?.on === 'function');
+    adServers.set("Appnexus Ad Server", typeof window?.apntag?.onEvent === 'function');
 
     // Loop on the map to check if value != undefined
     let stringAdServer = "";
     for (let [key, value] of adServers) {
-        if (value !== undefined) {
-            stringAdServer += `<code>${key}</code> `;
+        if (value != false) {
+            if (stringAdServer === "") stringAdServer += `<code>${key}</code>`;
+            else stringAdServer += `, <code>${key}</code>`;
         }
     }
 
-    appendCheckerRow(
-        STATUSBADGES.INFO,
-        ADAGIOCHECK.ADSERVER,
-        `${stringAdServer}`,
-    );
+    // Display the adserver checking result
+    if (stringAdServer === "") {
+        appendCheckerRow(
+            STATUSBADGES.CHECK,
+            ADAGIOCHECK.ADSERVER,
+            `No supported adserver: the viewability measurement may not work`,
+        );
+    }
+    else {
+        appendCheckerRow(
+            STATUSBADGES.OK,
+            ADAGIOCHECK.ADSERVER,
+            `${stringAdServer}`,
+        );
+    }
 }
 
 function checkPrebidVersion() {
@@ -2298,7 +2298,7 @@ function checkAdagioAnalyticsModule() {
         appendCheckerRow(
             STATUSBADGES.KO,
             ADAGIOCHECK.ANALYTICS,
-            `No Adagio bidder adapter found: <code>${adagioAdapter}</code>`,
+            `<code>window.ADAGIO</code>: <code>${adagioAdapter}</code>`,
         );
         return;
     }
@@ -2313,19 +2313,19 @@ function checkAdagioAnalyticsModule() {
         appendCheckerRow(
             STATUSBADGES.INFO,
             ADAGIOCHECK.ANALYTICS,
-            `Prebid version too low: <code>${prebidVersion}</code>`,
+            `<code>${prebidWrapper[0]}.version</code>: <code>${prebidVersion}</code>`,
         );
     else if (!hasEnabledAnalytics)
         appendCheckerRow(
             STATUSBADGES.INFO,
             ADAGIOCHECK.ANALYTICS,
-            `Analytics not enabled: <code>${hasEnabledAnalytics}</code>`,
+            `<code>ADAGIO.versions.adagioAnalyticsAdapter</code>: <code>${hasEnabledAnalytics}</code>`,
         );
     else if (!hasPrebidNineVersion)
         appendCheckerRow(
             STATUSBADGES.OK,
             ADAGIOCHECK.ANALYTICS,
-            `Prebid version: <code>${prebidVersion}</code> / Analytics: <code>${adagioAdapter.versions?.adagioAnalyticsAdapter}</code>`,
+            `Prebid version: <code>${prebidVersion}</code> / Analytics: <code>${hasEnabledAnalytics}</code>`,
         );
     else {
         // Try to retrieve the 'options' from the analytics wrapper configuration
