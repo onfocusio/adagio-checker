@@ -1940,8 +1940,8 @@ function checkAdServer() {
     // By default, we support only GAM, SAS and APN for the viewability.
     const adServers = new Map();
     adServers.set("Google Ad Manager", typeof window?.googletag?.pubads === 'function');
-    adServers.set("Smart Ad Server", typeof window?.sas?.events?.on === 'function');
-    adServers.set("Appnexus Ad Server", typeof window?.apntag?.onEvent === 'function');
+    adServers.set("Smart AdServer", typeof window?.sas?.events?.on === 'function');
+    adServers.set("Appnexus", typeof window?.apntag?.onEvent === 'function');
 
     // Loop on the map to check if value != undefined
     let stringAdServer = "";
