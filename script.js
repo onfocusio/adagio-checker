@@ -205,7 +205,9 @@ function getPrebidWrappers() {
     // Look for pbjs object (pbjs, hubjs, etc...)
     if (window._pbjsGlobals !== undefined && window._pbjsGlobals !== null) {
         for (let wrapper of window._pbjsGlobals) {
-            prebidWrappers.push([wrapper, window]);
+            if (window[wrapper]?.version && typeof window[wrapper].getEvents === 'function') {
+                prebidWrappers.push([wrapper, window]);
+            }
         }
         prebidWrapper = prebidWrappers[0];
         prebidObject = prebidWrapper[1][prebidWrapper[0]];
@@ -218,7 +220,9 @@ function getPrebidWrappers() {
                 const prebidIframeDoc = iframe.contentWindow;
                 if (prebidIframeDoc._pbjsGlobals !== undefined) {
                     for (let wrapper of prebidIframeDoc._pbjsGlobals) {
-                        prebidWrappers.push([wrapper, prebidIframeDoc]);
+                        if (prebidIframeDoc[wrapper]?.version && typeof prebidIframeDoc[wrapper].getEvents === 'function') {
+                            prebidWrappers.push([wrapper, prebidIframeDoc]);
+                        }
                     }
                 }
             } catch (error) {
@@ -412,6 +416,7 @@ function buildPrebidButton(name, svg, isactive) {
     for (let i = 0; i < nbWrappers; i++) {
         // Create the radio button for the current wrapper item
         const item = prebidWrappers[i];
+
         const wrapperItem = overlayFrameDoc.createElement("div");
         const itemInput = overlayFrameDoc.createElement("input");
         itemInput.setAttribute("type", "radio");
