@@ -1410,25 +1410,26 @@ function createParametersCheckTable(paragraph, bid) {
             // Check the banner sizes
             if (mediatypeBannerSizes !== undefined) {
                 let supportedSizes = [
+                    [120, 600],
                     [160, 600],
                     [250, 250],
+                    [300, 50],
                     [300, 100],
                     [300, 250],
                     [300, 300],
-                    [300, 50],
                     [300, 600],
+                    [320, 50],
                     [320, 100],
                     [320, 160],
                     [320, 320],
                     [320, 480],
-                    [320, 50],
                     [336, 280],
                     [728, 90],
                     [800, 250],
                     [930, 180],
-                    [970, 250],
                     [970, 90],
-                    [1800, 1000],
+                    [970, 250],
+                    [1800, 1000]
                 ];
                 let commonArrays = [];
                 supportedSizes.forEach((ss) => {
