@@ -1745,7 +1745,7 @@ function catchBidRequestsGlobalParams() {
         prebidBids = prebidBidsRequested.map((e) => e.bids).flat();
         // Gets the Adagio bids requested
         prebidAdagioBidsRequested = prebidBids.filter((e) =>
-            e.bidder.toLowerCase().includes("adagio"),
+            e.bidder?.toLowerCase()?.includes("adagio"),
         );
         // Find the params for Adagio adUnits and update manager URL
         prebidAdagioParams = prebidAdagioBidsRequested.map((e) => e.params);
@@ -2256,7 +2256,7 @@ function checkAdagioUserSync() {
                 (prebidUserSyncIframe?.bidders?.includes("*") ||
                     (Array.isArray(prebidUserSyncIframe?.bidders) &&
                         prebidUserSyncIframe?.bidders.some((item) =>
-                            item.toLowerCase()?.includes("adagio"),
+                            item?.toLowerCase()?.includes("adagio"),
                         ))) &&
                 prebidUserSyncIframe.filter === "include"
             ) {
@@ -2270,7 +2270,7 @@ function checkAdagioUserSync() {
                 (prebidUserSyncAll?.bidders?.includes("*") ||
                     (Array.isArray(prebidUserSyncAll?.bidders) &&
                         prebidUserSyncAll?.bidders.some((item) =>
-                            item.toLowerCase()?.includes("adagio"),
+                            item?.toLowerCase()?.includes("adagio"),
                         ))) &&
                 prebidUserSyncAll.filter === "include"
             ) {
@@ -2434,7 +2434,7 @@ function checkAdagioAdUnitParams() {
         prebidBids = prebidBidsRequested.map((e) => e.bids).flat();
         // Gets the Adagio bids requested
         prebidAdagioBidsRequested = prebidBids.filter((e) =>
-            e.bidder.toLowerCase().includes("adagio"),
+            e.bidder?.toLowerCase()?.includes("adagio"),
         );
         
         // Find the params for Adagio adUnits and update manager URL
@@ -2531,7 +2531,7 @@ function checkDuplicatedAdUnitCode() {
     } else {
         const duplicates = [];
         const adgioBidsRequested = prebidBidsRequested.filter((e) =>
-            e.bidderCode.toLowerCase().includes("adagio"),
+            e.bidderCode?.toLowerCase()?.includes("adagio"),
         );
 
         adgioBidsRequested.forEach((bidRequested) => {
@@ -2587,6 +2587,9 @@ async function checkPublisher() {
             // Handle JSON failure here
             adagioSellersJson = null;
         }
+    }
+    else {
+        alertTextDiv.innerHTML += `<small>• No organization(s) detected... Try to refresh the checker or the page.`;
     }
 }
 
