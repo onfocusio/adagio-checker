@@ -1794,7 +1794,7 @@ function runCheck() {
     checkAdagioAnalyticsModule();
     checkUserIds();
     checkDuplicatedAdUnitCode();
-    checkSupplyChainObject();
+    // checkSupplyChainObject(); HIDING SSC AS NOT CORRECTLY IMPLEMENTED ATM
     checkCurrencyModule();
     checkConsentMetadata();
     checkAdagioCMP();
