@@ -231,7 +231,9 @@ function getPrebidWrappers() {
             }
         }
         if (prebidWrappers.length !== 0) {
-            prebidWrapper = prebidWrappers[0];
+            const pbjsItem = prebidWrappers.find(item => item.includes('pbjs'));
+            if (pbjsItem != undefined) prebidWrapper = pbjsItem;
+            else prebidWrapper = prebidWrappers[0];
             prebidObject = prebidWrapper[1][prebidWrapper[0]];
         }
     }
