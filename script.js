@@ -138,7 +138,6 @@ const ADAGIOPARAMS = {
 
 createOverlay();
 getPrebidWrappers();
-catchBidRequestsGlobalParams();
 buildOverlayHtml();
 buildAdagioButton();
 createManagerDiv();
@@ -230,12 +229,13 @@ function getPrebidWrappers() {
                 // (Note: the exact output may be browser-dependent)
             }
         }
-        if (prebidWrappers.length !== 0) {
-            const pbjsItem = prebidWrappers.find(item => item.includes('pbjs'));
-            if (pbjsItem != undefined) prebidWrapper = pbjsItem;
-            else prebidWrapper = prebidWrappers[0];
-            prebidObject = prebidWrapper[1][prebidWrapper[0]];
-        }
+    }   
+    // If a pbjs wrapper name is detected, set it as active item by default
+    if (prebidWrappers.length !== 0) {
+        const pbjsItem = prebidWrappers.find(item => item.includes('pbjs'));
+        if (pbjsItem != undefined) prebidWrapper = pbjsItem;
+        else prebidWrapper = prebidWrappers[0];
+        prebidObject = prebidWrapper[1][prebidWrapper[0]];
     }
 }
 
@@ -1780,6 +1780,7 @@ function catchBidRequestsGlobalParams() {
  ************************************************************************************************************************************************************************************************************************************/
 
 function runCheck() {
+    catchBidRequestsGlobalParams();
     checkAdagioAdUnitParams();
     checkAdagioAPI();
     checkCurrentLocation();
@@ -2006,18 +2007,34 @@ function checkPrebidVersion() {
 function checkAdagioModule() {
     // Gets ADAGIO adapter object
     adagioAdapter = window.ADAGIO;
-    // Checks if found
-    if (adagioAdapter === undefined) {
+
+    // Gets wrapper name integrity
+    if (adagioAdapter !== undefined) {
+        const pbjsAdUnits = adagioAdapter.pbjsAdUnits;
+        // const aliasPbjsAdUnits = adagioAdapter[`${prebidWrapper[0]}AdUnits`];
+
+        if (pbjsAdUnits === undefined) {
+            appendCheckerRow(
+                STATUSBADGES.OK,
+                ADAGIOCHECK.ADAPTER,
+                `• <code>${JSON.stringify(adagioAdapter.versions)}</code><br>
+                • Wrapper integrity: <code>🔴 Failed</code>. Viewability measurement won't work.`,
+            );
+        }
+        else {
+            appendCheckerRow(
+                STATUSBADGES.OK,
+                ADAGIOCHECK.ADAPTER,
+                `• <code>${JSON.stringify(adagioAdapter.versions)}</code><br>
+                • Wrapper integrity: <code>🟢 Successed</code>.`,
+            );
+        }
+    }
+    else {
         appendCheckerRow(
             STATUSBADGES.KO,
             ADAGIOCHECK.ADAPTER,
             `<code>window.ADAGIO</code>: <code>${window.ADAGIO}</code>`,
-        );
-    } else {
-        appendCheckerRow(
-            STATUSBADGES.OK,
-            ADAGIOCHECK.ADAPTER,
-            `<code>${JSON.stringify(adagioAdapter.versions)}</code>`,
         );
     }
 }
