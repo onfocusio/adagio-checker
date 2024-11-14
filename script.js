@@ -2015,7 +2015,7 @@ function checkAdagioModule() {
 
         if (pbjsAdUnits === undefined) {
             appendCheckerRow(
-                STATUSBADGES.OK,
+                STATUSBADGES.CHECK,
                 ADAGIOCHECK.ADAPTER,
                 `• <code>${JSON.stringify(adagioAdapter.versions)}</code><br>
                 • Wrapper integrity: <code>🔴 Failed</code>. Viewability measurement won't work.`,
