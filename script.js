@@ -2018,7 +2018,7 @@ function checkAdagioModule() {
                 STATUSBADGES.CHECK,
                 ADAGIOCHECK.ADAPTER,
                 `• <code>${JSON.stringify(adagioAdapter.versions)}</code><br>
-                • Wrapper integrity: <code>🔴 Failed</code>. Viewability / Analytics won't work.`,
+                • Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work</code>.`,
             );
         }
         else {
