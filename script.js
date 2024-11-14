@@ -2011,14 +2011,22 @@ function checkAdagioModule() {
     // Gets wrapper name integrity
     if (adagioAdapter !== undefined) {
         const pbjsAdUnits = adagioAdapter.pbjsAdUnits;
-        // const aliasPbjsAdUnits = adagioAdapter[`${prebidWrapper[0]}AdUnits`];
+        const aliasPbjsAdUnits = adagioAdapter[`${prebidWrapper[0]}AdUnits`];
 
-        if (pbjsAdUnits === undefined) {
+        if (aliasPbjsAdUnits !== undefined) {
             appendCheckerRow(
                 STATUSBADGES.CHECK,
                 ADAGIOCHECK.ADAPTER,
                 `• <code>${JSON.stringify(adagioAdapter.versions)}</code><br>
                 • Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work</code>.`,
+            );
+        }
+        else if (pbjsAdUnits === undefined) {
+            appendCheckerRow(
+                STATUSBADGES.CHECK,
+                ADAGIOCHECK.ADAPTER,
+                `• <code>${JSON.stringify(adagioAdapter.versions)}</code><br>
+                • Wrapper integrity: <code>🔴 Failed: Contact your Solution Engineer</code>.`,
             );
         }
         else {
