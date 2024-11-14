@@ -230,6 +230,16 @@ function getPrebidWrappers() {
             }
         }
     }   
+    // If no wrapper are found but there's traffic, it may be because of a bad parametering of the wrapper name
+    // We will catch the wrapper name using the ADAGIO.versions results
+    if (prebidWrappers.length === 0) {
+        if (window.ADAGIO !== undefined) {
+            for (let item in ADAGIO.versions) {
+                if (item !== 'adagiojs') prebidWrappers.push([item, window]);
+            }
+            console.log(prebidWrappers);
+        }
+    }
     // If a pbjs wrapper name is detected, set it as active item by default
     if (prebidWrappers.length !== 0) {
         const pbjsItem = prebidWrappers.find(item => item.includes('pbjs'));
@@ -2011,9 +2021,8 @@ function checkAdagioModule() {
     // Gets wrapper name integrity
     if (adagioAdapter !== undefined) {
         const pbjsAdUnits = adagioAdapter.pbjsAdUnits;
-        const aliasPbjsAdUnits = adagioAdapter[`${prebidWrapper[0]}AdUnits`];
 
-        if (aliasPbjsAdUnits !== undefined) {
+        if (prebidWrapper !== undefined && adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined) {
             appendCheckerRow(
                 STATUSBADGES.CHECK,
                 ADAGIOCHECK.ADAPTER,
