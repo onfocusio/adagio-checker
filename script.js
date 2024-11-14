@@ -2069,6 +2069,30 @@ function checkRealTimeDataProvider() {
     }
     // Ensure the module is built through ADAGIO
     if (adagioAdapter !== undefined) {
+
+        // First try to load installedModules
+        const prebidInstalledModules = prebidObject.installedModules;
+        if (prebidInstalledModules !== undefined && prebidInstalledModules.length !== 0) {
+            // Get the modules from the installedModules array
+            const hasRtdModule = prebidInstalledModules.includes('rtdModule');
+            const hasAdagioRtdProvider = prebidInstalledModules.includes('adagioRtdProvider');
+            let messageString = '';
+
+            // Check if modules are present, build the checker message then displays it (leave the function is missing module).
+            if (!hasRtdModule && !hasAdagioRtdProvider) messageString = `Missing rtd and adagioRtdProvider modules: <code>${prebidInstalledModules}</code>`;
+            else if (!hasRtdModule) messageString = `Missing rtd module: <code>${prebidInstalledModules}</code>`;
+            else if (!hasAdagioRtdProvider) messageString = `Missing adagioRtdProvider module: <code>${prebidInstalledModules}</code>`;
+
+            if (messageString !== '') {
+                appendCheckerRow(
+                    computeBadgeToDisplay(true, 9, null),
+                    ADAGIOCHECK.RDTMODULE,
+                    messageString,
+                );
+                return;
+            }
+        }
+        // If installedModules not usable, relies on ADAGIO.hasRtd
         if (!adagioAdapter.hasRtd) {
             appendCheckerRow(
                 computeBadgeToDisplay(true, 9, null),
