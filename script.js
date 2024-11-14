@@ -2022,7 +2022,7 @@ function checkAdagioModule() {
     if (adagioAdapter !== undefined) {
         const pbjsAdUnits = adagioAdapter.pbjsAdUnits;
 
-        if (prebidWrapper !== undefined && adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined) {
+        if (prebidWrapper !== undefined && adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs') {
             appendCheckerRow(
                 STATUSBADGES.CHECK,
                 ADAGIOCHECK.ADAPTER,
