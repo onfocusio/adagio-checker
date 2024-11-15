@@ -1762,6 +1762,8 @@ function catchBidRequestsGlobalParams() {
         // Find the params for Adagio adUnits and update manager URL
         prebidAdagioParams = prebidAdagioBidsRequested.map((e) => e.params);
         if (prebidAdagioParams.length !== 0) {
+            // Clear the array before filling it (usefull after wrapper switch)
+            organizationIds = [];
             // Get all the orgId parameter value sent to fill organizationIds[]
             for (const param in prebidAdagioParams) {
                 let paramOrganizationId =
