@@ -2069,7 +2069,6 @@ function checkRealTimeDataProvider() {
     }
     // Ensure the module is built through ADAGIO
     if (adagioAdapter !== undefined) {
-
         // First try to load installedModules
         const prebidInstalledModules = prebidObject.installedModules;
         if (prebidInstalledModules !== undefined && prebidInstalledModules.length !== 0) {
@@ -2093,7 +2092,7 @@ function checkRealTimeDataProvider() {
             }
         }
         // If installedModules not usable, relies on ADAGIO.hasRtd
-        if (!adagioAdapter.hasRtd) {
+        else if (!adagioAdapter.hasRtd) {
             appendCheckerRow(
                 computeBadgeToDisplay(true, 9, null),
                 ADAGIOCHECK.RDTMODULE,
