@@ -1793,12 +1793,12 @@ function catchBidRequestsGlobalParams() {
 
 function runCheck() {
     catchBidRequestsGlobalParams();
-    checkAdagioAdUnitParams();
     checkAdagioAPI();
     checkCurrentLocation();
     checkAdServer();
     checkPrebidVersion();
     checkAdagioModule();
+    checkAdagioAdUnitParams();
     checkRealTimeDataProvider();
     checkDeviceAccess();
     checkFirstPartyData();
