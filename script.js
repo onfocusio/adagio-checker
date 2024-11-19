@@ -237,7 +237,6 @@ function getPrebidWrappers() {
             for (let item in ADAGIO.versions) {
                 if (item !== 'adagiojs') prebidWrappers.push([item, window]);
             }
-            console.log(prebidWrappers);
         }
     }
     // If a pbjs wrapper name is detected, set it as active item by default
@@ -661,6 +660,9 @@ function createAdUnitsDiv() {
     const table = overlayFrameDoc.createElement("table");
     const thead = overlayFrameDoc.createElement("thead");
     const tr = overlayFrameDoc.createElement("tr");
+    const th0 = overlayFrameDoc.createElement("th");
+    th0.setAttribute("scope", "col");
+    th0.textContent = "Status";
     const th1 = overlayFrameDoc.createElement("th");
     th1.setAttribute("scope", "col");
     th1.textContent = "Code";
@@ -670,6 +672,7 @@ function createAdUnitsDiv() {
     const th3 = overlayFrameDoc.createElement("th");
     th3.setAttribute("scope", "col");
     th3.textContent = "Bidder params";
+    tr.appendChild(th0);
     tr.appendChild(th1);
     tr.appendChild(th2);
     tr.appendChild(th3);
@@ -866,12 +869,18 @@ function appendAdUnitsRow(bidders, bids) {
         }
     } else alertTextDiv.innerHTML += `<small><kbd> 0</kbd></small>`;
 
-    // fill the table section
+    // Fill the table section
     bids.forEach((bid) => {
 
+        // Gather the initial info: code, type, bidder
         const adUnitCode = bid.adUnitCode;
         const mediaTypes = bid.mediaTypes;
         const bidderId = bid.bidder;
+
+        // Build the bid checking array and compute the adunit status
+        let paramsCheckingArray = [];
+        buildParamsCheckingArray(bid, paramsCheckingArray);
+        const status = computeAdUnitStatus(paramsCheckingArray);
 
         // Create the row
         const newRow = overlayFrameDoc.createElement("tr");
@@ -882,15 +891,17 @@ function appendAdUnitsRow(bidders, bids) {
         }
 
         // Create the cells
+        const statusCell = overlayFrameDoc.createElement("td");
         const codeCell = overlayFrameDoc.createElement("td");
         const mediatypesCell = overlayFrameDoc.createElement("td");
         const bidderIdCell = overlayFrameDoc.createElement("td");
         const bidderParamButton = overlayFrameDoc.createElement("kbd");
         bidderParamButton.addEventListener("click", () =>
-            createBidderParamsModal(bid),
+            createBidderParamsModal(bid, paramsCheckingArray),
         );
         bidderParamButton.style.cursor = "pointer";
 
+        statusCell.innerHTML = status;
         codeCell.innerHTML = `<code>${adUnitCode}</code>`;
         for (const mediaType in mediaTypes) {
             if (mediaTypes[mediaType]?.context) mediatypesCell.innerHTML += `<code>${mediaTypes[mediaType].context}</code> `;
@@ -899,6 +910,7 @@ function appendAdUnitsRow(bidders, bids) {
         bidderParamButton.innerHTML = `🔎 ${bidderId}`;
 
         // Add the cells
+        newRow.appendChild(statusCell);
         newRow.appendChild(codeCell);
         newRow.appendChild(mediatypesCell);
         newRow.appendChild(bidderIdCell);
@@ -1019,7 +1031,7 @@ function displayAdunits(eyeButton) {
     });
 }
 
-function createBidderParamsModal(bid) {
+function createBidderParamsModal(bid, paramsCheckingArray) {
     // Create a dialog window showing the params of the bidrequest.
     const dialog = overlayFrameDoc.createElement("dialog");
     dialog.setAttribute("open", true);
@@ -1036,7 +1048,7 @@ function createBidderParamsModal(bid) {
     });
 
     const parametersCheckTable = overlayFrameDoc.createElement("p");
-    createParametersCheckTable(parametersCheckTable, bid);
+    createParametersCheckTable(parametersCheckTable, paramsCheckingArray);
 
     const paragraph = overlayFrameDoc.createElement("p");
     paragraph.innerHTML = `<pre><code class="language-json">${JSON.stringify(bid, null, 2)}</code></pre>`;
@@ -1151,7 +1163,7 @@ function base64Decode(base64String) {
     return new TextDecoder().decode(decodedBytes);
 }
 
-function createParametersCheckTable(paragraph, bid) {
+function createParametersCheckTable(paragraph, paramsCheckingArray) {
 
     // Create the alert text
     // create the alert article
@@ -1163,11 +1175,6 @@ function createParametersCheckTable(paragraph, bid) {
     alertContainer.style.marginBottom = "1em";
     alertContainer.style.color = COLOR.YELLOWTEXT;
     alertContainer.style.backgroundColor = COLOR.YELLOWBACKGROUND;
-
-    /*const alertTextDiv = overlayFrameDoc.createElement("div");
-    alertTextDiv.innerHTML = `<small>Checks if the <code>parameters</code> are <b>found</b>. Not if their string value exists in the data.</small>`;
-    alertTextDiv.innerHTML += `<small><br><li><code>ortb2.site.domain</code>: <code>${bid?.ortb2?.site?.domain}</code></li></small>`;
-    alertContainer.appendChild(alertTextDiv);*/
 
     // Create the parameter checker table
     const table = overlayFrameDoc.createElement("table");
@@ -1191,514 +1198,12 @@ function createParametersCheckTable(paragraph, bid) {
     table.appendChild(thead);
     table.appendChild(tbody);
 
-    // Check the adagio bidder params (orgId and site in params)
-    let paramOrganizationId = bid?.params?.organizationId;
-    let paramSite = bid?.params?.site;
-
-    // Since Prebid 9, placement and divId should be in ortb2Imp
-    let paramPlacement = bid?.params?.placement;
-    let paramAdUnitElementId = bid?.params?.adUnitElementId;
-    let ortb2ImpPlacement = bid?.ortb2Imp?.ext?.data?.placement;
-    let ortb2ImpDivId = bid?.ortb2Imp?.ext?.data?.divId;
-
-    // Check the organizationId
-    if (paramOrganizationId === undefined)
-        appendParametersCheckerTableRow(
-            tbody,
-            STATUSBADGES.KO,
-            `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
-            `Parameter not found.`,
-        );
-    else {
-        if (paramOrganizationId.length !== 4)
-            appendParametersCheckerTableRow(
-                tbody,
-                STATUSBADGES.CHECK,
-                `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
-                `More than 4 characters detected.`,
-            );
-        else if (/\D/.test(paramOrganizationId) !== false)
-            appendParametersCheckerTableRow(
-                tbody,
-                STATUSBADGES.CHECK,
-                `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
-                `Contains non-integer caracters.`,
-            );
-        else
-            appendParametersCheckerTableRow(
-                tbody,
-                STATUSBADGES.OK,
-                `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
-                ``,
-            );
-    }
-
-    // Check the site name
-    if (paramSite === undefined)
-        appendParametersCheckerTableRow(
-            tbody,
-            STATUSBADGES.KO,
-            `<code>params.site</code>: <code>${paramSite}</code>`,
-            "Parameter not found.",
-        );
-    else {
-        if (paramSite.trim() !== paramSite)
-            appendParametersCheckerTableRow(
-                tbody,
-                STATUSBADGES.KO,
-                `<code>params.site</code>: <code>${paramSite}</code>`,
-                `Space character detected.`,
-            );
-        else if (adagioApiKeyfound && successRecordItems !== null)
-            appendParametersCheckerTableRow(
-                tbody,
-                STATUSBADGES.OK,
-                `<code>params.site</code>: <code>${paramSite}</code>`,
-                ``,
-            );
-        else if (adagioApiKeyfound && successRecordItems === null)
-            appendParametersCheckerTableRow(
-                tbody,
-                STATUSBADGES.KO,
-                `<code>params.site</code>: <code>${paramSite}</code>`,
-                `No API record found, check logs.`,
-            );
-        else
-            appendParametersCheckerTableRow(
-                tbody,
-                STATUSBADGES.INFO,
-                `<code>params.site</code>: <code>${paramSite}</code>`,
-                "No API loaded for checking",
-            );
-    }
-
-    // AdUnitElementId (1/3): Depending on the Prebid version, we don't expect the same param
-    let divIdStatus = "";
-    let divIdSetup = "";
-    let divIdRes = "";
-    // AdUnitElementId (2/3): First checks if a value is found
-    if (prebidVersion >= 9) {
-        if (ortb2ImpDivId !== undefined) {
-            divIdStatus = STATUSBADGES.OK;
-            divIdSetup = "ortb2Imp.ext.data.divId";
-            divIdRes = ortb2ImpDivId;
-        } else if (paramAdUnitElementId !== undefined) {
-            divIdStatus = STATUSBADGES.UPDATE;
-            divIdSetup = "params.adUnitElementId";
-            divIdRes = paramAdUnitElementId;
-        } else {
-            divIdStatus = STATUSBADGES.KO;
-            divIdSetup = "ortb2Imp.ext.data.divId";
-            divIdRes = undefined;
-        }
-    } else {
-        if (paramAdUnitElementId !== undefined) {
-            divIdStatus = STATUSBADGES.OK;
-            divIdSetup = "params.adUnitElementId";
-            divIdRes = paramAdUnitElementId;
-        } else {
-            divIdStatus = STATUSBADGES.KO;
-            divIdSetup = "params.adUnitElementId";
-            divIdRes = undefined;
-        }
-    }
-    // AdUnitElementId (3/3): Then ensure the value is correct
-    if (divIdRes === undefined)
-        appendParametersCheckerTableRow(
-            tbody,
-            divIdStatus,
-            `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
-            `Not defined in the adUnit configuration.`,
-        );
-    else {
-        const htlmDiv = document.getElementById(divIdRes);
-        if (divIdRes.trim() !== divIdRes)
-            appendParametersCheckerTableRow(
-                tbody,
-                STATUSBADGES.CHECK,
-                `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
-                `Space character detected.`,
-            );
-        else if (htlmDiv === null)
-            appendParametersCheckerTableRow(
-                tbody,
-                STATUSBADGES.CHECK,
-                `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
-                `Div id not found in the page.`,
-            );
-        else
-            appendParametersCheckerTableRow(
-                tbody,
-                divIdStatus,
-                `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
-                ``,
-            );
-    }
-
-    // Placement (1/3): Depending on the Prebid version, we don't expect the same param
-    let placementStatus = "";
-    let placementSetup = "";
-    let placementRes = "";
-    // Placement (2/3): First checks if a value is found
-    if (prebidVersion >= 9) {
-        if (ortb2ImpPlacement !== undefined) {
-            placementStatus = STATUSBADGES.OK;
-            placementSetup = "ortb2Imp.ext.data.placement";
-            placementRes = ortb2ImpPlacement;
-        } else if (paramPlacement !== undefined) {
-            placementStatus = STATUSBADGES.UPDATE;
-            placementSetup = "params.placement";
-            placementRes = paramPlacement;
-        } else {
-            placementStatus = STATUSBADGES.KO;
-            placementSetup = "ortb2Imp.placement";
-            placementRes = undefined;
-        }
-    } else {
-        if (paramPlacement !== undefined) {
-            placementStatus = STATUSBADGES.OK;
-            placementSetup = "params.placement";
-            placementRes = paramPlacement;
-        } else {
-            placementStatus = STATUSBADGES.KO;
-            placementSetup = "params.placement";
-            placementRes = undefined;
-        }
-    }
-    // Placement (3/3): Then ensure the value is correct
-    if (placementRes === undefined)
-        appendParametersCheckerTableRow(
-            tbody,
-            placementStatus,
-            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
-            `Not defined in the adUnit configuration.`,
-        );
-    else if (placementRes.trim() !== placementRes)
-        appendParametersCheckerTableRow(
-            tbody,
-            STATUSBADGES.CHECK,
-            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
-            `Space character detected.`,
-        );
-    else if (
-        /mobile/i.test(placementRes) ||
-        /desktop/i.test(placementRes) ||
-        /tablet/i.test(placementRes)
-    )
-        appendParametersCheckerTableRow(
-            tbody,
-            STATUSBADGES.CHECK,
-            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
-            `Should not include reference to an environment`,
-        );
-    else
-        appendParametersCheckerTableRow(
-            tbody,
-            placementStatus,
-            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
-            ``,
-        );
-
-    // Check the mediatypes parameters
-    let mediatypeBanner = bid.mediaTypes?.banner;
-    let mediatypeVideo = bid.mediaTypes?.video;
-    let mediatypeNative = bid.mediaTypes?.native;
-
-    if (
-        mediatypeBanner === undefined &&
-        mediatypeVideo === undefined &&
-        mediatypeNative === undefined
-    )
-        appendParametersCheckerTableRow(
-            tbody,
-            STATUSBADGES.KO,
-            `<code>mediaTypes</code>: <code>${JSON.stringify(bid.mediaTypes)}</code>`,
-            `No mediatype detected.`,
-        );
-    else {
-        if (mediatypeBanner !== undefined) {
-            let mediatypeBannerSizes = mediatypeBanner?.sizes;
-
-            // Check the banner sizes
-            if (mediatypeBannerSizes !== undefined) {
-                let supportedSizes = [
-                    [120, 600],
-                    [160, 600],
-                    [250, 250],
-                    [300, 50],
-                    [300, 100],
-                    [300, 250],
-                    [300, 300],
-                    [300, 600],
-                    [320, 50],
-                    [320, 100],
-                    [320, 160],
-                    [320, 320],
-                    [320, 480],
-                    [336, 280],
-                    [728, 90],
-                    [800, 250],
-                    [930, 180],
-                    [970, 90],
-                    [970, 250],
-                    [1800, 1000]
-                ];
-                let commonArrays = [];
-                supportedSizes.forEach((ss) => {
-                    mediatypeBannerSizes.forEach((mbs) => {
-                        if (JSON.stringify(ss) === JSON.stringify(mbs))
-                            commonArrays.push(ss);
-                    });
-                });
-                if (commonArrays.length > 0)
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.OK,
-                        `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(commonArrays)}</code>`,
-                        ``,
-                    );
-                else
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.KO,
-                        `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`,
-                        `No supported size detected.`,
-                    );
-            } else
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.KO,
-                    `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`,
-                    `No parameter found.`,
-                );
-        }
-
-        if (mediatypeVideo !== undefined) {
-
-            // Required for both instream and outstream
-            let mediatypeVideoContext = mediatypeVideo?.context; // DONE
-            let mediatypeVideoApi = mediatypeVideo?.api; // DONE
-            let mediatypeVideoPlayerSize = mediatypeVideo?.playerSize; // DONE
-            // Required for instream only
-            let mediatypeVideoMimes = mediatypeVideo?.mimes; // DONE
-            let mediatypeVideoPlcmt = mediatypeVideo?.plcmt; // DONE
-            // Highly recommended for instream and outstream
-            let mediatypeVideoPlaybackMethod = mediatypeVideo?.playbackmethod; // DONE
-            // Highly recommended for instream only
-            let mediatypeVideoStartDelay = mediatypeVideo?.startdelay; // DONE
-            let mediatypeVideoStartProtocols = mediatypeVideo?.protocols;
-
-            // For checking purpose
-            let hasOutstreamContext = mediatypeVideoContext ? 'outstream' : false;
-            let hasInstreamContext = mediatypeVideoContext ? 'instream' : false;
-            let videoApiSupported = [1,2,3,4,5];
-            let mimesExpected = ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript'];
-            let plcmtExpected = [1,2];
-            let protocolsExpected = [3, 6, 7, 8];
-
-            // Check the video context: instream or outstream
-            if (hasOutstreamContext || hasInstreamContext) {
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.OK,
-                    `<code>mediaTypes.video.context</code>: <code>${mediatypeVideoContext}</code>`,
-                    ``,
-                );
-            } else {
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.KO,
-                    `<code>mediaTypes.video.context</code>: <code>${mediatypeVideoContext}</code>`,
-                    `No supported context found.`,
-                );
-                // If no context found, we should not check params furthermore
-                return;
-            }
-
-            // Check the video api: [1, 2, 3, 4, 5]
-            if (mediatypeVideoApi !== undefined) {
-                if (hasOutstreamContext && !mediatypeVideoApi.includes(2))
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.KO,
-                        `<code>mediaTypes.video.api</code>: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
-                        `Must support api <code>2</code>'`,
-                    );
-                else if (!videoApiSupported.some(i => mediatypeVideoApi.includes(i)) && hasInstreamContext)
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.KO,
-                        `<code>mediaTypes.video.api</code>: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
-                        `Must support at least one of <code>${JSON.stringify(videoApiSupported)}</code>`,
-                    );
-                else
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.OK,
-                        `<code>mediaTypes.video.api</code>: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
-                        ``,
-                    );
-            } else
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.KO,
-                    `<code>mediaTypes.video.api</code>: <code>${mediatypeVideoApi}</code>`,
-                    `No video api detected.`,
-                );
-
-            // Check the player size
-            if (mediatypeVideoPlayerSize && Array.isArray(mediatypeVideoPlayerSize) && mediatypeVideoPlayerSize.every(subArr => Array.isArray(subArr) && subArr.length === 2 && subArr.every(Number.isInteger))) {
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.OK,
-                    `<code>mediaTypes.video.playerSize</code>: <code>${JSON.stringify(mediatypeVideoPlayerSize)}</code>`,
-                    ``,
-                );
-            } else {
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.KO,
-                    `<code>mediaTypes.video.playerSize</code>: <code>${JSON.stringify(mediatypeVideoPlayerSize)}</code>`,
-                    `Wrong format or not size detected.`,
-                );
-            }
-
-            // Check the video mimes: ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript']
-            if (mediatypeVideoMimes === undefined) {
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.KO,
-                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
-                    `No mimes detected.`,
-                );
-            }
-            else if (!mimesExpected.every(i => mediatypeVideoApi.includes(i))) {
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.CHECK,
-                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
-                    `Missing mimes: <code>${JSON.stringify(mimesExpected.filter(i => !mediatypeVideoMimes.includes(i)))}</code>`,
-                );
-            }
-            else {
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.OK,
-                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
-                    ``,
-                );
-            }
-
-            // Check the placement (for instream only)
-            if (hasInstreamContext) {
-                if (mediatypeVideoPlcmt) {
-                    if (plcmtExpected.includes(mediatypeVideoPlcmt)) {
-                        appendParametersCheckerTableRow(
-                            tbody,
-                            STATUSBADGES.OK,
-                            `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
-                            ``,
-                        );
-                    } else {
-                        appendParametersCheckerTableRow(
-                            tbody,
-                            STATUSBADGES.KO,
-                            `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
-                            `Must be one of <code>${JSON.stringify(plcmtExpected)}</code>`,
-                        );
-                    }
-                } 
-                else {
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.KO,
-                        `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
-                        `No placement detected.`,
-                    );
-                }
-            }
-
-            // Check the video playbackmethod
-            if (mediatypeVideoPlaybackMethod) {
-                if (mediatypeVideoPlaybackMethod.includes(6)) {
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.OK,
-                        `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
-                        ``,
-                    );
-                }
-                else {
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.CHECK,
-                        `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
-                        `We recommend to include <code>[6]</code>.`,
-                    );
-                }
-            }
-            else
-                appendParametersCheckerTableRow(
-                    tbody,
-                    STATUSBADGES.CHECK,
-                    `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
-                    `No playback method detected.`,
-                );
-
-            // Check the startdelay (for instream only)
-            if (hasInstreamContext) {
-                if(mediatypeVideoStartDelay) {
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.OK,
-                        `<code>mediaTypes.video.startdelay</code>: <code>${mediatypeVideoStartDelay}</code>`,
-                        ``,
-                    );
-                }
-                else {
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.CHECK,
-                        `<code>mediaTypes.video.startdelay</code>: <code>${mediatypeVideoStartDelay}</code>`,
-                        `No start delay detected.`,
-                    );
-                }
-            }
-
-            // Check the protocols (for instream only)
-            if (hasInstreamContext) {
-                if(mediatypeVideoStartProtocols) {
-                    if (protocolsExpected.every(i => mediatypeVideoStartProtocols.includes(i))) {
-                        appendParametersCheckerTableRow(
-                            tbody,
-                            STATUSBADGES.OK,
-                            `<code>mediaTypes.video.protocols</code>: <code>${mediatypeVideoStartProtocols}</code>`,
-                            ``,
-                        );
-                    }
-                    else {
-                        appendParametersCheckerTableRow(
-                            tbody,
-                            STATUSBADGES.CHECK,
-                            `<code>mediaTypes.video.protocols</code>: <code>${mediatypeVideoStartProtocols}</code>`,
-                            `Missing protocols: <code>${JSON.stringify(protocolsExpected.filter(i => !mediatypeVideoStartProtocols.includes(i)))}</code>`,
-                        );
-                    }
-                }
-                else {
-                    appendParametersCheckerTableRow(
-                        tbody,
-                        STATUSBADGES.CHECK,
-                        `<code>mediaTypes.video.protocols</code>: <code>${mediatypeVideoStartProtocols}</code>`,
-                        `No protocol detected.`,
-                    );
-                }
-            } 
-        }
-
-        if (mediatypeNative !== undefined) {
-            // TODO
-        }
+    /// HERE WAS THE PARAMS CHECKING (todo)
+    for (let item of paramsCheckingArray) {
+        const status = item[0];
+        const parameter = item[1];
+        const details = item[2];
+        appendParametersCheckerTableRow(tbody, status, parameter, details);
     }
 
     // paragraph.appendChild(alertContainer);
@@ -1785,6 +1290,486 @@ function catchBidRequestsGlobalParams() {
             }
         }
     }
+}
+
+function buildParamsCheckingArray(bid, paramsCheckingArray) {
+    
+    // Check the adagio bidder params (orgId and site in params)
+    let paramOrganizationId = bid?.params?.organizationId;
+    let paramSite = bid?.params?.site;
+
+    // Since Prebid 9, placement and divId should be in ortb2Imp
+    let paramPlacement = bid?.params?.placement;
+    let paramAdUnitElementId = bid?.params?.adUnitElementId;
+    let ortb2ImpPlacement = bid?.ortb2Imp?.ext?.data?.placement;
+    let ortb2ImpDivId = bid?.ortb2Imp?.ext?.data?.divId;
+
+    // Check the organizationId
+    if (paramOrganizationId === undefined)
+        paramsCheckingArray.push([
+            STATUSBADGES.KO,
+            `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
+            `Parameter not found.`,
+        ]);
+    else {
+        if (paramOrganizationId.length !== 4)
+            paramsCheckingArray.push([
+                STATUSBADGES.CHECK,
+                `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
+                `More than 4 characters detected.`,
+            ]);
+        else if (/\D/.test(paramOrganizationId) !== false)
+            paramsCheckingArray.push([
+                STATUSBADGES.CHECK,
+                `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
+                `Contains non-integer caracters.`,
+            ]);
+        else
+            paramsCheckingArray.push([
+                STATUSBADGES.OK,
+                `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
+                ``,
+            ]);
+    }
+
+    // Check the site name
+    if (paramSite === undefined)
+        paramsCheckingArray.push([
+            STATUSBADGES.KO,
+            `<code>params.site</code>: <code>${paramSite}</code>`,
+            "Parameter not found.",
+        ]);
+    else {
+        if (paramSite.trim() !== paramSite)
+            paramsCheckingArray.push([
+                STATUSBADGES.KO,
+                `<code>params.site</code>: <code>${paramSite}</code>`,
+                `Space character detected.`,
+            ]);
+        else if (adagioApiKeyfound && successRecordItems !== null)
+            paramsCheckingArray.push([
+                STATUSBADGES.OK,
+                `<code>params.site</code>: <code>${paramSite}</code>`,
+                ``,
+            ]);
+        else if (adagioApiKeyfound && successRecordItems === null)
+            paramsCheckingArray.push([
+                STATUSBADGES.KO,
+                `<code>params.site</code>: <code>${paramSite}</code>`,
+                `No API record found, check logs.`,
+            ]);
+        else
+            paramsCheckingArray.push([
+                STATUSBADGES.INFO,
+                `<code>params.site</code>: <code>${paramSite}</code>`,
+                "No API loaded for checking",
+            ]);
+    }
+
+    // AdUnitElementId (1/3): Depending on the Prebid version, we don't expect the same param
+    let divIdStatus = "";
+    let divIdSetup = "";
+    let divIdRes = "";
+    // AdUnitElementId (2/3): First checks if a value is found
+    if (prebidVersion >= 9) {
+        if (ortb2ImpDivId !== undefined) {
+            divIdStatus = STATUSBADGES.OK;
+            divIdSetup = "ortb2Imp.ext.data.divId";
+            divIdRes = ortb2ImpDivId;
+        } else if (paramAdUnitElementId !== undefined) {
+            divIdStatus = STATUSBADGES.UPDATE;
+            divIdSetup = "params.adUnitElementId";
+            divIdRes = paramAdUnitElementId;
+        } else {
+            divIdStatus = STATUSBADGES.KO;
+            divIdSetup = "ortb2Imp.ext.data.divId";
+            divIdRes = undefined;
+        }
+    } else {
+        if (paramAdUnitElementId !== undefined) {
+            divIdStatus = STATUSBADGES.OK;
+            divIdSetup = "params.adUnitElementId";
+            divIdRes = paramAdUnitElementId;
+        } else {
+            divIdStatus = STATUSBADGES.KO;
+            divIdSetup = "params.adUnitElementId";
+            divIdRes = undefined;
+        }
+    }
+    // AdUnitElementId (3/3): Then ensure the value is correct
+    if (divIdRes === undefined)
+        paramsCheckingArray.push([
+            divIdStatus,
+            `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
+            `Not defined in the adUnit configuration.`,
+        ]);
+    else {
+        const htlmDiv = document.getElementById(divIdRes);
+        if (divIdRes.trim() !== divIdRes)
+            paramsCheckingArray.push([
+                STATUSBADGES.CHECK,
+                `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
+                `Space character detected.`,
+            ]);
+        else if (htlmDiv === null)
+            paramsCheckingArray.push([
+                STATUSBADGES.CHECK,
+                `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
+                `Div id not found in the page.`,
+            ]);
+        else
+            paramsCheckingArray.push([
+                divIdStatus,
+                `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
+                ``,
+            ]);
+    }
+
+    // Placement (1/3): Depending on the Prebid version, we don't expect the same param
+    let placementStatus = "";
+    let placementSetup = "";
+    let placementRes = "";
+    // Placement (2/3): First checks if a value is found
+    if (prebidVersion >= 9) {
+        if (ortb2ImpPlacement !== undefined) {
+            placementStatus = STATUSBADGES.OK;
+            placementSetup = "ortb2Imp.ext.data.placement";
+            placementRes = ortb2ImpPlacement;
+        } else if (paramPlacement !== undefined) {
+            placementStatus = STATUSBADGES.UPDATE;
+            placementSetup = "params.placement";
+            placementRes = paramPlacement;
+        } else {
+            placementStatus = STATUSBADGES.KO;
+            placementSetup = "ortb2Imp.placement";
+            placementRes = undefined;
+        }
+    } else {
+        if (paramPlacement !== undefined) {
+            placementStatus = STATUSBADGES.OK;
+            placementSetup = "params.placement";
+            placementRes = paramPlacement;
+        } else {
+            placementStatus = STATUSBADGES.KO;
+            placementSetup = "params.placement";
+            placementRes = undefined;
+        }
+    }
+    // Placement (3/3): Then ensure the value is correct
+    if (placementRes === undefined)
+        paramsCheckingArray.push([
+            placementStatus,
+            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
+            `Not defined in the adUnit configuration.`,
+        ]);
+    else if (placementRes.trim() !== placementRes)
+        paramsCheckingArray.push([
+            STATUSBADGES.CHECK,
+            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
+            `Space character detected.`,
+        ]);
+    else if (
+        /mobile/i.test(placementRes) ||
+        /desktop/i.test(placementRes) ||
+        /tablet/i.test(placementRes)
+    )
+        paramsCheckingArray.push([
+            STATUSBADGES.CHECK,
+            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
+            `Should not include reference to an environment`,
+        ]);
+    else
+        paramsCheckingArray.push([
+            placementStatus,
+            `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
+            ``,
+        ]);
+
+    // Check the mediatypes parameters
+    let mediatypeBanner = bid.mediaTypes?.banner;
+    let mediatypeVideo = bid.mediaTypes?.video;
+    let mediatypeNative = bid.mediaTypes?.native;
+
+    if (
+        mediatypeBanner === undefined &&
+        mediatypeVideo === undefined &&
+        mediatypeNative === undefined
+    )
+        paramsCheckingArray.push([
+            STATUSBADGES.KO,
+            `<code>mediaTypes</code>: <code>${JSON.stringify(bid.mediaTypes)}</code>`,
+            `No mediatype detected.`,
+        ]);
+    else {
+        if (mediatypeBanner !== undefined) {
+            let mediatypeBannerSizes = mediatypeBanner?.sizes;
+
+            // Check the banner sizes
+            if (mediatypeBannerSizes !== undefined) {
+                let supportedSizes = [
+                    [120, 600],
+                    [160, 600],
+                    [250, 250],
+                    [300, 50],
+                    [300, 100],
+                    [300, 250],
+                    [300, 300],
+                    [300, 600],
+                    [320, 50],
+                    [320, 100],
+                    [320, 160],
+                    [320, 320],
+                    [320, 480],
+                    [336, 280],
+                    [728, 90],
+                    [800, 250],
+                    [930, 180],
+                    [970, 90],
+                    [970, 250],
+                    [1800, 1000]
+                ];
+                let commonArrays = [];
+                supportedSizes.forEach((ss) => {
+                    mediatypeBannerSizes.forEach((mbs) => {
+                        if (JSON.stringify(ss) === JSON.stringify(mbs))
+                            commonArrays.push(ss);
+                    });
+                });
+                if (commonArrays.length > 0)
+                    paramsCheckingArray.push([
+                        STATUSBADGES.OK,
+                        `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(commonArrays)}</code>`,
+                        ``,
+                    ]);
+                else
+                    paramsCheckingArray.push([
+                        STATUSBADGES.KO,
+                        `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`,
+                        `No supported size detected.`,
+                    ]);
+            } else
+                paramsCheckingArray.push([
+                    STATUSBADGES.KO,
+                    `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`,
+                    `No parameter found.`,
+                ]);
+        }
+
+        if (mediatypeVideo !== undefined) {
+
+            // Required for both instream and outstream
+            let mediatypeVideoContext = mediatypeVideo?.context; // DONE
+            let mediatypeVideoApi = mediatypeVideo?.api; // DONE
+            let mediatypeVideoPlayerSize = mediatypeVideo?.playerSize; // DONE
+            // Required for instream only
+            let mediatypeVideoMimes = mediatypeVideo?.mimes; // DONE
+            let mediatypeVideoPlcmt = mediatypeVideo?.plcmt; // DONE
+            // Highly recommended for instream and outstream
+            let mediatypeVideoPlaybackMethod = mediatypeVideo?.playbackmethod; // DONE
+            // Highly recommended for instream only
+            let mediatypeVideoStartDelay = mediatypeVideo?.startdelay; // DONE
+            let mediatypeVideoStartProtocols = mediatypeVideo?.protocols;
+
+            // For checking purpose
+            let hasOutstreamContext = mediatypeVideoContext ? 'outstream' : false;
+            let hasInstreamContext = mediatypeVideoContext ? 'instream' : false;
+            let videoApiSupported = [1,2,3,4,5];
+            let mimesExpected = ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript'];
+            let plcmtExpected = [1,2];
+            let protocolsExpected = [3, 6, 7, 8];
+
+            // Check the video context: instream or outstream
+            if (hasOutstreamContext || hasInstreamContext) {
+                paramsCheckingArray.push([
+                    STATUSBADGES.OK,
+                    `<code>mediaTypes.video.context</code>: <code>${mediatypeVideoContext}</code>`,
+                    ``,
+                ]);
+            } else {
+                paramsCheckingArray.push([
+                    STATUSBADGES.KO,
+                    `<code>mediaTypes.video.context</code>: <code>${mediatypeVideoContext}</code>`,
+                    `No supported context found.`,
+                ]);
+                // If no context found, we should not check params furthermore
+                return;
+            }
+
+            // Check the video api: [1, 2, 3, 4, 5]
+            if (mediatypeVideoApi !== undefined) {
+                if (hasOutstreamContext && !mediatypeVideoApi.includes(2))
+                    paramsCheckingArray.push([
+                        STATUSBADGES.KO,
+                        `<code>mediaTypes.video.api</code>: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                        `Must support api <code>2</code>'`,
+                    ]);
+                else if (!videoApiSupported.some(i => mediatypeVideoApi.includes(i)) && hasInstreamContext)
+                    paramsCheckingArray.push([
+                        STATUSBADGES.KO,
+                        `<code>mediaTypes.video.api</code>: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                        `Must support at least one of <code>${JSON.stringify(videoApiSupported)}</code>`,
+                    ]);
+                else
+                    paramsCheckingArray.push([
+                        STATUSBADGES.OK,
+                        `<code>mediaTypes.video.api</code>: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
+                        ``,
+                    ]);
+            } else
+                paramsCheckingArray.push([
+                    STATUSBADGES.KO,
+                    `<code>mediaTypes.video.api</code>: <code>${mediatypeVideoApi}</code>`,
+                    `No video api detected.`,
+                ]);
+
+            // Check the player size
+            if (mediatypeVideoPlayerSize && Array.isArray(mediatypeVideoPlayerSize) && mediatypeVideoPlayerSize.every(subArr => Array.isArray(subArr) && subArr.length === 2 && subArr.every(Number.isInteger))) {
+                paramsCheckingArray.push([
+                    STATUSBADGES.OK,
+                    `<code>mediaTypes.video.playerSize</code>: <code>${JSON.stringify(mediatypeVideoPlayerSize)}</code>`,
+                    ``,
+                ]);
+            } else {
+                paramsCheckingArray.push([
+                    STATUSBADGES.KO,
+                    `<code>mediaTypes.video.playerSize</code>: <code>${JSON.stringify(mediatypeVideoPlayerSize)}</code>`,
+                    `Wrong format or not size detected.`,
+                ]);
+            }
+
+            // Check the video mimes: ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript']
+            if (mediatypeVideoMimes === undefined) {
+                paramsCheckingArray.push([
+                    STATUSBADGES.KO,
+                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                    `No mimes detected.`,
+                ]);
+            }
+            else if (!mimesExpected.every(i => mediatypeVideoApi.includes(i))) {
+                paramsCheckingArray.push([
+                    STATUSBADGES.CHECK,
+                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                    `Missing mimes: <code>${JSON.stringify(mimesExpected.filter(i => !mediatypeVideoMimes.includes(i)))}</code>`,
+                ]);
+            }
+            else {
+                paramsCheckingArray.push([
+                    STATUSBADGES.OK,
+                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                    ``,
+                ]);
+            }
+
+            // Check the placement (for instream only)
+            if (hasInstreamContext) {
+                if (mediatypeVideoPlcmt) {
+                    if (plcmtExpected.includes(mediatypeVideoPlcmt)) {
+                        paramsCheckingArray.push([
+                            STATUSBADGES.OK,
+                            `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
+                            ``,
+                        ]);
+                    } else {
+                        paramsCheckingArray.push([
+                            STATUSBADGES.KO,
+                            `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
+                            `Must be one of <code>${JSON.stringify(plcmtExpected)}</code>`,
+                        ]);
+                    }
+                } 
+                else {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.KO,
+                        `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
+                        `No placement detected.`,
+                    ]);
+                }
+            }
+
+            // Check the video playbackmethod
+            if (mediatypeVideoPlaybackMethod) {
+                if (mediatypeVideoPlaybackMethod.includes(6)) {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.OK,
+                        `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                        ``,
+                    ]);
+                }
+                else {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.CHECK,
+                        `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                        `We recommend to include <code>[6]</code>.`,
+                    ]);
+                }
+            }
+            else
+                paramsCheckingArray.push([
+                    STATUSBADGES.CHECK,
+                    `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                    `No playback method detected.`,
+                ]);
+
+            // Check the startdelay (for instream only)
+            if (hasInstreamContext) {
+                if(mediatypeVideoStartDelay) {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.OK,
+                        `<code>mediaTypes.video.startdelay</code>: <code>${mediatypeVideoStartDelay}</code>`,
+                        ``,
+                    ]);
+                }
+                else {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.CHECK,
+                        `<code>mediaTypes.video.startdelay</code>: <code>${mediatypeVideoStartDelay}</code>`,
+                        `No start delay detected.`,
+                    ]);
+                }
+            }
+
+            // Check the protocols (for instream only)
+            if (hasInstreamContext) {
+                if(mediatypeVideoStartProtocols) {
+                    if (protocolsExpected.every(i => mediatypeVideoStartProtocols.includes(i))) {
+                        paramsCheckingArray.push([
+                            STATUSBADGES.OK,
+                            `<code>mediaTypes.video.protocols</code>: <code>${mediatypeVideoStartProtocols}</code>`,
+                            ``,
+                        ]);
+                    }
+                    else {
+                        paramsCheckingArray.push([
+                            STATUSBADGES.CHECK,
+                            `<code>mediaTypes.video.protocols</code>: <code>${mediatypeVideoStartProtocols}</code>`,
+                            `Missing protocols: <code>${JSON.stringify(protocolsExpected.filter(i => !mediatypeVideoStartProtocols.includes(i)))}</code>`,
+                        ]);
+                    }
+                }
+                else {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.CHECK,
+                        `<code>mediaTypes.video.protocols</code>: <code>${mediatypeVideoStartProtocols}</code>`,
+                        `No protocol detected.`,
+                    ]);
+                }
+            } 
+        }
+
+        if (mediatypeNative !== undefined) {
+            // TODO
+        }
+    }
+}
+
+function computeAdUnitStatus(paramsCheckingArray) {
+    // The array contains X item with the following structure: [string, string, string] (html code)
+    const statuses = [STATUSBADGES.OK, STATUSBADGES.INFO, STATUSBADGES.CHECK, STATUSBADGES.KO]; // Priority ranking
+    // Check the full array to get the highest status (is it ko, check, ok)
+    const highestStatus = paramsCheckingArray.reduce((highest, current) => 
+        statuses.indexOf(current[0]) > statuses.indexOf(highest) ? current[0] : highest, STATUSBADGES.OK
+    );
+    return highestStatus;
 }
 
 /*************************************************************************************************************************************************************************************************************************************
