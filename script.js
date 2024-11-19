@@ -2756,12 +2756,12 @@ function checkConsentMetadata() {
         return;
     } else if (typeof prebidObject.getConsentMetadata !== "function") {
         appendCheckerRow(
-            STATUSBADGES.KO,
+            STATUSBADGES.CHECK,
             "Consents",
             `<code>${prebidWrapper[0]}.getConsentMetadata()</code> not a function`,
         );
         appendConsentsRow(
-            STATUSBADGES.KO,
+            STATUSBADGES.CHECK,
             "Consents",
             `<code>${prebidWrapper[0]}.getConsentMetadata()</code> not a function`,
         );
@@ -2785,13 +2785,13 @@ function checkConsentMetadata() {
             );
         } else
             appendCheckerRow(
-                STATUSBADGES.KO,
+                STATUSBADGES.CHECK,
                 "Consent metadata",
                 `<code>${prebidWrapper[0]}.getConsentMetadata()</code>: <code>${JSON.stringify(consentMetadata)}</code>`,
             );
     } else {
         appendCheckerRow(
-            STATUSBADGES.KO,
+            STATUSBADGES.CHECK,
             "Consent metadata",
             `<code>${prebidWrapper[0]}.getConsentMetadata()</code>: <code>${JSON.stringify(consentMetadata)}</code>`,
         );
