@@ -88,7 +88,7 @@ const STATUSBADGES = Object.freeze({
     OK: `<kbd style="color:${COLOR.GREENTEXT};background-color:${COLOR.GREENBACKGROUND};">OK</kbd>`,
     KO: `<kbd style="color:${COLOR.REDTEXT};background-color:${COLOR.REDBACKGROUND};">KO</kbd>`,
     CHECK: `<kbd style="color:${COLOR.YELLOWTEXT};background-color:${COLOR.YELLOWBACKGROUND};">!?</kbd>`,
-    UPDATE: `<kbd style="color:${COLOR.YELLOWTEXT};background-color:${COLOR.YELLOWBACKGROUND};">Update: v9</kbd>`,
+    UPDATE: `<kbd style="color:${COLOR.YELLOWTEXT};background-color:${COLOR.YELLOWBACKGROUND};">Update</kbd>`,
     INFO: `<kbd style="color:${COLOR.BLUETEXT};background-color:${COLOR.BLUEBACKGROUND};">Info</kbd>`,
 });
 
@@ -1377,7 +1377,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             divIdSetup = "ortb2Imp.ext.data.divId";
             divIdRes = ortb2ImpDivId;
         } else if (paramAdUnitElementId !== undefined) {
-            divIdStatus = STATUSBADGES.UPDATE;
+            divIdStatus = STATUSBADGES.INFO; // STATUSBADGES.UPDATE;
             divIdSetup = "params.adUnitElementId";
             divIdRes = paramAdUnitElementId;
         } else {
@@ -1436,7 +1436,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             placementSetup = "ortb2Imp.ext.data.placement";
             placementRes = ortb2ImpPlacement;
         } else if (paramPlacement !== undefined) {
-            placementStatus = STATUSBADGES.UPDATE;
+            placementStatus = STATUSBADGES.INFO; // STATUSBADGES.UPDATE;
             placementSetup = "params.placement";
             placementRes = paramPlacement;
         } else {
