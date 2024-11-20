@@ -2013,24 +2013,24 @@ function checkAdagioModule() {
             appendCheckerRow(
                 STATUSBADGES.CHECK,
                 ADAGIOCHECK.ADAPTER,
-                `• <code>${JSON.stringify(adagioAdapter.versions)}</code><br>
-                • Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work</code>.`,
+                `• Adagiojs version: <code>${JSON.stringify(adagioAdapter.versions.adagiojs)}</code><br>
+                • Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work</code>`,
             );
         }
         else if (pbjsAdUnits === undefined) {
             appendCheckerRow(
                 STATUSBADGES.CHECK,
                 ADAGIOCHECK.ADAPTER,
-                `• <code>${JSON.stringify(adagioAdapter.versions)}</code><br>
-                • Wrapper integrity: <code>🔴 Failed: Contact your Solution Engineer</code>.`,
+                `• Adagiojs version: <code>${JSON.stringify(adagioAdapter.versions.adagiojs)}</code><br>
+                • Wrapper integrity: <code>🔴 Failed: Contact your Solution Engineer</code>`,
             );
         }
         else {
             appendCheckerRow(
                 STATUSBADGES.OK,
                 ADAGIOCHECK.ADAPTER,
-                `• <code>${JSON.stringify(adagioAdapter.versions)}</code><br>
-                • Wrapper integrity: <code>🟢 Successed</code>.`,
+                `• Adagiojs version: <code>${JSON.stringify(adagioAdapter.versions.adagiojs)}</code><br>
+                • Wrapper integrity: <code>🟢 Successed</code>`,
             );
         }
     }
