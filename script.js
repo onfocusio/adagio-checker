@@ -1279,6 +1279,8 @@ function catchBidRequestsGlobalParams() {
                 )
                     organizationIds.push(paramOrganizationId);
             }
+            // Clear the array before filling it (usefull after wrapper switch)
+            siteNames = [];
             // Get all the siteName parameter value sent to fill siteNames[]
             for (const param in prebidAdagioParams) {
                 let paramSiteName = prebidAdagioParams[param]?.site;
@@ -1352,12 +1354,15 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
                 `<code>params.site</code>: <code>${paramSite}</code>`,
                 ``,
             ]);
-        else if (adagioApiKeyfound && successRecordItems === null)
+        else if (adagioApiKeyfound && successRecordItems === null) {
+
+            console.log('Params checking array - successRecordItems:' + successRecordItems);
             paramsCheckingArray.push([
                 STATUSBADGES.KO,
                 `<code>params.site</code>: <code>${paramSite}</code>`,
                 `No API record found, check logs.`,
             ]);
+        }
         else
             paramsCheckingArray.push([
                 STATUSBADGES.INFO,
@@ -1776,10 +1781,11 @@ function computeAdUnitStatus(paramsCheckingArray) {
  * PBJS functions
  ************************************************************************************************************************************************************************************************************************************/
 
-function runCheck() {
+async function runCheck() {
     catchBidRequestsGlobalParams();
-    checkAdagioAPI();
-    checkCurrentLocation();
+    await checkAdagioAPI();
+    await checkPublisher();
+    await checkCurrentLocation();
     checkAdServer();
     checkPrebidVersion();
     checkAdagioModule();
@@ -1798,7 +1804,6 @@ function runCheck() {
     checkAdagioCMP();
     checkFloorPriceModule();
     checkDsaTransparency();
-    checkPublisher();
 }
 
 async function checkAdagioAPI() {
@@ -1859,6 +1864,8 @@ async function checkAdagioAPI() {
                         (siteNameRecore) => domainRecord === siteNameRecore,
                     ),
                 ) || null;
+
+            console.log('API GET - successRecordItems:' + successRecordItems);
 
             // Check display API status regarding record results.
             if (matchedDomainRecords === null) {
