@@ -1038,7 +1038,7 @@ function createBidderParamsModal(bid, paramsCheckingArray) {
 
     const article = overlayFrameDoc.createElement("article");
     const header = overlayFrameDoc.createElement("header");
-    header.textContent = bid.bidder;
+    header.textContent = `${bid.bidder}: ${bid.adUnitCode} (${Object.keys(bid.mediaTypes)})`;
     header.style.marginBottom = "0px";
     const closeLink = overlayFrameDoc.createElement("a");
     closeLink.setAttribute("aria-label", "Close");
