@@ -1354,15 +1354,12 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
                 `<code>params.site</code>: <code>${paramSite}</code>`,
                 ``,
             ]);
-        else if (adagioApiKeyfound && successRecordItems === null) {
-
-            console.log('Params checking array - successRecordItems:' + successRecordItems);
+        else if (adagioApiKeyfound && successRecordItems === null)
             paramsCheckingArray.push([
                 STATUSBADGES.KO,
                 `<code>params.site</code>: <code>${paramSite}</code>`,
                 `No API record found, check logs.`,
             ]);
-        }
         else
             paramsCheckingArray.push([
                 STATUSBADGES.INFO,
@@ -1864,8 +1861,6 @@ async function checkAdagioAPI() {
                         (siteNameRecore) => domainRecord === siteNameRecore,
                     ),
                 ) || null;
-
-            console.log('API GET - successRecordItems:' + successRecordItems);
 
             // Check display API status regarding record results.
             if (matchedDomainRecords === null) {
