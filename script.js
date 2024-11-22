@@ -2020,10 +2020,12 @@ function checkAdagioModule() {
         }
         // Define and set wrapper integrity log
         let wrapperIntegrityLog = `• Wrapper integrity: <code>🟢 Successed</code>`;
-
         if (pbjsAdUnits === undefined || !Array.isArray(pbjsAdUnits) || pbjsAdUnits.length === 0) {
             wrapperIntegrityLog =  `• Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`;
             adagioModuleStatus = STATUSBADGES.CHECK;
+        }
+        else if (adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs') {
+            wrapperIntegrityLog =  `• Wrapper integrity: <code>🟠 Fixed: Try to contact client for bad behavior.</code>`;
         }
         // Display the final log
         appendCheckerRow(
