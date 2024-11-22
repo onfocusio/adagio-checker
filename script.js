@@ -2012,16 +2012,17 @@ function checkAdagioModule() {
 
         // Define and set checker item status
         let adagioModuleStatus = STATUSBADGES.OK;
-        // Define and set wrapper integrity log
-        let wrapperIntegrityLog = `• Wrapper integrity: <code>🟢 Successed</code>`;
-        if ((prebidWrapper !== undefined && adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs') || pbjsAdUnits === undefined) {
-            wrapperIntegrityLog =  `Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`;
-            adagioModuleStatus = STATUSBADGES.CHECK;
-        }
         // Define and set adagioJsLog
         let adagiojsLog = `• Adagiojs: <code>🟢 Version: ${JSON.stringify(adagioJsVersion)}</code><br>`;
         if (adagioJsVersion === undefined) {
             adagiojsLog = `• Adagiojs: <code>🔴 Failed: Script not loaded.</code><br>`;
+            adagioModuleStatus = STATUSBADGES.CHECK;
+        }
+        // Define and set wrapper integrity log
+        let wrapperIntegrityLog = `• Wrapper integrity: <code>🟢 Successed</code>`;
+
+        if (pbjsAdUnits === undefined || !Array.isArray(pbjsAdUnits) || pbjsAdUnits.length === 0) {
+            wrapperIntegrityLog =  `• Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`;
             adagioModuleStatus = STATUSBADGES.CHECK;
         }
         // Display the final log
