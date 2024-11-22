@@ -2006,11 +2006,11 @@ function checkPrebidVersion() {
 function checkAdagioModule() {
     // Gets ADAGIO adapter object
     adagioAdapter = window.ADAGIO;
-    let adagioJsVersion = adagioAdapter.versions.adagiojs;
 
     // Gets wrapper name integrity
     if (adagioAdapter !== undefined) {
         const pbjsAdUnits = adagioAdapter.pbjsAdUnits;
+        let adagioJsVersion = adagioAdapter.versions.adagiojs;
 
         if ((prebidWrapper !== undefined && adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs') || pbjsAdUnits === undefined) {
             appendCheckerRow(
