@@ -671,7 +671,7 @@ function createAdUnitsDiv() {
     th2.textContent = "Mediatypes";
     const th3 = overlayFrameDoc.createElement("th");
     th3.setAttribute("scope", "col");
-    th3.textContent = "Bidder params";
+    th3.textContent = "🔎 Bidder params";
     tr.appendChild(th0);
     tr.appendChild(th1);
     tr.appendChild(th2);
