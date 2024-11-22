@@ -127,9 +127,6 @@ const ADAGIOLINKS = Object.freeze({
 const ADAGIOPARAMS = {
     ORGANIZATIONID: null,
     SITE: null,
-    ENVIRONMENT: null,
-    CATEGORY: null,
-    PAGETYPE: null,
 };
 
 /*************************************************************************************************************************************************************************************************************************************
@@ -1365,7 +1362,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             paramsCheckingArray.push([
                 STATUSBADGES.INFO,
                 `<code>params.site</code>: <code>${paramSite}</code>`,
-                "No API loaded for checking",
+                "No API loaded for checking.",
             ]);
     }
 
@@ -2115,7 +2112,7 @@ function checkRealTimeDataProvider() {
                         ADAGIOCHECK.RDTMODULE,
                         `Missing 'site' parameter: <code>${JSON.stringify(adagioRtdProvider)}</code>`,
                     );
-                else if ((ADAGIOPARAMS.SITE != null && ADAGIOPARAMS.SITE !== paramsSite) || (ADAGIOPARAMS.ORGANIZATIONID !== null && ADAGIOPARAMS.ORGANIZATIONID != paramsOrgId))
+                else if ((ADAGIOPARAMS.SITE != null && ADAGIOPARAMS.SITE !== paramsSite) || (ADAGIOPARAMS.ORGANIZATIONID !== null && ADAGIOPARAMS.ORGANIZATIONID !== paramsOrgId))
                     appendCheckerRow(
                         computeBadgeToDisplay(true, 9, null),
                         ADAGIOCHECK.RDTMODULE,
