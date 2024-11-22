@@ -2012,22 +2012,26 @@ function checkAdagioModule() {
         const pbjsAdUnits = adagioAdapter.pbjsAdUnits;
         let adagioJsVersion = adagioAdapter.versions.adagiojs;
 
+        // Define and set checker item status
+        let adagioModuleStatus = STATUSBADGES.OK;
+        // Define and set wrapper integrity log
+        let wrapperIntegrityLog = `• Wrapper integrity: <code>🟢 Successed</code>`;
         if ((prebidWrapper !== undefined && adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs') || pbjsAdUnits === undefined) {
-            appendCheckerRow(
-                STATUSBADGES.CHECK,
-                ADAGIOCHECK.ADAPTER,
-                `• Adagiojs: <code>${adagioJsVersion !== undefined ? `🟢 Version: ${JSON.stringify(adagioJsVersion)}` : '🔴 Failed: Script not loaded.'}</code><br>
-                • Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`,
-            );
+            wrapperIntegrityLog =  `Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`;
+            adagioModuleStatus = STATUSBADGES.CHECK;
         }
-        else {
-            appendCheckerRow(
-                STATUSBADGES.OK,
-                ADAGIOCHECK.ADAPTER,
-                `• Adagiojs: <code>${adagioJsVersion !== undefined ? `🟢 Version: ${JSON.stringify(adagioJsVersion)}` : '🔴 Failed: Script not loaded.'}</code><br>
-                • Wrapper integrity: <code>🟢 Successed</code>`,
-            );
+        // Define and set adagioJsLog
+        let adagiojsLog = `• Adagiojs: <code>🟢 Version: ${JSON.stringify(adagioJsVersion)}</code><br>`;
+        if (adagioJsVersion === undefined) {
+            adagiojsLog = `• Adagiojs: <code>🔴 Failed: Script not loaded.</code><br>`;
+            adagioModuleStatus = STATUSBADGES.CHECK;
         }
+        // Display the final log
+        appendCheckerRow(
+            adagioModuleStatus,
+            ADAGIOCHECK.ADAPTER,
+            adagiojsLog + wrapperIntegrityLog,
+        );
     }
     else {
         appendCheckerRow(
