@@ -82,6 +82,8 @@ const COLOR = Object.freeze({
     YELLOWBACKGROUND: "rgb(253 243 228)",
     BLUETEXT: "rgb(38, 130, 185)",
     BLUEBACKGROUND: "rgb(222, 241, 248)",
+    GREYTEXT: "rgb(120, 120, 120)",
+    GREYBACKGROUD: "rgb(230, 230, 230)",
 });
 
 const STATUSBADGES = Object.freeze({
@@ -90,6 +92,7 @@ const STATUSBADGES = Object.freeze({
     CHECK: `<kbd style="color:${COLOR.YELLOWTEXT};background-color:${COLOR.YELLOWBACKGROUND};">!?</kbd>`,
     UPDATE: `<kbd style="color:${COLOR.YELLOWTEXT};background-color:${COLOR.YELLOWBACKGROUND};">Update</kbd>`,
     INFO: `<kbd style="color:${COLOR.BLUETEXT};background-color:${COLOR.BLUEBACKGROUND};">Info</kbd>`,
+    NA: `<kbd style="color:${COLOR.GREYTEXT};background-color:${COLOR.GREYBACKGROUD};">N/A</kbd>`,
 });
 
 const ADAGIOCHECK = Object.freeze({
@@ -874,10 +877,13 @@ function appendAdUnitsRow(bidders, bids) {
         const mediaTypes = bid.mediaTypes;
         const bidderId = bid.bidder;
 
+        // Checks if the concerned bidder is Adagio
+        const bidderAdagioDetected = bidderId.toLowerCase().includes('adagio');
+
         // Build the bid checking array and compute the adunit status
         let paramsCheckingArray = [];
-        buildParamsCheckingArray(bid, paramsCheckingArray);
-        const status = computeAdUnitStatus(paramsCheckingArray);
+        if (bidderAdagioDetected) buildParamsCheckingArray(bid, paramsCheckingArray);
+        const status = bidderAdagioDetected ? computeAdUnitStatus(paramsCheckingArray) : STATUSBADGES.NA;
 
         // Create the row
         const newRow = overlayFrameDoc.createElement("tr");
@@ -894,7 +900,7 @@ function appendAdUnitsRow(bidders, bids) {
         const bidderIdCell = overlayFrameDoc.createElement("td");
         const bidderParamButton = overlayFrameDoc.createElement("kbd");
         bidderParamButton.addEventListener("click", () =>
-            createBidderParamsModal(bid, paramsCheckingArray),
+            createBidderParamsModal(bid, paramsCheckingArray, bidderAdagioDetected),
         );
         bidderParamButton.style.cursor = "pointer";
 
@@ -1028,7 +1034,7 @@ function displayAdunits(eyeButton) {
     });
 }
 
-function createBidderParamsModal(bid, paramsCheckingArray) {
+function createBidderParamsModal(bid, paramsCheckingArray, bidderAdagioDetected) {
     // Create a dialog window showing the params of the bidrequest.
     const dialog = overlayFrameDoc.createElement("dialog");
     dialog.setAttribute("open", true);
@@ -1045,15 +1051,20 @@ function createBidderParamsModal(bid, paramsCheckingArray) {
         dialog.remove();
     });
 
-    const parametersCheckTable = overlayFrameDoc.createElement("p");
-    createParametersCheckTable(parametersCheckTable, paramsCheckingArray);
+    article.appendChild(header);
+    header.appendChild(closeLink);
 
+    // If the bidder is Adagio, we display the params checking
+    if (bidderAdagioDetected) {
+        const parametersCheckTable = overlayFrameDoc.createElement("p");
+        createParametersCheckTable(parametersCheckTable, paramsCheckingArray);
+        article.appendChild(parametersCheckTable);
+    }    
+
+    // Display the bidrequest json from pbjs.getEvents()
     const paragraph = overlayFrameDoc.createElement("p");
     paragraph.innerHTML = `<pre><code class="language-json">${JSON.stringify(bid, null, 2)}</code></pre>`;
 
-    article.appendChild(header);
-    header.appendChild(closeLink);
-    article.appendChild(parametersCheckTable);
     article.appendChild(paragraph);
     dialog.appendChild(article);
     overlayFrameDoc.body.appendChild(dialog);
@@ -2020,7 +2031,7 @@ function checkAdagioModule() {
         }
         // Define and set wrapper integrity log
         let wrapperIntegrityLog = `• Wrapper integrity: <code>🟢 Successed</code>`;
-        if (pbjsAdUnits === undefined || !Array.isArray(pbjsAdUnits) || pbjsAdUnits.length === 0) {
+        if (pbjsAdUnits === undefined || !Array.isArray(pbjsAdUnits) || (pbjsAdUnits.length === 0 && (adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs'))) {
             wrapperIntegrityLog =  `• Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`;
             adagioModuleStatus = STATUSBADGES.CHECK;
         }
