@@ -174,7 +174,7 @@ function createOverlay() {
     overlayFrame.style.position = "fixed";
     overlayFrame.style.top = "10px";
     overlayFrame.style.left = "10px";
-    overlayFrame.style.width = "850px";
+    overlayFrame.style.width = "1000px";
     overlayFrame.style.height = "95%";
     overlayFrame.style.zIndex = "2147483647";
     overlayFrame.style.backgroundColor = "transparent";
