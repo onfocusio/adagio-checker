@@ -1037,6 +1037,7 @@ function createBidderParamsModal(bid, paramsCheckingArray) {
     dialog.setAttribute("open", true);
 
     const article = overlayFrameDoc.createElement("article");
+    article.style.maxWidth = "100%";
     const header = overlayFrameDoc.createElement("header");
     header.textContent = `${bid.bidder}: ${bid.adUnitCode} (${Object.keys(bid.mediaTypes)})`;
     header.style.marginBottom = "0px";
