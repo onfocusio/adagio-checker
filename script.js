@@ -2006,32 +2006,25 @@ function checkPrebidVersion() {
 function checkAdagioModule() {
     // Gets ADAGIO adapter object
     adagioAdapter = window.ADAGIO;
+    let adagioJsVersion = adagioAdapter.versions.adagiojs;
 
     // Gets wrapper name integrity
     if (adagioAdapter !== undefined) {
         const pbjsAdUnits = adagioAdapter.pbjsAdUnits;
 
-        if (prebidWrapper !== undefined && adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs') {
+        if ((prebidWrapper !== undefined && adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs') || pbjsAdUnits === undefined) {
             appendCheckerRow(
                 STATUSBADGES.CHECK,
                 ADAGIOCHECK.ADAPTER,
-                `• Adagiojs version: <code>${JSON.stringify(adagioAdapter.versions.adagiojs)}</code><br>
-                • Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work</code>`,
-            );
-        }
-        else if (pbjsAdUnits === undefined) {
-            appendCheckerRow(
-                STATUSBADGES.CHECK,
-                ADAGIOCHECK.ADAPTER,
-                `• Adagiojs version: <code>${JSON.stringify(adagioAdapter.versions.adagiojs)}</code><br>
-                • Wrapper integrity: <code>🔴 Failed: Contact your Solution Engineer</code>`,
+                `• Adagiojs: <code>${adagioJsVersion !== undefined ? `🟢 Version: ${JSON.stringify(adagioJsVersion)}` : '🔴 Failed: Script not loaded.'}</code><br>
+                • Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`,
             );
         }
         else {
             appendCheckerRow(
                 STATUSBADGES.OK,
                 ADAGIOCHECK.ADAPTER,
-                `• Adagiojs version: <code>${JSON.stringify(adagioAdapter.versions.adagiojs)}</code><br>
+                `• Adagiojs: <code>${adagioJsVersion !== undefined ? `🟢 Version: ${JSON.stringify(adagioJsVersion)}` : '🔴 Failed: Script not loaded.'}</code><br>
                 • Wrapper integrity: <code>🟢 Successed</code>`,
             );
         }
