@@ -42,6 +42,8 @@ let adagioApiKeyfound = false;
 let matchedDomainRecords = null;
 let matchedSiteNameRecords = null;
 let successRecordItems = null;
+let MY_BROKENOBJECT = null;
+let MY_GOODOBJECT = null;
 
 /*************************************************************************************************************************************************************************************************************************************
  * Enums
@@ -1328,6 +1330,11 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     let ortb2ImpPlacement = bid?.ortb2Imp?.ext?.data?.placement;
     let ortb2ImpDivId = bid?.ortb2Imp?.ext?.data?.divId;
 
+    if (paramOrganizationId === undefined) {
+        MY_BROKENOBJECT = bid.params;
+    }
+    else MY_GOODOBJECT = bid.params;
+
     // Check the organizationId
     if (paramOrganizationId === undefined)
         paramsCheckingArray.push([
@@ -1595,8 +1602,8 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             let mediatypeVideoStartProtocols = mediatypeVideo?.protocols;
 
             // For checking purpose
-            let hasOutstreamContext = mediatypeVideoContext ? 'outstream' : false;
-            let hasInstreamContext = mediatypeVideoContext ? 'instream' : false;
+            let hasOutstreamContext = mediatypeVideoContext === 'outstream';
+            let hasInstreamContext = mediatypeVideoContext === 'instream';
             let videoApiSupported = [1,2,3,4,5];
             let mimesExpected = ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript'];
             let plcmtExpected = [1,2];
@@ -1661,27 +1668,29 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
                 ]);
             }
 
-            // Check the video mimes: ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript']
-            if (mediatypeVideoMimes === undefined) {
-                paramsCheckingArray.push([
-                    STATUSBADGES.KO,
-                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
-                    `No mimes detected.`,
-                ]);
-            }
-            else if (!mimesExpected.every(i => mediatypeVideoApi.includes(i))) {
-                paramsCheckingArray.push([
-                    STATUSBADGES.CHECK,
-                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
-                    `Missing mimes: <code>${JSON.stringify(mimesExpected.filter(i => !mediatypeVideoMimes.includes(i)))}</code>`,
-                ]);
-            }
-            else {
-                paramsCheckingArray.push([
-                    STATUSBADGES.OK,
-                    `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
-                    ``,
-                ]);
+            // Check the video mimes: ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript'] (for instream only)
+            if (hasInstreamContext) {
+                if (mediatypeVideoMimes === undefined) {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.KO,
+                        `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                        `No mimes detected.`,
+                    ]);
+                }
+                else if (!mimesExpected.every(i => mediatypeVideoApi.includes(i))) {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.CHECK,
+                        `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                        `Missing mimes: <code>${JSON.stringify(mimesExpected.filter(i => !mediatypeVideoMimes.includes(i)))}</code>`,
+                    ]);
+                }
+                else {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.OK,
+                        `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
+                        ``,
+                    ]);
+                }
             }
 
             // Check the placement (for instream only)
@@ -2068,10 +2077,6 @@ function checkAdagioModule() {
 }
 
 function checkRealTimeDataProvider() {
-
-    console.log("OrganzationIds: " + organizationIds);
-    console.log("OrganzationIds: " + siteNames);
-
     // Since Prebid 9, the RTD module and Adagio provider are necessary for our visibility/repackaging optimization.
     // It requires the module and the Adagio provider module to be installed and configured.
     if (prebidObject === undefined) {
@@ -2147,7 +2152,7 @@ function checkRealTimeDataProvider() {
                     appendCheckerRow(
                         computeBadgeToDisplay(true, 9, null),
                         ADAGIOCHECK.RDTMODULE,
-                        `Parameters doesn't match with bids.param: <code>${JSON.stringify(adagioRtdProvider)}</code>`,
+                        `Parameters doesn't match with bids.params: <code>${JSON.stringify(adagioRtdProvider)}</code>`,
                     );
                 else
                     appendCheckerRow(
