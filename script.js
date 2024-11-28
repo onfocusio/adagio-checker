@@ -450,7 +450,20 @@ function buildPrebidButton(name, svg, isactive) {
                 prebidObject = prebidWrapper[1][prebidWrapper[0]];
                 refreshTables();
             }
-        });
+        });/**
+ * Checks if the wrapper maintains its integrity by ensuring Adagio's Prebid configuration remains accessible.
+ *
+ * @param {object} _pbjs - The Prebid.js object.
+ * @param {string} _wrapperName - The name of the wrapper (global variable alias for Prebid.js).
+ * @param {object} _ADAGIO - The ADAGIO object containing configuration data.
+ * @returns {boolean} `true` if the wrapper's integrity is intact, `false` otherwise.
+ */
+function hasWrapperIntegrity(_pbjs, _wrapperName, _ADAGIO) {
+    const pbjsAdUnits = _ADAGIO.pbjsAdUnits;
+    return !pbjsAdUnits || 
+           !Array.isArray(pbjsAdUnits) || 
+           (pbjsAdUnits.length === 0 && adagioAdapter[`${_wrapperName}AdUnits`] !== undefined && _wrapperName !== 'pbjs');
+}
 
         // Append the wrapper item
         paragraph.appendChild(wrapperItem);
@@ -1789,13 +1802,17 @@ function computeAdUnitStatus(paramsCheckingArray) {
 
 async function runCheck() {
     catchBidRequestsGlobalParams();
+    console.log("HERE WE START 1: " + new Date());
     await checkAdagioAPI();
+    console.log("HERE WE FINISH 1: " + new Date());
     await checkPublisher();
     await checkCurrentLocation();
     checkAdServer();
     checkPrebidVersion();
     checkAdagioModule();
+    console.log("HERE WE START 2: " + new Date());
     checkAdagioAdUnitParams();
+    console.log("HERE WE START 2: " + new Date());
     checkRealTimeDataProvider();
     checkDeviceAccess();
     checkFirstPartyData();
@@ -2857,14 +2874,17 @@ function checkAdagioCMP() {
         const cmpAdagioBidders = new Map();
         cmpAdagioBidders.set(617, "Adagio");
         cmpAdagioBidders.set(58, "33Across");
+        cmpAdagioBidders.set(138, "ConnectAd");
         cmpAdagioBidders.set(90, "E-Planning");
         cmpAdagioBidders.set(285, "Freewheel");
+        cmpAdagioBidders.set(149, "Illumin / ADman");
         cmpAdagioBidders.set(253, "Improve Digital");
         cmpAdagioBidders.set(10, "Index Exchange");
         cmpAdagioBidders.set(36, "Nexxen (Unruly)");
         cmpAdagioBidders.set(241, "OneTag");
         cmpAdagioBidders.set(69, "OpenX");
         cmpAdagioBidders.set(76, "Pubmatic");
+        cmpAdagioBidders.set(16, "RTB House S.A.");
         cmpAdagioBidders.set(52, "Rubicon");
         cmpAdagioBidders.set(45, "Smart Adserver");
         cmpAdagioBidders.set(13, "Sovrn");
