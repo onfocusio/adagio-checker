@@ -1802,17 +1802,13 @@ function computeAdUnitStatus(paramsCheckingArray) {
 
 async function runCheck() {
     catchBidRequestsGlobalParams();
-    console.log("HERE WE START 1: " + new Date());
     await checkAdagioAPI();
-    console.log("HERE WE FINISH 1: " + new Date());
     await checkPublisher();
     await checkCurrentLocation();
     checkAdServer();
     checkPrebidVersion();
     checkAdagioModule();
-    console.log("HERE WE START 2: " + new Date());
     checkAdagioAdUnitParams();
-    console.log("HERE WE START 2: " + new Date());
     checkRealTimeDataProvider();
     checkDeviceAccess();
     checkFirstPartyData();
@@ -2072,6 +2068,10 @@ function checkAdagioModule() {
 }
 
 function checkRealTimeDataProvider() {
+
+    console.log("OrganzationIds: " + organizationIds);
+    console.log("OrganzationIds: " + siteNames);
+
     // Since Prebid 9, the RTD module and Adagio provider are necessary for our visibility/repackaging optimization.
     // It requires the module and the Adagio provider module to be installed and configured.
     if (prebidObject === undefined) {
@@ -2143,7 +2143,7 @@ function checkRealTimeDataProvider() {
                         ADAGIOCHECK.RDTMODULE,
                         `Missing 'site' parameter: <code>${JSON.stringify(adagioRtdProvider)}</code>`,
                     );
-                else if ((ADAGIOPARAMS.SITE != null && ADAGIOPARAMS.SITE !== paramsSite) || (ADAGIOPARAMS.ORGANIZATIONID !== null && ADAGIOPARAMS.ORGANIZATIONID !== paramsOrgId))
+                else if (!siteNames.includes(paramsSite) || !organizationIds.includes(paramsOrgId))
                     appendCheckerRow(
                         computeBadgeToDisplay(true, 9, null),
                         ADAGIOCHECK.RDTMODULE,
