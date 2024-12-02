@@ -452,20 +452,7 @@ function buildPrebidButton(name, svg, isactive) {
                 prebidObject = prebidWrapper[1][prebidWrapper[0]];
                 refreshTables();
             }
-        });/**
- * Checks if the wrapper maintains its integrity by ensuring Adagio's Prebid configuration remains accessible.
- *
- * @param {object} _pbjs - The Prebid.js object.
- * @param {string} _wrapperName - The name of the wrapper (global variable alias for Prebid.js).
- * @param {object} _ADAGIO - The ADAGIO object containing configuration data.
- * @returns {boolean} `true` if the wrapper's integrity is intact, `false` otherwise.
- */
-function hasWrapperIntegrity(_pbjs, _wrapperName, _ADAGIO) {
-    const pbjsAdUnits = _ADAGIO.pbjsAdUnits;
-    return !pbjsAdUnits || 
-           !Array.isArray(pbjsAdUnits) || 
-           (pbjsAdUnits.length === 0 && adagioAdapter[`${_wrapperName}AdUnits`] !== undefined && _wrapperName !== 'pbjs');
-}
+        });
 
         // Append the wrapper item
         paragraph.appendChild(wrapperItem);
