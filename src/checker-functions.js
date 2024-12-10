@@ -540,7 +540,7 @@ function checkCategoryParam(_pbjs, bid, prebidVersion) {
 
 /* MAIN - Run function */
 
-function run(_window, organizationId, siteName) {
+export function run(_window, organizationId, siteName) {
     const _ADAGIO = getAdagioAdapter(_window);
     const prebidWrappers = getPrebidWrappers(_window, _ADAGIO);
     const adServers = getSupportedAdServers(_window);
@@ -600,5 +600,3 @@ function run(_window, organizationId, siteName) {
 
     return results;
 }
-
-run(window);
