@@ -1447,30 +1447,36 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     let placementStatus = "";
     let placementSetup = "";
     let placementRes = "";
+    let placementDetails = "";
     // Placement (2/3): First checks if a value is found
     if (prebidVersion >= 9) {
         if (ortb2ImpPlacement !== undefined) {
             placementStatus = STATUSBADGES.OK;
             placementSetup = "ortb2Imp.ext.data.placement";
             placementRes = ortb2ImpPlacement;
+            placementDetails = '';
         } else if (paramPlacement !== undefined) {
             placementStatus = STATUSBADGES.INFO; // STATUSBADGES.UPDATE;
             placementSetup = "params.placement";
             placementRes = paramPlacement;
+            placementDetails = 'Recommendation: Setup the new placement param in ortb2Imp.'
         } else {
             placementStatus = STATUSBADGES.KO;
             placementSetup = "ortb2Imp.placement";
             placementRes = undefined;
+            placementDetails = '';
         }
     } else {
         if (paramPlacement !== undefined) {
             placementStatus = STATUSBADGES.OK;
             placementSetup = "params.placement";
             placementRes = paramPlacement;
+            placementDetails = '';
         } else {
             placementStatus = STATUSBADGES.KO;
             placementSetup = "params.placement";
             placementRes = undefined;
+            placementDetails = '';
         }
     }
     // Placement (3/3): Then ensure the value is correct
@@ -1500,7 +1506,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
         paramsCheckingArray.push([
             placementStatus,
             `<code>${placementSetup}</code>: <code>${placementRes}</code>`,
-            ``,
+            placementDetails,
         ]);
 
     // Check the mediatypes parameters
