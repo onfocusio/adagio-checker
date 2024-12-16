@@ -15,7 +15,7 @@
  * 
  * @note This function accounts for cross-origin restrictions when accessing iframe content and will silently ignore iframe access errors.
  */
-function getPrebidWrappers(_window, _ADAGIO) {
+export function getPrebidWrappers(_window, _ADAGIO) {
     const prebidWrappers = [];
     
     // Helper function to check and push valid wrappers, ensuring no duplicates
@@ -116,7 +116,7 @@ export async function runAdagioApi(organizationId) {
  *  - `siteName`: The name of the matching site, or `null` if no unique match exists.
  *  - `details`: A message explaining the status or why a match could not be made.
  */
-function getSiteNameForOrganizationIdFromApi(orgIdApiDataResponse, _window) {
+export function getSiteNameForOrganizationIdFromApi(orgIdApiDataResponse, _window) {
     const records = orgIdApiDataResponse?.records;
     if (!records) {
         return { status: 'KO', siteName: null, details: 'No records available in the API response.' };
@@ -147,7 +147,7 @@ function getSiteNameForOrganizationIdFromApi(orgIdApiDataResponse, _window) {
  * 
  * @returns {Object} - The ADAGIO adapter object, or undefined if it is not present in the provided window context.
  */
-function getAdagioAdapter(_window) {
+export function getAdagioAdapter(_window) {
     return _window.ADAGIO;
 }
 
@@ -160,7 +160,7 @@ function getAdagioAdapter(_window) {
  * 
  * @returns {Function|undefined} - The `__tcfapi` function, or undefined if it is not present in the provided window context.
  */
-function getTcfApi(_window) {
+export function getTcfApi(_window) {
     return _window.__tcfapi;
 }
 
@@ -171,7 +171,7 @@ function getTcfApi(_window) {
  * @param {Object} _window - The window object to check for ad server SDKs.
  * @returns {Array} - A list of supported ad server names.
  */
-function getSupportedAdServers(_window) {
+export function getSupportedAdServers(_window) {
     // Define an array of ad servers and corresponding checks.
     // Each object has a 'name' (ad server name) and a 'check' (function to verify if the ad server is present).
     const adServerChecks = [
@@ -194,7 +194,7 @@ function getSupportedAdServers(_window) {
  * @param {Object} _pbjs - The Prebid object from which the version will be extracted.
  * @returns {string} The formatted Prebid version (major.minor).
  */
-function getPrebidVersion(_pbjs) {
+export function getPrebidVersion(_pbjs) {
     return _pbjs?.version?.replace('v', '').split('-')[0].split('.').slice(0, 2).join('.');
 }
 
@@ -204,7 +204,7 @@ function getPrebidVersion(_pbjs) {
  * @param {object} _ADAGIO - The ADAGIO object containing version details.
  * @returns {boolean} `true` if the Adagio JS library is loaded, `false` otherwise.
  */
-function hasAdagioJsLoaded(_ADAGIO) {
+export function hasAdagioJsLoaded(_ADAGIO) {
     return Boolean(_ADAGIO && _ADAGIO?.versions?.adagiojs);
 }
 
@@ -215,7 +215,7 @@ function hasAdagioJsLoaded(_ADAGIO) {
  * @param {object} _ADAGIO - The ADAGIO object containing configuration data.
  * @returns {boolean} `true` if the wrapper's integrity is intact, `false` otherwise.
  */
-function hasWrapperIntegrity(wrapperName, _ADAGIO) {
+export function hasWrapperIntegrity(wrapperName, _ADAGIO) {
     // TODO
 }
 
@@ -225,7 +225,7 @@ function hasWrapperIntegrity(wrapperName, _ADAGIO) {
  * @param {object} _pbjs - The Prebid.js object.
  * @returns {object} An object containing `config`, `status`, and `details`.
  */
-function checkAdagioBidAdapter(_pbjs) {
+export function checkAdagioBidAdapter(_pbjs) {
     const hasAdapter = _pbjs.installedModules.includes('adagioBidAdapter');
     const modulesEmpty = !_pbjs.installedModules.length;
     const config = `installedModules.includes('adagioBidAdapter')`
@@ -244,7 +244,7 @@ function checkAdagioBidAdapter(_pbjs) {
  * @param {object} _pbjs - The Prebid.js object.
  * @returns {object} An object containing `config`, `status`, and `details`.
  */
-function checkRealTimeDataModule(_pbjs) {
+export function checkRealTimeDataModule(_pbjs) {
     const hasAdapter = _pbjs.installedModules.includes('rtdModule');
     const modulesEmpty = !_pbjs.installedModules.length;
     const config = `installedModules.includes('rtdModule')`
@@ -263,7 +263,7 @@ function checkRealTimeDataModule(_pbjs) {
  * @param {object} _pbjs - The Prebid.js object.
  * @returns {object} An object containing `config`, `status`, and `details`.
  */
-function checkAdagioRtdProviderModule(_pbjs) {
+export function checkAdagioRtdProviderModule(_pbjs) {
     const hasAdapter = _pbjs.installedModules.includes('adagioRtdProvider');
     const modulesEmpty = !_pbjs.installedModules.length;
     const config = `installedModules.includes('adagioRtdProvider')`
@@ -282,7 +282,7 @@ function checkAdagioRtdProviderModule(_pbjs) {
  * @param {object} _pbjs - The Prebid.js object.
  * @returns {object} An object containing `config`, `status`, and `details`.
  */
-function checkAdagioAnalyticsAdapter(_pbjs) {
+export function checkAdagioAnalyticsAdapter(_pbjs) {
     const hasAdapter = _pbjs.installedModules.includes('adagioAnalyticsAdapter');
     const modulesEmpty = !_pbjs.installedModules.length;
     const config = `installedModules.includes('adagioAnalyticsAdapter')`;
@@ -303,7 +303,7 @@ function checkAdagioAnalyticsAdapter(_pbjs) {
  * @param {string|null} expectedSiteName - The expected value for 'site', or null if no comparison is needed.
  * @returns {Object} An object containing the status of 'organizationId' and 'site' parameters.
  */
-function checkRealTimeDataConfig(_pbjs, expectedOrgId = null, expectedSiteName = null) {
+export function checkRealTimeDataConfig(_pbjs, expectedOrgId = null, expectedSiteName = null) {
     const { params: { organizationId, site } = {} } = 
         _pbjs.getConfig('realTimeData')?.dataProviders?.find(p => p.name === "adagio") || {};
 
@@ -328,7 +328,7 @@ function checkRealTimeDataConfig(_pbjs, expectedOrgId = null, expectedSiteName =
  * @param {object} _pbjs - The Prebid.js object.
  * @returns {object} An object containing `config`, `status`, and `details`.
  */
-function checkAdagioLocalStorage(_pbjs) {
+export function checkAdagioLocalStorage(_pbjs) {
     const standardStorage = _pbjs?.bidderSettings?.standard?.storageAllowed;
     const adagioStorage = _pbjs?.bidderSettings?.adagio?.storageAllowed;
 
@@ -342,7 +342,7 @@ function checkAdagioLocalStorage(_pbjs) {
  * @param {object} _pbjs - The Prebid.js object.
  * @returns {object} An object containing `config`, `status`, and `details`.
  */
-function checkDeviceAccess(_pbjs) {
+export function checkDeviceAccess(_pbjs) {
     const deviceAccess = _pbjs.getConfig(`deviceAccess`);
     return {
         config: `getConfig('deviceAccess')`,
@@ -357,7 +357,7 @@ function checkDeviceAccess(_pbjs) {
  * @param {object} _pbjs - The Prebid.js object.
  * @returns {object} An object containing `config`, `status`, and `details`.
  */
-function checkAdagioUserSync(_pbjs) {
+export function checkAdagioUserSync(_pbjs) {
     const userSync = _pbjs?.getConfig('userSync');
     if (!userSync) return { config: `getConfig('userSync')`, status: 'KO', details: 'User sync is not configured.' };
 
@@ -376,7 +376,7 @@ function checkAdagioUserSync(_pbjs) {
  * @param {object} _pbjs - The Prebid.js object.
  * @returns {Array} An array of Adagio bids or an empty array if none found.
  */
-function getAdagioBidRequested(_pbjs) {
+export function getAdagioBidRequested(_pbjs) {
     return _pbjs.getEvents()
         .filter(e => e.eventType === `bidRequested` && e?.args?.bidderCode.toLowerCase().includes('adagio'))
         .flatMap(e => e?.args?.bids || []);
@@ -389,7 +389,7 @@ function getAdagioBidRequested(_pbjs) {
  * @param {Array} adagioBidRequested - The Adagio bid request data.
  * @returns {Array} An array of unique organization IDs that are valid.
  */
-function getAdagioOrganizationIds(adagioBidRequested) {
+export function getAdagioOrganizationIds(adagioBidRequested) {
     const organizationIds = new Set();
 
     adagioBidRequested.forEach((e) => {
@@ -410,7 +410,7 @@ function getAdagioOrganizationIds(adagioBidRequested) {
  * @param {object} bid - The bid object containing the organization ID parameter.
  * @returns {object} An object with `config`, `value`, `status`, and `details` indicating the result of the check.
  */
-function checkOrganizationIdParam(bid) {
+export function checkOrganizationIdParam(bid) {
     const organizationId = bid?.params?.organizationId;
     const config = 'params.organizationId';
 
@@ -429,7 +429,7 @@ function checkOrganizationIdParam(bid) {
  * @param {string|null} expectedSiteName - The expected value for the `site` parameter, or `null` if no comparison is required.
  * @returns {object} An object with `config`, `value`, `status`, and `details` indicating the result of the check.
  */
-function checkSiteParam(bid, expectedSiteName) {
+export function checkSiteParam(bid, expectedSiteName) {
     const site = bid?.params?.site, config = 'params.site';
 
     if (!site) return { config, value: site, status: 'KO', details: 'Parameter undefined.' };
@@ -446,7 +446,7 @@ function checkSiteParam(bid, expectedSiteName) {
  * @param {number} prebidVersion - The version of Prebid being used.
  * @returns {object} An object containing `config`, `value`, `status`, and `details`.
  */
-function checkPlacementParam(bid, prebidVersion) {
+export function checkPlacementParam(bid, prebidVersion) {
     const ortb2Placement = bid?.ortb2Imp?.ext?.data?.placement;
     const paramPlacement = bid?.params?.placement;
     const useFallback = prebidVersion >= 9 && ortb2Placement === undefined;
@@ -470,7 +470,7 @@ function checkPlacementParam(bid, prebidVersion) {
  * @param {number} prebidVersion - The version of Prebid being used.
  * @returns {object} An object containing `config`, `value`, `status`, and `details`.
  */
-function checkAdUnitElementIdParam(bid, prebidVersion) {
+export function checkAdUnitElementIdParam(bid, prebidVersion) {
     const ortb2DivId = bid?.ortb2Imp?.ext?.data?.divId;
     const paramAdUnitElementId = bid?.params?.adUnitElementId;
     const useFallback = prebidVersion >= 9 && ortb2DivId === undefined;
@@ -496,7 +496,7 @@ function checkAdUnitElementIdParam(bid, prebidVersion) {
  * @param {number} prebidVersion - The version of Prebid being used.
  * @returns {object} An object containing `config`, `value`, `status`, and `details`.
  */
-function checkPagetypeParam(_pbjs, bid, prebidVersion) {
+export function checkPagetypeParam(_pbjs, bid, prebidVersion) {
     const ortb2Pagetype = _pbjs.getConfig('ortb2')?.site?.ext?.data?.pagetype;
     const paramPageType = bid?.params?.pagetype;
     const useFallback = prebidVersion >= 9 && ortb2Pagetype === undefined;
@@ -521,7 +521,7 @@ function checkPagetypeParam(_pbjs, bid, prebidVersion) {
  * @param {number} prebidVersion - The version of Prebid being used.
  * @returns {object} An object containing `config`, `value`, `status`, and `details`.
  */
-function checkCategoryParam(_pbjs, bid, prebidVersion) {
+export function checkCategoryParam(_pbjs, bid, prebidVersion) {
     const ortb2Category = _pbjs.getConfig('ortb2')?.site?.ext?.data?.category;
     const paramCategory = bid?.params?.category;
     const useFallback = prebidVersion >= 9 && ortb2Category === undefined;
