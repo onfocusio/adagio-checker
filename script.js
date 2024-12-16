@@ -1921,13 +1921,14 @@ async function runAdagioAPI(queryString) {
             },
         });
         if (!response.ok) {
-            alertTextDiv.innerHTML += `<small>• Adagio API - <code>🔴 ${response.status}</code></small><br>`;
-            throw new Error(`HTTP error! status: ${response.status}`);
+            // alertTextDiv.innerHTML += `<small>• Adagio API - <code>🔴 ${response.status}</code></small><br>`;
+            throw new Error(response.status);
         }
         const data = await response.json();
         return data;
     } catch (error) {
-        alertTextDiv.innerHTML += `<small>• Adagio API - <code>🔴 Error fetching from Adagio API - ${error}</code></small><br>`;
+        console.log(error);
+        alertTextDiv.innerHTML += `<small>• Adagio API - <code>🔴 Error on loading: ${error}</code></small><br>`;
         return null;
     }
 }
