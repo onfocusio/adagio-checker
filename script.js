@@ -2269,11 +2269,20 @@ function checkAdagioLocalStorage() {
                 `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>false</code>`,
             );
         } else {
-            appendCheckerRow(
-                STATUSBADGES.KO,
-                ADAGIOCHECK.LOCALSTORAGE,
-                "Localstorage not found. If detected on network, contact dev!",
-            );
+            if (prebidVersion >= 9) {
+                appendCheckerRow(
+                    STATUSBADGES.NA,
+                    ADAGIOCHECK.LOCALSTORAGE,
+                    "Localstorage not found. But not required anymore since Prebid 9.",
+                );
+            }
+            else {
+                appendCheckerRow(
+                    STATUSBADGES.KO,
+                    ADAGIOCHECK.LOCALSTORAGE,
+                    "Localstorage not found. But not required anymore since Prebid 9.",
+                );
+            }
         }
     }
 }
