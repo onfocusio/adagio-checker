@@ -1708,27 +1708,34 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 
             // Check the video playbackmethod
             if (mediatypeVideoPlaybackMethod) {
-                if (mediatypeVideoPlaybackMethod.includes(6)) {
+                const expectedMethod = hasInstreamContext ? 2 : (hasOutstreamContext ? 6 : null);
+            
+                if (expectedMethod && !mediatypeVideoPlaybackMethod.includes(expectedMethod)) {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.CHECK,
+                        `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                        `Recommended playback method is: [${expectedMethod}].`,
+                    ]);
+                } else if (!expectedMethod) {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.CHECK,
+                        `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
+                        `No playback method detected or context not available.`,
+                    ]);
+                } else {
                     paramsCheckingArray.push([
                         STATUSBADGES.OK,
                         `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
                         ``,
                     ]);
                 }
-                else {
-                    paramsCheckingArray.push([
-                        STATUSBADGES.CHECK,
-                        `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
-                        `We recommend to include <code>[6]</code>.`,
-                    ]);
-                }
-            }
-            else
+            } else {
                 paramsCheckingArray.push([
                     STATUSBADGES.CHECK,
                     `<code>mediaTypes.video.playbackmethod</code>: <code>${JSON.stringify(mediatypeVideoPlaybackMethod)}</code>`,
                     `No playback method detected.`,
                 ]);
+            }
 
             // Check the startdelay (for instream only)
             if (hasInstreamContext) {
