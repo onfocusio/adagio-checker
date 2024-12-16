@@ -598,5 +598,7 @@ export function run(_window, organizationId, siteName) {
         });
     });
 
+    console.log(results);
+
     return results;
 }
