@@ -1688,7 +1688,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 
             // Check the placement (for instream only)
             if (hasInstreamContext) {
-                if (mediatypeVideoPlcmt) {
+                if (mediatypeVideoPlcmt !== undefined) {
                     if (plcmtExpected.includes(mediatypeVideoPlcmt)) {
                         paramsCheckingArray.push([
                             STATUSBADGES.OK,
@@ -1713,7 +1713,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             }
 
             // Check the video playbackmethod
-            if (mediatypeVideoPlaybackMethod) {
+            if (mediatypeVideoPlaybackMethod !== undefined) {
                 const expectedMethod = hasInstreamContext ? 2 : (hasOutstreamContext ? 6 : null);
             
                 if (expectedMethod && !mediatypeVideoPlaybackMethod.includes(expectedMethod)) {
@@ -1745,7 +1745,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 
             // Check the startdelay (for instream only)
             if (hasInstreamContext) {
-                if(mediatypeVideoStartDelay) {
+                if(mediatypeVideoStartDelay !== undefined) {
                     paramsCheckingArray.push([
                         STATUSBADGES.OK,
                         `<code>mediaTypes.video.startdelay</code>: <code>${mediatypeVideoStartDelay}</code>`,
@@ -1763,7 +1763,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 
             // Check the protocols (for instream only)
             if (hasInstreamContext) {
-                if(mediatypeVideoStartProtocols) {
+                if(mediatypeVideoStartProtocols !== undefined) {
                     if (protocolsExpected.every(i => mediatypeVideoStartProtocols.includes(i))) {
                         paramsCheckingArray.push([
                             STATUSBADGES.OK,
