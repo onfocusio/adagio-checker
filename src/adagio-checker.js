@@ -164,9 +164,9 @@ function buildOverlayHtml() {
     ul.appendChild(
         buildApiButton("API status", ADAGIOSVG.APIGREY, true),
     );
-    /*ul.appendChild(
+    ul.appendChild(
         buildPrebidButton("Prebid versions detected", ADAGIOSVG.PREBID, true),
-    );*/
+    );
     ul.appendChild(
         buildDebuggingButton("Enable debbug mode and reload page",ADAGIOSVG.DEBUGGING,true,),
     );
