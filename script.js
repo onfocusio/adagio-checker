@@ -1714,7 +1714,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 
             // Check the video playbackmethod
             if (mediatypeVideoPlaybackMethod !== undefined) {
-                const expectedMethod = hasInstreamContext ? 2 : (hasOutstreamContext ? 6 : null);
+                const expectedMethod = hasInstreamContext ? 1 : (hasOutstreamContext ? 6 : null);
             
                 if (expectedMethod && !mediatypeVideoPlaybackMethod.includes(expectedMethod)) {
                     paramsCheckingArray.push([
@@ -2525,6 +2525,12 @@ function checkAdagioAdUnitParams() {
         prebidAdagioBidsRequested = prebidBids.filter((e) =>
             e.bidder?.toLowerCase()?.includes("adagio"),
         );
+
+        console.log(prebidEvents);
+        console.log(prebidBidsRequested);
+        console.log(prebidBidders);
+        console.log(prebidBids);
+        console.log(prebidAdagioBidsRequested);
         
         // Find the params for Adagio adUnits and update manager URL
         prebidAdagioParams = prebidAdagioBidsRequested.map((e) => e.params);
