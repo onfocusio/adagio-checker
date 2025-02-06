@@ -1394,24 +1394,29 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             divIdStatus = STATUSBADGES.OK;
             divIdSetup = "ortb2Imp.ext.data.divId";
             divIdRes = ortb2ImpDivId;
+            divIdDetails = '';
         } else if (paramAdUnitElementId !== undefined) {
             divIdStatus = STATUSBADGES.INFO; // STATUSBADGES.UPDATE;
             divIdSetup = "params.adUnitElementId";
             divIdRes = paramAdUnitElementId;
+            divIdDetails = 'Recommendation: Setup the new divId param in ortb2Imp.';
         } else {
             divIdStatus = STATUSBADGES.KO;
             divIdSetup = "ortb2Imp.ext.data.divId";
             divIdRes = undefined;
+            divIdDetails = '';
         }
     } else {
         if (paramAdUnitElementId !== undefined) {
             divIdStatus = STATUSBADGES.OK;
             divIdSetup = "params.adUnitElementId";
             divIdRes = paramAdUnitElementId;
+            divIdDetails = '';
         } else {
             divIdStatus = STATUSBADGES.KO;
             divIdSetup = "params.adUnitElementId";
             divIdRes = undefined;
+            divIdDetails = '';
         }
     }
     // AdUnitElementId (3/3): Then ensure the value is correct
@@ -1439,7 +1444,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             paramsCheckingArray.push([
                 divIdStatus,
                 `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
-                ``,
+                divIdDetails,
             ]);
     }
 
