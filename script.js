@@ -202,45 +202,39 @@ function createOverlay() {
 }
 
 function getPrebidWrappers() {
-    // To add: getGlobal() => https://github.com/prebid/Prebid.js/pull/9568
-    // Look for pbjs object (pbjs, hubjs, etc...)
-    if (window._pbjsGlobals !== undefined && window._pbjsGlobals !== null) {
-        for (let wrapper of window._pbjsGlobals) {
-            if (window[wrapper]?.version && typeof window[wrapper].getEvents === 'function') {
-                prebidWrappers.push([wrapper, window]);
+    
+    // Helper function to check and push valid wrappers, ensuring no duplicates
+    const addWrappers = (windowObj, wrapperList) => {
+        wrapperList.forEach(wrapper => {
+            const instance = windowObj[wrapper];
+            // Only add the wrapper if it's valid and not already in prebidWrappers
+            if (instance?.version && typeof instance.getEvents === 'function' &&
+                !prebidWrappers.some(([existingWrapper, existingWindow]) =>
+                    existingWrapper === wrapper && existingWindow === windowObj
+                )) {
+                prebidWrappers.push([wrapper, windowObj]);
             }
+        });
+    };
+
+    // Check top window for Prebid wrappers
+    if (window._pbjsGlobals) addWrappers(window, window._pbjsGlobals);
+
+    // Check iframes for Prebid wrappers
+    Array.from(window.document.getElementsByTagName(`iframe`)).forEach(iframe => {
+        try {
+            const iframeDoc = iframe.contentWindow;
+            if (iframeDoc._pbjsGlobals) addWrappers(iframeDoc, iframeDoc._pbjsGlobals);
+        } catch (e) {
+            // Ignore iframe access errors (cross-origin or others)
         }
-        prebidWrapper = prebidWrappers[0];
-        prebidObject = prebidWrapper[1][prebidWrapper[0]];
+    });
+
+    // Check ADAGIO versions for hidden wrappers, using addWrappers for consistency
+    if (adagioAdapter !== undefined && adagioAdapter?.versions !== undefined) {
+        addWrappers(window, Object.keys(adagioAdapter.versions).filter(item => item !== 'adagiojs'));
     }
-    // In some configurations, the wrapper is inside iframes
-    else {
-        const iframes = document.getElementsByTagName("iframe");
-        for (let iframe of iframes) {
-            try {
-                const prebidIframeDoc = iframe.contentWindow;
-                if (prebidIframeDoc._pbjsGlobals !== undefined) {
-                    for (let wrapper of prebidIframeDoc._pbjsGlobals) {
-                        if (prebidIframeDoc[wrapper]?.version && typeof prebidIframeDoc[wrapper].getEvents === 'function') {
-                            prebidWrappers.push([wrapper, prebidIframeDoc]);
-                        }
-                    }
-                }
-            } catch (error) {
-                // Expected output: ReferenceError: nonExistentFunction is not defined
-                // (Note: the exact output may be browser-dependent)
-            }
-        }
-    }   
-    // If no wrapper are found but there's traffic, it may be because of a bad parametering of the wrapper name
-    // We will catch the wrapper name using the ADAGIO.versions results
-    if (prebidWrappers.length === 0) {
-        if (window.ADAGIO !== undefined) {
-            for (let item in ADAGIO.versions) {
-                if (item !== 'adagiojs') prebidWrappers.push([item, window]);
-            }
-        }
-    }
+
     // If a pbjs wrapper name is detected, set it as active item by default
     if (prebidWrappers.length !== 0) {
         const pbjsItem = prebidWrappers.find(item => item.includes('pbjs'));
