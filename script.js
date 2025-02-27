@@ -1669,7 +1669,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
                         `No mimes detected.`,
                     ]);
                 }
-                else if (!mimesExpected.every(i => mediatypeVideoApi.includes(i))) {
+                else if (!mimesExpected.every(i => mediatypeVideoMimes.includes(i))) {
                     paramsCheckingArray.push([
                         STATUSBADGES.CHECK,
                         `<code>mediaTypes.video.mimes</code>: <code>${JSON.stringify(mediatypeVideoMimes)}</code>`,
@@ -2053,7 +2053,6 @@ function checkAdagioModule() {
         }
         // Define and set wrapper integrity log
         let wrapperIntegrityLog = `• Wrapper integrity: <code>🟢 Successed</code>`;
-        console.log(prebidWrappers);
         let brokenWrapperStringName = `${prebidWrapper[0]}AdUnits`;
         if (pbjsAdUnits === undefined || !Array.isArray(pbjsAdUnits) || (pbjsAdUnits.length === 0 && (adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs'))) {
             wrapperIntegrityLog =  `• Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`;
@@ -2526,12 +2525,6 @@ function checkAdagioAdUnitParams() {
         prebidAdagioBidsRequested = prebidBids.filter((e) =>
             e.bidder?.toLowerCase()?.includes("adagio"),
         );
-
-        console.log(prebidEvents);
-        console.log(prebidBidsRequested);
-        console.log(prebidBidders);
-        console.log(prebidBids);
-        console.log(prebidAdagioBidsRequested);
         
         // Find the params for Adagio adUnits and update manager URL
         prebidAdagioParams = prebidAdagioBidsRequested.map((e) => e.params);
