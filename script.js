@@ -2053,11 +2053,13 @@ function checkAdagioModule() {
         }
         // Define and set wrapper integrity log
         let wrapperIntegrityLog = `• Wrapper integrity: <code>🟢 Successed</code>`;
+        console.log(prebidWrappers);
+        let brokenWrapperStringName = `${prebidWrapper[0]}AdUnits`;
         if (pbjsAdUnits === undefined || !Array.isArray(pbjsAdUnits) || (pbjsAdUnits.length === 0 && (adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs'))) {
             wrapperIntegrityLog =  `• Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`;
             adagioModuleStatus = STATUSBADGES.CHECK;
         }
-        else if (adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs') {
+        else if (adagioAdapter[brokenWrapperStringName] !== undefined && prebidWrapper[0] !== 'pbjs') {
             wrapperIntegrityLog =  `• Wrapper integrity: <code>🟠 Fixed: Try to contact client for bad behavior.</code>`;
         }
         // Display the final log
@@ -2899,6 +2901,7 @@ function checkAdagioCMP() {
         cmpAdagioBidders.set(90, "E-Planning");
         cmpAdagioBidders.set(285, "Freewheel");
         cmpAdagioBidders.set(149, "Illumin / ADman");
+        cmpAdagioBidders.set(149, "Insticator");
         cmpAdagioBidders.set(253, "Improve Digital");
         cmpAdagioBidders.set(10, "Index Exchange");
         cmpAdagioBidders.set(36, "Nexxen (Unruly)");
