@@ -1713,7 +1713,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 
             // Check the video playbackmethod
             if (mediatypeVideoPlaybackMethod !== undefined) {
-                const expectedMethod = hasInstreamContext ? 1 : (hasOutstreamContext ? 6 : null);
+                const expectedMethod = hasInstreamContext ? 2 : (hasOutstreamContext ? 6 : null);
             
                 if (expectedMethod && !mediatypeVideoPlaybackMethod.includes(expectedMethod)) {
                     paramsCheckingArray.push([
