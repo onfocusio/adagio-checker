@@ -1877,9 +1877,7 @@ async function checkAdagioAPI() {
             // Check if the records provides a domain match and a sitename match
             matchedDomainRecords =
                 orgIdApiDataResponse.records.filter((record) =>
-                    record.domain.includes(
-                        window.location.hostname.replace("www.", ""),
-                    ),
+                    window.location.hostname.includes(record.domain),
                 ) || null;
             matchedSiteNameRecords =
                 orgIdApiDataResponse.records.filter((record) =>
@@ -1888,7 +1886,7 @@ async function checkAdagioAPI() {
             successRecordItems =
                 matchedDomainRecords.filter((domainRecord) =>
                     matchedSiteNameRecords.filter(
-                        (siteNameRecore) => domainRecord === siteNameRecore,
+                        (siteNameRecord) => domainRecord === siteNameRecord,
                     ),
                 ) || null;
 
