@@ -2892,7 +2892,7 @@ function checkAdagioCMP() {
         cmpAdagioBidders.set(90, "E-Planning");
         cmpAdagioBidders.set(285, "Freewheel");
         cmpAdagioBidders.set(149, "Illumin / ADman");
-        cmpAdagioBidders.set(149, "Insticator");
+        cmpAdagioBidders.set(910, "Insticator");
         cmpAdagioBidders.set(253, "Improve Digital");
         cmpAdagioBidders.set(10, "Index Exchange");
         cmpAdagioBidders.set(36, "Nexxen (Unruly)");
