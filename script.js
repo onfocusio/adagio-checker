@@ -235,11 +235,33 @@ function getPrebidWrappers() {
         addWrappers(window, Object.keys(adagioAdapter.versions).filter(item => item !== 'adagiojs'));
     }
 
-    // If a pbjs wrapper name is detected, set it as active item by default
+    // Pre-select the wrapper based on adagio bidrequests, or name 'pbjs'
     if (prebidWrappers.length !== 0) {
-        const pbjsItem = prebidWrappers.find(item => item.includes('pbjs'));
-        if (pbjsItem != undefined) prebidWrapper = pbjsItem;
-        else prebidWrapper = prebidWrappers[0];
+        let maxAdagioBids, maxBids = 0;
+        let maxAdagioBidsWrapper, maxBidsWrapper = null; // prebidWrappers[0];
+
+        prebidWrappers.forEach(([wrapper, win]) => {
+            const instance = win[wrapper];
+            if (instance?.getEvents) {
+                const bids = instance.getEvents()?.filter(event => event.eventType === "bidRequested") || [];
+                const bidsCount = bids.length;
+                const adagioBidsCount = bids.filter(bid => bid.bidder?.toLowerCase().includes("adagio")).length;
+
+                if (bidsCount >= maxBids) {
+                    maxBids = bidsCount;
+                    maxBidsWrapper = [wrapper, win];
+                }
+                if (adagioBidsCount >= maxAdagioBids) {
+                    maxAdagioBids = adagioBidsCount;
+                    maxAdagioBidsWrapper = [wrapper, win];
+                }
+            }
+        });
+
+        // Select the wrapper based on priority: most Adagio bids > most bids > first wrapper
+        prebidWrapper = maxAdagioBids > 0 ? maxAdagioBidsWrapper :
+                maxBids > 0 ? maxBidsWrapper :
+                prebidWrappers[0];
         prebidObject = prebidWrapper[1][prebidWrapper[0]];
     }
 }
@@ -436,7 +458,7 @@ function buildPrebidButton(name, svg, isactive) {
         if (prebidWrappers[i][1] !== window) itemLabel.innerHTML += " (iframe)";
 
         // If current wrapper is the used one at the moment, check the radio
-        if (prebidWrapper === item) {
+        if (prebidWrapper[0] === item[0] && Object.is(prebidWrapper[1], item[1])) {
             itemInput.checked = true;
         }
 
