@@ -138,17 +138,19 @@ const ADAGIOPARAMS = {
  * Main
  ************************************************************************************************************************************************************************************************************************************/
 
-createOverlay();
-getPrebidWrappers();
-buildOverlayHtml();
-buildAdagioButton();
-createManagerDiv();
-createCheckerDiv();
-createAdUnitsDiv();
-createConsentsDiv();
-// createBuyerUidsDiv();
-makeIframeDraggable();
-runCheck();
+function run() {;
+    createOverlay();
+    getPrebidWrappers();
+    buildOverlayHtml();
+    buildAdagioButton();
+    createManagerDiv();
+    createCheckerDiv();
+    createAdUnitsDiv();
+    createConsentsDiv();
+    makeIframeDraggable();
+    runCheck();
+}
+run();
 
 /*************************************************************************************************************************************************************************************************************************************
  * HTML functions
@@ -157,6 +159,7 @@ runCheck();
 function createOverlay() {
     // create a new button element
     buttonFrame = window.document.createElement("iframe");
+    buttonFrame.setAttribute("id", "adagio-button-frame");
     buttonFrame.style.position = "fixed";
     buttonFrame.style.top = "10px";
     buttonFrame.style.right = "10px";
@@ -172,6 +175,7 @@ function createOverlay() {
 
     // create a new iframe element
     overlayFrame = window.document.createElement("iframe");
+    buttonFrame.setAttribute("id", "adagio-overlay-frame");
     overlayFrame.classList.add("adagio-overlay");
     overlayFrame.style.position = "fixed";
     overlayFrame.style.top = "10px";
@@ -466,7 +470,7 @@ function buildPrebidButton(name, svg, isactive) {
             if (itemInput.checked) {
                 prebidWrapper = prebidWrappers[itemInput.value];
                 prebidObject = prebidWrapper[1][prebidWrapper[0]];
-                refreshTables();
+                refreshChecker();
             }
         });
 
@@ -527,7 +531,7 @@ function buildRefreshButton(name, svg, isactive) {
     button.setAttribute("title", name);
     if (!isactive) button.disabled = true;
     button.innerHTML = svg;
-    button.addEventListener("click", () => refreshTables());
+    button.addEventListener("click", () => refreshChecker());
     button.classList.add("outline");
     button.style.borderColor = "transparent";
     button.style.padding = "0.3em";
@@ -1012,25 +1016,18 @@ function loadDebuggingMode() {
     window.location.href = url;
 }
 
-function refreshTables() {
-    goTopPage();
-    const checkertbody = overlayFrameDoc.getElementById(
-        `${ADAGIOTABSNAME.CHECKER.toLowerCase().replace(" ", "-")}-tbody`,
-    );
-    const checkeradunits = overlayFrameDoc.getElementById(
-        `${ADAGIOTABSNAME.ADUNITS.toLowerCase().replace(" ", "-")}-tbody`,
-    );
-    const checkerconsents = overlayFrameDoc.getElementById(
-        `${ADAGIOTABSNAME.CONSENTS.toLowerCase().replace(" ", "-")}-tbody`,
-    );
-    const alertTextDiv = overlayFrameDoc.getElementById(
-        `${ADAGIOTABSNAME.CHECKER.toLowerCase().replace(" ", "-")}-alert`,
-    );
-    checkertbody.innerHTML = "";
-    checkeradunits.innerHTML = "";
-    checkerconsents.innerHTML = "";
-    alertTextDiv.innerHTML = ""; 
-    runCheck();
+function refreshChecker() {
+    // Remove the adagio-button-frame and adagio-overlay-frame elements if they exist
+    const buttonFrameElement = document.getElementById("adagio-button-frame");
+    if (buttonFrameElement) {
+        buttonFrameElement.remove();
+    }
+    const overlayFrameElement = document.getElementById("adagio-overlay-frame");
+    if (overlayFrameElement) {
+        overlayFrameElement.remove();
+    }
+    // Then re-run the checker
+    run();
 }
 
 function displayAdunits(eyeButton) {
