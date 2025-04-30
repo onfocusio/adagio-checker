@@ -1333,6 +1333,12 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     let ortb2ImpPlacement = bid?.ortb2Imp?.ext?.data?.placement;
     let ortb2ImpDivId = bid?.ortb2Imp?.ext?.data?.divId;
 
+    // Since Prebid 9.39, Adagio supports interstitial and rewarded
+    let ortb2ImpInterstitial = bid?.ortb2Imp?.instl;
+    let ortb2ImpRewarded = bid?.ortb2Imp?.rwdd;
+    let deepOrtb2ImpInterstitial = findParam(bid, 'instl') || null;
+    let deepOrtb2ImpRewarded = findParam(bid, 'rwdd') || null;
+
     if (paramOrganizationId === undefined) {
         MY_BROKENOBJECT = bid.params;
     }
@@ -1810,6 +1816,68 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             } 
         }
 
+        // Interstitial - Supported since Prebid 9.39, should be in ortb2Imp.
+    if (ortb2ImpInterstitial !== undefined) {
+        if (prebidVersion < 9.39) {
+            paramsCheckingArray.push([
+                STATUSBADGES.INFO,
+                `<code>ortb2Imp.instl</code>: <code>${ortb2ImpInterstitial}</code>`,
+                'Not supported before Prebid 9.39.',
+            ]);
+        } else {
+            paramsCheckingArray.push([
+                STATUSBADGES.OK,
+                `<code>ortb2Imp.instl</code>: <code>${ortb2ImpInterstitial}</code>`,
+                '',
+            ]);
+        }
+    }
+    else if (deepOrtb2ImpInterstitial !== null) {
+        paramsCheckingArray.push([
+            prebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+            `<code>${deepOrtb2ImpInterstitial.path}</code>: <code>${deepOrtb2ImpInterstitial.value}</code>`,
+            'Misplaced, should be in <code>ortb2Imp.instl</code>.',
+        ]);
+    }
+    else {
+        paramsCheckingArray.push([
+            prebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+            `<code>ortb2Imp.instl</code>: <code>undefined</code>`,
+            'No interstitial parameter detected.',
+        ]);
+    }
+    
+    // Rewarded - Supported since Prebid 9.39, should be in ortb2Imp.
+    if (ortb2ImpRewarded !== undefined) {
+        if (prebidVersion < 9.39) {
+            paramsCheckingArray.push([
+                STATUSBADGES.INFO,
+                `<code>ortb2Imp.rwdd</code>: <code>${ortb2ImpRewarded}</code>`,
+                'Not supported before Prebid 9.39.',
+            ]);
+        } else {
+            paramsCheckingArray.push([
+                STATUSBADGES.OK,
+                `<code>ortb2Imp.rwdd</code>: <code>${ortb2ImpRewarded}</code>`,
+                '',
+            ]);
+        }
+    }
+    else if (deepOrtb2ImpRewarded !== null) {
+        paramsCheckingArray.push([
+            prebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+            `<code>${deepOrtb2ImpRewarded.path}</code>: <code>${deepOrtb2ImpRewarded.value}</code>`,
+            'Misplaced, should be in <code>ortb2Imp.rwdd</code>',
+        ]);
+    }
+    else {
+        paramsCheckingArray.push([
+            prebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+            `<code>ortb2Imp.rwdd</code>: <code>undefined</code>`,
+            'No rewarded parameter detected.',
+        ]);
+    }
+
         if (mediatypeNative !== undefined) {
             // TODO
         }
@@ -1824,6 +1892,24 @@ function computeAdUnitStatus(paramsCheckingArray) {
         statuses.indexOf(current[0]) > statuses.indexOf(highest) ? current[0] : highest, STATUSBADGES.OK
     );
     return highestStatus;
+}
+
+// Deep search for a specific parameter in the bid object
+function findParam(obj, param, path = []) {
+    for (let key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            const currentPath = [...path, key];
+            if (key === param) {
+                return { path: currentPath.join('.'), value: obj[key] };
+            } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                const result = findParam(obj[key], param, currentPath);
+                if (result) {
+                    return result;
+                }
+            }
+        }
+    }
+    return null;
 }
 
 /*************************************************************************************************************************************************************************************************************************************
