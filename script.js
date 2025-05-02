@@ -263,10 +263,12 @@ function getPrebidWrappers() {
         });
 
         // Select the wrapper based on priority: most Adagio bids > most bids > first wrapper
-        prebidWrapper = maxAdagioBids > 0 ? maxAdagioBidsWrapper :
-                maxBids > 0 ? maxBidsWrapper :
-                prebidWrappers[0];
-        prebidObject = prebidWrapper[1][prebidWrapper[0]];
+        if (prebidWrapper === undefined && prebidObject === undefined) {
+            prebidWrapper = maxAdagioBids > 0 ? maxAdagioBidsWrapper :
+                    maxBids > 0 ? maxBidsWrapper :
+                    prebidWrappers[0];
+            prebidObject = prebidWrapper[1][prebidWrapper[0]];
+        }
     }
 }
 
