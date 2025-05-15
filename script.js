@@ -1351,24 +1351,23 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             `Parameter not found.`,
         ]);
     else {
-        if (paramOrganizationId.length !== 4)
+        // Accept both integer and string representations of 4-digit numbers
+        if (
+            (typeof paramOrganizationId === "string" && !/^\d{4}$/.test(paramOrganizationId)) ||
+            (typeof paramOrganizationId === "number" && (paramOrganizationId < 1000 || paramOrganizationId > 9999))
+        ) {
             paramsCheckingArray.push([
                 STATUSBADGES.CHECK,
                 `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
-                `More than 4 characters detected.`,
+                `Should be a 4-digit integer or string (e.g., 1000 or '1000').`,
             ]);
-        else if (/\D/.test(paramOrganizationId) !== false)
-            paramsCheckingArray.push([
-                STATUSBADGES.CHECK,
-                `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
-                `Contains non-integer caracters.`,
-            ]);
-        else
-            paramsCheckingArray.push([
+        } else {
+                paramsCheckingArray.push([
                 STATUSBADGES.OK,
                 `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
                 ``,
             ]);
+        }
     }
 
     // Check the site name
