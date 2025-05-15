@@ -1088,6 +1088,8 @@ function createBidderParamsModal(bid, paramsCheckingArray, bidderAdagioDetected)
 }
 
 function updateManagerFilters(params) {
+    let organizationId = params?.organizationId;
+    if (organizationId !== undefined) organizationId = organizationId.toString();
     ADAGIOPARAMS.ORGANIZATIONID = params.organizationId;
     ADAGIOPARAMS.SITE = params.site;
 
@@ -1297,13 +1299,10 @@ function catchBidRequestsGlobalParams() {
             organizationIds = [];
             // Get all the orgId parameter value sent to fill organizationIds[]
             for (const param in prebidAdagioParams) {
-                let paramOrganizationId =
-                    prebidAdagioParams[param]?.organizationId;
-                if (
-                    paramOrganizationId !== undefined &&
-                    !organizationIds.includes(paramOrganizationId)
-                )
-                    organizationIds.push(paramOrganizationId);
+                // Accept both string and integer, but store as string
+                let paramOrganizationId = prebidAdagioParams[param]?.organizationId;
+                if (paramOrganizationId !== undefined) paramOrganizationId = paramOrganizationId.toString();
+                if (paramOrganizationId !== undefined && !organizationIds.includes(paramOrganizationId)) organizationIds.push(paramOrganizationId);
             }
             // Clear the array before filling it (usefull after wrapper switch)
             siteNames = [];
@@ -1324,6 +1323,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     
     // Check the adagio bidder params (orgId and site in params)
     let paramOrganizationId = bid?.params?.organizationId;
+    if (paramOrganizationId !== undefined) paramOrganizationId = paramOrganizationId.toString();
     let paramSite = bid?.params?.site;
 
     // Since Prebid 9, placement and divId should be in ortb2Imp
@@ -1351,11 +1351,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             `Parameter not found.`,
         ]);
     else {
-        // Accept both integer and string representations of 4-digit numbers
-        if (
-            (typeof paramOrganizationId === "string" && !/^\d{4}$/.test(paramOrganizationId)) ||
-            (typeof paramOrganizationId === "number" && (paramOrganizationId < 1000 || paramOrganizationId > 9999))
-        ) {
+        if (typeof paramOrganizationId === "string" && !/^\d{4}$/.test(paramOrganizationId)) {
             paramsCheckingArray.push([
                 STATUSBADGES.CHECK,
                 `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
@@ -2256,6 +2252,7 @@ function checkRealTimeDataProvider() {
             // If Adagio is find, check the parameters
             if (adagioRtdProvider !== null) {
                 let paramsOrgId = adagioRtdProvider?.params?.organizationId;
+                if (paramsOrgId !== undefined) paramsOrgId = paramsOrgId.toString();
                 let paramsSite = adagioRtdProvider?.params?.site;
                 // Check if params are well configured
                 if (paramsOrgId === undefined)
