@@ -1475,20 +1475,37 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     let placementRes = "";
     let placementDetails = "";
     // Placement (2/3): First checks if a value is found
-    if (prebidVersion >= 9 && prebidVersion < 10) {
+    if (prebidVersion >= 10) {
+        if (paramPlacement !== undefined) {
+            placementStatus = STATUSBADGES.OK;
+            placementSetup = "params.placement";
+            placementRes = paramPlacement;
+            placementDetails = '';
+        } else if (ortb2ImpPlacement !== undefined) {
+            placementStatus = STATUSBADGES.INFO;
+            placementSetup = "ortb2Imp.ext.data.placement";
+            placementRes = ortb2ImpPlacement;
+            placementDetails = 'Fallback: placement found in ortb2Imp, but should be in params.placement for Prebid 10+.';
+        } else {
+            placementStatus = STATUSBADGES.KO;
+            placementSetup = "params.placement";
+            placementRes = undefined;
+            placementDetails = '';
+        }
+    } else if (prebidVersion >= 9) {
         if (ortb2ImpPlacement !== undefined) {
             placementStatus = STATUSBADGES.OK;
             placementSetup = "ortb2Imp.ext.data.placement";
             placementRes = ortb2ImpPlacement;
             placementDetails = '';
         } else if (paramPlacement !== undefined) {
-            placementStatus = STATUSBADGES.INFO; // STATUSBADGES.UPDATE;
+            placementStatus = STATUSBADGES.INFO;
             placementSetup = "params.placement";
             placementRes = paramPlacement;
-            placementDetails = 'Recommendation: Setup the new placement param in ortb2Imp.'
+            placementDetails = 'Fallback: placement found in params, but should be in ortb2Imp.ext.data.placement for Prebid 9.x.';
         } else {
             placementStatus = STATUSBADGES.KO;
-            placementSetup = "ortb2Imp.placement";
+            placementSetup = "ortb2Imp.ext.data.placement";
             placementRes = undefined;
             placementDetails = '';
         }
