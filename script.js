@@ -1475,7 +1475,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     let placementRes = "";
     let placementDetails = "";
     // Placement (2/3): First checks if a value is found
-    if (prebidVersion >= 9) {
+    if (prebidVersion >= 9 && prebidVersion < 10) {
         if (ortb2ImpPlacement !== undefined) {
             placementStatus = STATUSBADGES.OK;
             placementSetup = "ortb2Imp.ext.data.placement";
