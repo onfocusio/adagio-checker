@@ -3007,6 +3007,7 @@ function checkAdagioCMP() {
         const cmpAdagioBidders = new Map();
         cmpAdagioBidders.set(617, "Adagio");
         cmpAdagioBidders.set(58, "33Across");
+        cmpAdagioBidders.set(14, "Adkernel (Madopi");
         cmpAdagioBidders.set(1218, "Aidem");
         cmpAdagioBidders.set(138, "ConnectAd");
         cmpAdagioBidders.set(90, "E-Planning");
