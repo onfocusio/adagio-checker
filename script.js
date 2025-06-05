@@ -3007,7 +3007,7 @@ function checkAdagioCMP() {
         const cmpAdagioBidders = new Map();
         cmpAdagioBidders.set(617, "Adagio");
         cmpAdagioBidders.set(58, "33Across");
-        cmpAdagioBidders.set(14, "Madopi");
+        cmpAdagioBidders.set(779, "Adtarget");
         cmpAdagioBidders.set(1218, "Aidem");
         cmpAdagioBidders.set(138, "ConnectAd");
         cmpAdagioBidders.set(90, "E-Planning");
@@ -3016,6 +3016,7 @@ function checkAdagioCMP() {
         cmpAdagioBidders.set(910, "Insticator");
         cmpAdagioBidders.set(253, "Improve Digital");
         cmpAdagioBidders.set(10, "Index Exchange");
+        cmpAdagioBidders.set(14, "Madopi");
         cmpAdagioBidders.set(36, "Nexxen (Unruly)");
         cmpAdagioBidders.set(241, "OneTag");
         cmpAdagioBidders.set(69, "OpenX");
