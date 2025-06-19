@@ -13,7 +13,7 @@ let prebidObject = undefined;
 let prebidWrappers = []; // arrays of [wrapper, window] : window[wrapper]
 let prebidWrapper = undefined;
 let adagioAdapter = undefined;
-let prebidVersion = undefined;
+let foundPrebidVersion = undefined;
 // Prebid events, bids and adUnits
 let prebidEvents = undefined;
 let prebidBidsRequested = undefined;
@@ -1264,12 +1264,12 @@ function computeBadgeToDisplay(isError, minVersion, maxVersion) {
     const max = maxVersion === null ? Infinity : maxVersion;
 
     if (isError === "warn") {
-        if (prebidVersion >= min && prebidVersion <= max) {
+        if (foundPrebidVersion >= min && foundPrebidVersion <= max) {
             return STATUSBADGES.CHECK;
         }
         return STATUSBADGES.INFO;
     } else if (isError) {
-        if (prebidVersion >= min && prebidVersion <= max) {
+        if (foundPrebidVersion >= min && foundPrebidVersion <= max) {
             return STATUSBADGES.KO;
         }
         return STATUSBADGES.INFO;
@@ -1406,7 +1406,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     let divIdSetup = "";
     let divIdRes = "";
     // AdUnitElementId (2/3): First checks if a value is found
-    if (prebidVersion >= 9) {
+    if (foundPrebidVersion >= 9) {
         if (ortb2ImpDivId !== undefined) {
             divIdStatus = STATUSBADGES.OK;
             divIdSetup = "ortb2Imp.ext.data.divId";
@@ -1471,7 +1471,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     let placementRes = "";
     let placementDetails = "";
     // Placement (2/3): First checks if a value is found
-    if (prebidVersion >= 10) {
+    if (foundPrebidVersion >= 10) {
         if (paramPlacement !== undefined) {
             placementStatus = STATUSBADGES.OK;
             placementSetup = "params.placement";
@@ -1488,7 +1488,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             placementRes = undefined;
             placementDetails = '';
         }
-    } else if (prebidVersion >= 9) {
+    } else if (foundPrebidVersion >= 9) {
         if (ortb2ImpPlacement !== undefined) {
             placementStatus = STATUSBADGES.OK;
             placementSetup = "ortb2Imp.ext.data.placement";
@@ -1838,7 +1838,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 
         // Interstitial - Supported since Prebid 9.39, should be in ortb2Imp.
     if (ortb2ImpInterstitial !== undefined) {
-        if (prebidVersion < 9.39) {
+        if (foundPrebidVersion < 9.39) {
             paramsCheckingArray.push([
                 STATUSBADGES.INFO,
                 `<code>ortb2Imp.instl</code>: <code>${ortb2ImpInterstitial}</code>`,
@@ -1854,14 +1854,14 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     }
     else if (deepOrtb2ImpInterstitial !== null) {
         paramsCheckingArray.push([
-            prebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+            foundPrebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
             `<code>${deepOrtb2ImpInterstitial.path}</code>: <code>${deepOrtb2ImpInterstitial.value}</code>`,
             'Misplaced, should be in <code>ortb2Imp.instl</code>.',
         ]);
     }
     else {
         paramsCheckingArray.push([
-            prebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+            foundPrebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
             `<code>ortb2Imp.instl</code>: <code>undefined</code>`,
             'No interstitial parameter detected.',
         ]);
@@ -1869,7 +1869,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     
     // Rewarded - Supported since Prebid 9.39, should be in ortb2Imp.
     if (ortb2ImpRewarded !== undefined) {
-        if (prebidVersion < 9.39) {
+        if (foundPrebidVersion < 9.39) {
             paramsCheckingArray.push([
                 STATUSBADGES.INFO,
                 `<code>ortb2Imp.rwdd</code>: <code>${ortb2ImpRewarded}</code>`,
@@ -1885,14 +1885,14 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     }
     else if (deepOrtb2ImpRewarded !== null) {
         paramsCheckingArray.push([
-            prebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+            foundPrebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
             `<code>${deepOrtb2ImpRewarded.path}</code>: <code>${deepOrtb2ImpRewarded.value}</code>`,
             'Misplaced, should be in <code>ortb2Imp.rwdd</code>',
         ]);
     }
     else {
         paramsCheckingArray.push([
-            prebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+            foundPrebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
             `<code>ortb2Imp.rwdd</code>: <code>undefined</code>`,
             'No rewarded parameter detected.',
         ]);
@@ -2143,7 +2143,7 @@ function checkPrebidVersion() {
             `<code>window._pbjsGlobals</code>: <code>undefined</code>`,
         );
     } else {
-        prebidVersion = prebidObject.version
+        foundPrebidVersion = prebidObject.version
             .replace("v", "")
             .split("-")[0]
             .split(".")
@@ -2409,7 +2409,7 @@ function checkAdagioLocalStorage() {
                 `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>false</code>`,
             );
         } else {
-            if (prebidVersion >= 9) {
+            if (foundPrebidVersion >= 9) {
                 appendCheckerRow(
                     STATUSBADGES.NA,
                     ADAGIOCHECK.LOCALSTORAGE,
@@ -2527,15 +2527,15 @@ function checkAdagioAnalyticsModule() {
 
     // Prebid Analytics is ready to use since Prebid 8.14
     // And additional 'options' parameters are required since Prebid 9
-    let hasEligibleVersion = prebidVersion > 8.14;
-    let hasPrebidNineVersion = prebidVersion > 9;
+    let hasEligibleVersion = foundPrebidVersion > 8.14;
+    let hasPrebidNineVersion = foundPrebidVersion > 9;
     let hasEnabledAnalytics = adagioAdapter.versions?.adagioAnalyticsAdapter;
 
     if (!hasEligibleVersion)
         appendCheckerRow(
             STATUSBADGES.INFO,
             ADAGIOCHECK.ANALYTICS,
-            `<code>${prebidWrapper[0]}.version</code>: <code>${prebidVersion}</code>`,
+            `<code>${prebidWrapper[0]}.version</code>: <code>${foundPrebidVersion}</code>`,
         );
     else if (!hasEnabledAnalytics)
         appendCheckerRow(
@@ -2547,7 +2547,7 @@ function checkAdagioAnalyticsModule() {
         appendCheckerRow(
             STATUSBADGES.OK,
             ADAGIOCHECK.ANALYTICS,
-            `Prebid version: <code>${prebidVersion}</code> / Analytics: <code>${hasEnabledAnalytics}</code>`,
+            `Prebid version: <code>${foundPrebidVersion}</code> / Analytics: <code>${hasEnabledAnalytics}</code>`,
         );
     else {
         // Try to retrieve the 'options' from the analytics wrapper configuration
