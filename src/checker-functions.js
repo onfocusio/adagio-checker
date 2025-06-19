@@ -169,7 +169,7 @@ export function getTcfApi(_window) {
  * This function checks for the presence of specific ad server SDKs and returns the names of the ones found.
  *
  * @param {Object} _window - The window object to check for ad server SDKs.
- * @returns {Array} - A list of supported ad server names.
+ * @returns {object} An object containing `title`, `config`, `value`, `status`, and `details`.
  */
 export function getSupportedAdServers(_window) {
     // Define an array of ad servers and corresponding checks.
@@ -183,7 +183,15 @@ export function getSupportedAdServers(_window) {
     // Filter the ad servers based on their checks and return an array of names of supported ad servers.
     // - filter() checks if the ad server is supported (i.e., the check function returns true).
     // - map() extracts the 'name' property of each supported ad server.
-    return adServerChecks.filter(server => server.check()).map(server => server.name);
+    const supportedAdServersDetected = adServerChecks.filter(server => server.check()).map(server => server.name);
+
+    return { 
+        title: 'Adservers',
+        config: '', 
+        value: supportedAdServersDetected, 
+        status: supportedAdServersDetected.length ? 'OK' : 'CHECK',
+        details: supportedAdServersDetected.length ? '' : 'No supported adserver detected.'
+    };
 }
 
 /**
@@ -223,18 +231,23 @@ export function hasWrapperIntegrity(wrapperName, _ADAGIO) {
  * Checks if the Adagio bidder adapter is installed.
  * 
  * @param {object} _pbjs - The Prebid.js object.
- * @returns {object} An object containing `config`, `status`, and `details`.
+ * @param {object} _ADAGIO - The ADAGIO object containing configuration data.
+ * @param {object} wrapperName - The Prebid.js object local name (pbjs, hubjs, ...).
+ * @returns {object} An object containing `title`, `config`, `value`, `status`, and `details`.
  */
-export function checkAdagioBidAdapter(_pbjs) {
+export function checkAdagioBidAdapter(_pbjs, _ADAGIO, wrapperName) {
+    const title = 'Adagio Bidder Adapter';
     const hasAdapter = _pbjs.installedModules.includes('adagioBidAdapter');
     const modulesEmpty = !_pbjs.installedModules.length;
-    const config = `installedModules.includes('adagioBidAdapter')`
+    const config = `${wrapperName}.installedModules.includes('adagioBidAdapter')`;
 
-    if (hasAdapter) return { config, status: 'OK', details: '' };
+    if (hasAdapter) return { title, config, value: hasAdapter, status: 'OK', details: '' };
     return {
+        title,
         config,
+        value: hasAdapter,
         status: modulesEmpty ? 'UNKNWN' : 'KO',
-        details: modulesEmpty ? 'installedModules[] is empty (often due to wrappers like hubjs).' : ''
+        details: modulesEmpty ? `${wrapperName}.installedModules is empty (often due to wrappers like hubjs).` : ''
     };
 }
 
@@ -242,18 +255,23 @@ export function checkAdagioBidAdapter(_pbjs) {
  * Checks if the Real-Time Data (rtdModule) is installed.
  * 
  * @param {object} _pbjs - The Prebid.js object.
- * @returns {object} An object containing `config`, `status`, and `details`.
+ * @param {object} _ADAGIO - The ADAGIO object containing configuration data.
+ * @param {object} wrapperName - The Prebid.js object local name (pbjs, hubjs, ...).
+ * @returns {object} An object containing `title`, `config`, `value`, `status`, and `details`.
  */
-export function checkRealTimeDataModule(_pbjs) {
+export function checkRealTimeDataModule(_pbjs, _ADAGIO, wrapperName) {
+    const title = 'Real Time Data Module';
     const hasAdapter = _pbjs.installedModules.includes('rtdModule');
     const modulesEmpty = !_pbjs.installedModules.length;
-    const config = `installedModules.includes('rtdModule')`
+    const config = `${wrapperName}.installedModules.includes('rtdModule')`
 
-    if (hasAdapter) return { config, status: 'OK', details: '' };
+    if (hasAdapter) return { title, config, value: hasAdapter, status: 'OK', details: '' };
     return {
+        title, 
         config,
+        value: hasAdapter,
         status: modulesEmpty ? 'UNKNWN' : 'KO',
-        details: modulesEmpty ? 'installedModules[] is empty (often due to wrappers like hubjs).' : ''
+        details: modulesEmpty ? `${wrapperName}.installedModules[] is empty (often due to wrappers like hubjs).` : ''
     };
 }
 
@@ -261,18 +279,23 @@ export function checkRealTimeDataModule(_pbjs) {
  * Checks if the Adagio RTD Provider (adagioRtdProvider) is installed.
  * 
  * @param {object} _pbjs - The Prebid.js object.
- * @returns {object} An object containing `config`, `status`, and `details`.
+ * @param {object} _ADAGIO - The ADAGIO object containing configuration data.
+ * @param {object} wrapperName - The Prebid.js object local name (pbjs, hubjs, ...).
+ * @returns {object} An object containing `title`, `config`, `value`, `status`, and `details`.
  */
-export function checkAdagioRtdProviderModule(_pbjs) {
+export function checkAdagioRtdProviderModule(_pbjs, _ADAGIO, wrapperName) {
+    const title = 'Adagio RTD Provider';
     const hasAdapter = _pbjs.installedModules.includes('adagioRtdProvider');
     const modulesEmpty = !_pbjs.installedModules.length;
-    const config = `installedModules.includes('adagioRtdProvider')`
+    const config = `${wrapperName}.installedModules.includes('adagioRtdProvider')`
 
-    if (hasAdapter) return { config, status: 'OK', details: '' };
+    if (hasAdapter) return { title, config, value: hasAdapter, status: 'OK', details: '' };
     return {
+        title,
         config,
+        value: hasAdapter,
         status: modulesEmpty ? 'UNKNWN' : 'KO',
-        details: modulesEmpty ? 'installedModules[] is empty (often due to wrappers like hubjs).' : ''
+        details: modulesEmpty ? `${wrapperName}.installedModules[] is empty (often due to wrappers like hubjs).` : ''
     };
 }
 
@@ -280,18 +303,23 @@ export function checkAdagioRtdProviderModule(_pbjs) {
  * Checks if the Adagio Analytics Adapter is installed via Prebid or detected in the ADAGIO object.
  * 
  * @param {object} _pbjs - The Prebid.js object.
- * @returns {object} An object containing `config`, `status`, and `details`.
+ * @param {object} _ADAGIO - The ADAGIO object containing configuration data.
+ * @param {object} wrapperName - The Prebid.js object local name (pbjs, hubjs, ...).
+ * @returns {object} An object containing `title`, `config`, `value`, `status`, and `details`.
  */
-export function checkAdagioAnalyticsAdapter(_pbjs) {
+export function checkAdagioAnalyticsAdapter(_pbjs, _ADAGIO, wrapperName) {
+    const title = 'Adagio Analytics Adapter';
     const hasAdapter = _pbjs.installedModules.includes('adagioAnalyticsAdapter');
     const modulesEmpty = !_pbjs.installedModules.length;
-    const config = `installedModules.includes('adagioAnalyticsAdapter')`;
+    const config = `${wrapperName}.installedModules.includes('adagioAnalyticsAdapter')`;
 
-    if (hasAdapter) return { config, status: 'OK', details: '' };
+    if (hasAdapter) return { title, config, value: hasAdapter, status: 'OK', details: '' };
     return {
+        title,
         config,
+        value: hasAdapter, 
         status: modulesEmpty ? 'UNKNWN' : 'KO',
-        details: modulesEmpty ? 'installedModules[] is empty (often due to wrappers like hubjs).' : ''
+        details: modulesEmpty ? `${wrapperName}.installedModules[] is empty (often due to wrappers like hubjs).` : ''
     };
 }
 
@@ -301,14 +329,15 @@ export function checkAdagioAnalyticsAdapter(_pbjs) {
  * @param {Object} _pbjs - The Prebid object containing the configuration.
  * @param {string|null} expectedOrgId - The expected value for 'organizationId', or null if no comparison is needed.
  * @param {string|null} expectedSiteName - The expected value for 'site', or null if no comparison is needed.
+ * @param {object} wrapperName - The Prebid.js object local name (pbjs, hubjs, ...).
  * @returns {Object} An object containing the status of 'organizationId' and 'site' parameters.
  */
-export function checkRealTimeDataConfig(_pbjs, expectedOrgId = null, expectedSiteName = null) {
+export function _checkRealTimeDataConfig(_pbjs, expectedOrgId = null, expectedSiteName = null, wrapperName) {
     const { params: { organizationId, site } = {} } = 
         _pbjs.getConfig('realTimeData')?.dataProviders?.find(p => p.name === "adagio") || {};
 
     const buildParamStatus = (value, expected, key) => ({
-        config: key,
+        config: `${wrapperName}.getConfig('realTimeData').dataProviders.adagio.${key}`,
         value,
         status: !value ? 'KO' : expected === null ? 'CHECK' : value !== expected ? 'KO' : 'OK',
         details: !value ? 'Parameter undefined.' : expected === null ? 'Could not check value validity.' : value !== expected ? `Expected '${expected}' but got '${value}'.` : ''
@@ -323,29 +352,74 @@ export function checkRealTimeDataConfig(_pbjs, expectedOrgId = null, expectedSit
 }
 
 /**
+ * Checks the configuration for 'realTimeData' in the Prebid object and returns the status of parameters.
+ * 
+ * @param {Object} _pbjs - The Prebid object containing the configuration.
+ * @param {string|null} expectedOrgId - The expected value for 'organizationId', or null if no comparison is needed.
+ * @param {string|null} expectedSiteName - The expected value for 'site', or null if no comparison is needed.
+ * @param {string} wrapperName - The Prebid.js object local name (pbjs, hubjs, ...).
+ * @returns {object} An object containing `title`, `config`, `value`, `status`, and `details`.
+ */
+export function checkRealTimeDataConfig(_pbjs, expectedOrgId = null, expectedSiteName = null, wrapperName) {
+    const adagioRtdConfig = _pbjs.getConfig('realTimeData')?.dataProviders?.find(p => p.name === "adagio");
+    const { params: { organizationId, site } = {} } = adagioRtdConfig || {};
+
+    const buildParamStatus = (value, expected, key) => ({
+        config: `${wrapperName}.getConfig('realTimeData').dataProviders.find(p => p.name === 'adagio').${key}`,
+        value,
+        status: !value ? 'KO' : expected === null ? 'CHECK' : value !== expected ? 'KO' : 'OK',
+        details: !value ? 'Parameter undefined.' : expected === null ? 'Could not check value validity.' : value !== expected ? `Expected '${expected}' but got '${value}'.` : ''
+    });
+
+    const orgStatus = buildParamStatus(organizationId, expectedOrgId, 'params.organizationId');
+    const siteStatus = buildParamStatus(site, expectedSiteName, 'params.site');
+
+    // Determine overall status
+    const combinedStatus = orgStatus.status === 'OK' && siteStatus.status === 'OK'
+        ? 'OK'
+        : orgStatus.status !== 'OK'
+        ? orgStatus.status
+        : siteStatus.status;
+
+    return {
+        title: "RDT Configuration",
+        config: `${wrapperName}.getConfig('realTimeData').dataProviders.find(p => p.name === 'adagio')`,
+        value: adagioRtdConfig, 
+        status: combinedStatus,
+        details: `params.organizationId: ${orgStatus.details}, params.site: ${siteStatus.details}`
+    };
+}
+
+/**
  * Checks if localStorage is enabled for the Adagio Prebid wrapper or if it's not needed in Prebid 9+.
  * 
  * @param {object} _pbjs - The Prebid.js object.
- * @returns {object} An object containing `config`, `status`, and `details`.
+ * @param {object} wrapperName - The Prebid.js object local name (pbjs, hubjs, ...).
+ * @returns {object} An object containing `title`, `config`, `value`, `status`, and `details`.
  */
-export function checkAdagioLocalStorage(_pbjs) {
+export function checkAdagioLocalStorage(_pbjs, wrapperName) {
+    const title = 'Localstorage';
     const standardStorage = _pbjs?.bidderSettings?.standard?.storageAllowed;
     const adagioStorage = _pbjs?.bidderSettings?.adagio?.storageAllowed;
+    const value = standardStorage ?? adagioStorage;
 
-    if (standardStorage || adagioStorage) return { config: standardStorage ? 'bidderSettings.standard.storageAllowed' : 'bidderSettings.adagio.storageAllowed', status: 'OK', details: '' };
-    return { config: 'bidderSettings.adagio.storageAllowed', status: 'KO', details: 'Local storage is not configured in either bidderSettings.standard or bidderSettings.adagio.' };
+    if (standardStorage || adagioStorage) return { title, config: standardStorage ? `${wrapperName}.bidderSettings.standard.storageAllowed` : `${wrapperName}.bidderSettings.adagio.storageAllowed`, value: value, status: 'OK', details: '' };
+    return { title, config: `${wrapperName}.bidderSettings.adagio.storageAllowed`, value: value, status: 'KO', details: 'Local storage is not configured.' };
 }
 
 /**
  * Checks if the deviceAccess configuration in Prebid is enabled.
  * 
  * @param {object} _pbjs - The Prebid.js object.
- * @returns {object} An object containing `config`, `status`, and `details`.
+ * @param {object} wrapperName - The Prebid.js object local name (pbjs, hubjs, ...).
+ * @returns {object} An object containing `title`, `config`, `value`, `status`, and `details`.
  */
-export function checkDeviceAccess(_pbjs) {
+export function checkDeviceAccess(_pbjs, wrapperName) {
     const deviceAccess = _pbjs.getConfig(`deviceAccess`);
     return {
-        config: `getConfig('deviceAccess')`,
+        title: 'Device Access',
+        config: `${wrapperName}.getConfig('deviceAccess')`,
+        value: deviceAccess,
         status: deviceAccess ? 'OK' : 'KO',
         details: deviceAccess ? '' : 'False or undefined.'
     };
@@ -355,19 +429,21 @@ export function checkDeviceAccess(_pbjs) {
  * Checks if Adagio user sync is configured correctly in Prebid.
  * 
  * @param {object} _pbjs - The Prebid.js object.
- * @returns {object} An object containing `config`, `status`, and `details`.
+ * @param {object} wrapperName - The Prebid.js object local name (pbjs, hubjs, ...).
+ * @returns {object} An object containing `title`, `config`, `value`, `status`, and `details`.
  */
-export function checkAdagioUserSync(_pbjs) {
+export function checkAdagioUserSync(_pbjs, wrapperName) {
+    const title = 'User Sync';
     const userSync = _pbjs?.getConfig('userSync');
-    if (!userSync) return { config: `getConfig('userSync')`, status: 'KO', details: 'User sync is not configured.' };
+    if (!userSync) return { title, config: `${wrapperName}.getConfig('userSync')`, status: 'KO', details: 'User sync is not configured.' };
 
     const isValid = (settings) => settings?.filter === 'include' &&
         (settings.bidders?.includes('*') || settings.bidders?.some(b => b.toLowerCase().includes('adagio')));
 
-    if (isValid(userSync?.filterSettings?.iframe)) return { config: 'userSync.filterSettings.iframe', status: 'OK', details: 'Adagio user sync for iframe is correct.' };
-    if (isValid(userSync?.filterSettings?.all)) return { config: 'userSync.filterSettings.all', status: 'OK', details: 'Adagio user sync for all is correct.' };
+    if (isValid(userSync?.filterSettings?.iframe)) return { title, config: `${wrapperName}.userSync.filterSettings.iframe`, value: userSync.filterSettings.iframe, status: 'OK', details: '' };
+    if (isValid(userSync?.filterSettings?.all)) return { title, config: `${wrapperName}.userSync.filterSettings.all`, value: userSync.filterSettings.all, status: 'OK', details: '' };
 
-    return { config: 'userSync.filterSettings.iframe', status: 'KO', details: 'Adagio user sync is not configured in either userSync.filterSettings.iframe or userSync.filterSettings.all.' };
+    return { title, config: `${wrapperName}.userSync.filterSettings.iframe`, value: userSync?.filterSettings?.iframe, status: 'KO', details: 'Adagio user sync is not configured.' };
 }
 
 /**
@@ -543,11 +619,10 @@ export function checkCategoryParam(_pbjs, bid, prebidVersion) {
 export function run(_window, organizationId, siteName) {
     const _ADAGIO = getAdagioAdapter(_window);
     const prebidWrappers = getPrebidWrappers(_window, _ADAGIO);
-    const adServers = getSupportedAdServers(_window);
 
     const results = {
-        'supportedAdServersDetected': adServers,
-        'wrappers': {},
+        'supportedAdServersDetected': getSupportedAdServers(_window),
+        'detectedWrappers': {},
     }; // Object to store the prebid data for each wrapper
 
     prebidWrappers.forEach(([wrapperName, wrapperWindow]) => {
@@ -557,27 +632,27 @@ export function run(_window, organizationId, siteName) {
         const detectedOrganizationIds = getAdagioOrganizationIds(adagioBidsRequested);
 
         const modules = {
-            'adagioBidderAdapter': checkAdagioBidAdapter(_pbjs, _ADAGIO),
-            'rtdModule': checkRealTimeDataModule(_pbjs, _ADAGIO),
-            'adagioRtdProvider': checkAdagioRtdProviderModule(_pbjs, _ADAGIO),
-            'adagioAnalyticsAdapter': checkAdagioAnalyticsAdapter(_pbjs, _ADAGIO),
+            'adagioBidderAdapter': checkAdagioBidAdapter(_pbjs, _ADAGIO, wrapperName),
+            'rtdModule': checkRealTimeDataModule(_pbjs, _ADAGIO, wrapperName),
+            'adagioRtdProvider': checkAdagioRtdProviderModule(_pbjs, _ADAGIO, wrapperName),
+            'adagioAnalyticsAdapter': checkAdagioAnalyticsAdapter(_pbjs, _ADAGIO,wrapperName),
         }
 
         // Create an object to hold ad units for the current wrapper
         const adUnitsList = [];
 
         // Create the prebid wrapper object and assign it to results using the wrapper name as the key
-        results.wrappers[wrapperName] = {
+        results.detectedWrappers[wrapperName] = {
             'adUnits': adUnitsList,
             'pbjsLocalName': wrapperName,
             'pbjsVersionNumber': prebidVersion,
             'pbjsVersionString': _pbjs.version,
             'detectedOrganizationIds': detectedOrganizationIds,
             // 'pbjsIntegrity': hasWrapperIntegrity(wrapperName, _ADAGIO)
-            'localstorage': checkAdagioLocalStorage(_pbjs),
-            'userSync': checkAdagioUserSync(_pbjs),
-            'deviceAccess': checkDeviceAccess(_pbjs),
-            'rtdConfig': checkRealTimeDataConfig(_pbjs, null, null),
+            'localStorage': checkAdagioLocalStorage(_pbjs, wrapperName),
+            'userSync': checkAdagioUserSync(_pbjs, wrapperName),
+            'deviceAccess': checkDeviceAccess(_pbjs, wrapperName),
+            'rtdConfig': checkRealTimeDataConfig(_pbjs, null, null, wrapperName),
             'modules': modules,
         };
 
