@@ -138,7 +138,7 @@ const ADAGIOPARAMS = {
  * Main
  ************************************************************************************************************************************************************************************************************************************/
 
-function run() {;
+function buildInterface() {;
     createOverlay();
     getPrebidWrappers();
     buildOverlayHtml();
@@ -148,9 +148,10 @@ function run() {;
     createAdUnitsDiv();
     createConsentsDiv();
     makeIframeDraggable();
-    runCheck();
+    runChecks();
 }
-run();
+
+buildInterface();
 
 /*************************************************************************************************************************************************************************************************************************************
  * HTML functions
@@ -1029,7 +1030,7 @@ function refreshChecker() {
         overlayFrameElement.remove();
     }
     // Then re-run the checker
-    run();
+    buildInterface();
 }
 
 function displayAdunits(eyeButton) {
@@ -1168,16 +1169,16 @@ function makeIframeDraggable() {
 }
 
 function base64Decode(base64String) {
-    var base64 =
+    let base64 =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-    var bufferLength = base64String.length * 0.75;
-    var len = base64String.length;
-    var decodedBytes = new Uint8Array(bufferLength);
+    let bufferLength = base64String.length * 0.75;
+    let len = base64String.length;
+    let decodedBytes = new Uint8Array(bufferLength);
 
-    var p = 0;
-    var encoded1, encoded2, encoded3, encoded4;
+    let p = 0;
+    let encoded1, encoded2, encoded3, encoded4;
 
-    for (var i = 0; i < len; i += 4) {
+    for (let i = 0; i < len; i += 4) {
         encoded1 = base64.indexOf(base64String[i]);
         encoded2 = base64.indexOf(base64String[i + 1]);
         encoded3 = base64.indexOf(base64String[i + 2]);
@@ -1620,16 +1621,16 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
         if (mediatypeVideo !== undefined) {
 
             // Required for both instream and outstream
-            let mediatypeVideoContext = mediatypeVideo?.context; // DONE
-            let mediatypeVideoApi = mediatypeVideo?.api; // DONE
-            let mediatypeVideoPlayerSize = mediatypeVideo?.playerSize; // DONE
+            let mediatypeVideoContext = mediatypeVideo?.context;
+            let mediatypeVideoApi = mediatypeVideo?.api;
+            let mediatypeVideoPlayerSize = mediatypeVideo?.playerSize;
             // Required for instream only
-            let mediatypeVideoMimes = mediatypeVideo?.mimes; // DONE
-            let mediatypeVideoPlcmt = mediatypeVideo?.plcmt; // DONE
+            let mediatypeVideoMimes = mediatypeVideo?.mimes;
+            let mediatypeVideoPlcmt = mediatypeVideo?.plcmt || mediatypeVideo?.placement; // placement is deprecated, plcmt is the new one
             // Highly recommended for instream and outstream
-            let mediatypeVideoPlaybackMethod = mediatypeVideo?.playbackmethod; // DONE
+            let mediatypeVideoPlaybackMethod = mediatypeVideo?.playbackmethod;
             // Highly recommended for instream only
-            let mediatypeVideoStartDelay = mediatypeVideo?.startdelay; // DONE
+            let mediatypeVideoStartDelay = mediatypeVideo?.startdelay;
             let mediatypeVideoStartProtocols = mediatypeVideo?.protocols;
 
             // For checking purpose
@@ -1637,7 +1638,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             let hasInstreamContext = mediatypeVideoContext === 'instream';
             let videoApiSupported = [1,2,3,4,5];
             let mimesExpected = ['video/mp4', 'video/ogg', 'video/webm', 'application/javascript'];
-            let plcmtExpected = [1,2];
+            let expectedInstreamPlcmt = 1;
             let protocolsExpected = [3, 6, 7, 8];
 
             // Check the video context: instream or outstream
@@ -1724,29 +1725,37 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
                 }
             }
 
-            // Check the placement (for instream only)
+            // Check the placement
             if (hasInstreamContext) {
-                if (mediatypeVideoPlcmt !== undefined) {
-                    if (plcmtExpected.includes(mediatypeVideoPlcmt)) {
-                        paramsCheckingArray.push([
-                            STATUSBADGES.OK,
-                            `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
-                            ``,
-                        ]);
-                    } else {
-                        paramsCheckingArray.push([
-                            STATUSBADGES.KO,
-                            `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
-                            `Must be one of <code>${JSON.stringify(plcmtExpected)}</code>`,
-                        ]);
-                    }
-                } 
-                else {
+                if (mediatypeVideoPlcmt === undefined || expectedInstreamPlcmt !== mediatypeVideoPlcmt ) {
+                    console.log('ADG - Im hereeeee!!!!');
                     paramsCheckingArray.push([
                         STATUSBADGES.KO,
                         `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
-                        `No placement detected.`,
+                        `Must be <code>${JSON.stringify(expectedInstreamPlcmt)}</code> for instream context (<a href="https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/main/AdCOM%20v1.0%20FINAL.md#list--plcmt-subtypes---video-" target="_blank">iab</a>).`,
                     ]);
+                } 
+                else {
+                    console.log('mediatypeVideoPlcmt is defined and equal to expectedInstreamPlcmt');
+                    paramsCheckingArray.push([
+                        STATUSBADGES.OK,
+                        `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
+                        ``,
+                    ]);
+                }
+            } else if (hasOutstreamContext) {
+                if (mediatypeVideoPlcmt === undefined || mediatypeVideoPlcmt === expectedInstreamPlcmt) {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.KO,
+                        `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
+                        `Must be set for outstream context (<a href="https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/main/AdCOM%20v1.0%20FINAL.md#list--plcmt-subtypes---video-" target="_blank">iab</a>).`,
+                    ]);
+                } else {
+                    paramsCheckingArray.push([
+                        STATUSBADGES.OK,
+                        `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
+                        ``,
+                    ]); 
                 }
             }
 
@@ -1927,7 +1936,7 @@ function findParam(obj, param, path = []) {
  * PBJS functions
  ************************************************************************************************************************************************************************************************************************************/
 
-async function runCheck() {
+async function runChecks() {
     catchBidRequestsGlobalParams();
     await checkAdagioAPI();
     await checkPublisher();
