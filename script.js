@@ -3017,7 +3017,6 @@ function checkAdagioCMP() {
         cmpAdagioBidders.set(617, "Adagio");
         cmpAdagioBidders.set(58, "33Across");
         cmpAdagioBidders.set(779, "Adtarget");
-        cmpAdagioBidders.set(1218, "Aidem");
         cmpAdagioBidders.set(138, "ConnectAd");
         cmpAdagioBidders.set(90, "E-Planning");
         cmpAdagioBidders.set(285, "Freewheel");
