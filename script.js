@@ -34,7 +34,7 @@ let siteNames = [];
 // Active tab (from button html element)
 let activeTab = undefined;
 // Variables for draggable iframe
-let isDragging = false;
+let isAdgWindowDragging = false;
 // Adagio API key detected
 let adagioApiKeyfound = false;
 // let domainResponseRecords = null;
@@ -1103,7 +1103,7 @@ function makeIframeDraggable() {
     function startDragging(e) {
         targetElement = e.target.tagName;
         if (targetElement === 'NAV' || targetElement === 'UL' || targetElement === 'LI') {
-            isDragging = true;
+            isAdgWindowDragging = true;
             navbar.style.cursor = 'grabbing';
             overlayFrame.style.opacity = '0.4';
             startX = e.clientX;
@@ -1112,13 +1112,13 @@ function makeIframeDraggable() {
     }
 
     function stopDragging() {
-        isDragging = false;
+        isAdgWindowDragging = false;
         navbar.style.cursor = 'grab';
         overlayFrame.style.opacity = '';
     }
 
     overlayFrameDoc.addEventListener('mousemove', function (e) {
-        if (!isDragging) {
+        if (!isAdgWindowDragging) {
             return;
         }
         const deltaX = e.clientX - startX;
