@@ -2018,7 +2018,7 @@ function checkAdagioLocalStorage() {
                 return value === true;
             }
             if (Array.isArray(value)) {
-                return value.includes('html5') && value.includes('cookie');
+                return value.includes('html5');
             }
             return false;
         }
