@@ -2012,18 +2012,26 @@ function checkAdagioLocalStorage() {
         // Is local storage enabled?
         const localStorage = prebidObject.bidderSettings;
 
-        if (localStorage.standard?.storageAllowed) {
-            appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.LOCALSTORAGE, `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>true</code>`);
-        } else if (localStorage.adagio?.storageAllowed) {
-            appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.LOCALSTORAGE, `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>true</code>`);
-        } else if (localStorage.adagio?.storageAllowed === false) {
-            appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.LOCALSTORAGE, `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>false</code>`);
-        } else {
-            if (foundPrebidVersion >= 9) {
-                appendCheckerRow(STATUSBADGES.NA, ADAGIOCHECK.LOCALSTORAGE, 'Localstorage not found. But not required anymore since Prebid 9.');
-            } else {
-                appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.LOCALSTORAGE, 'Localstorage not found. But not required anymore since Prebid 9.');
+        // Internal function to check if storageAllowed is correctly configured
+        function isStorageAllowed(value) {
+            if (typeof value === 'boolean') {
+                return value === true;
             }
+            if (Array.isArray(value)) {
+                return value.includes('html5') && value.includes('cookie');
+            }
+            return false;
+        }
+
+        // Check the local storage configuration
+        if (isStorageAllowed(localStorage.standard?.storageAllowed)) {
+            appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.LOCALSTORAGE, `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorage.standard?.storageAllowed)}</code>`);
+        } else if (isStorageAllowed(localStorage.adagio?.storageAllowed)) {
+            appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.LOCALSTORAGE, `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorage.adagio?.storageAllowed)}</code>`);
+        } else if (foundPrebidVersion >= 9) {
+            appendCheckerRow(STATUSBADGES.NA, ADAGIOCHECK.LOCALSTORAGE, 'Localstorage not found. But not required anymore since Prebid 9.');
+        } else {
+            appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.LOCALSTORAGE, `Localstorage not found: <code>${JSON.stringify(localStorage.adagio?.storageAllowed)}</code>`);
         }
     }
 }
