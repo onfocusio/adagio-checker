@@ -2242,26 +2242,43 @@ function checkAdagioAdUnitParams() {
 }
 
 function checkDuplicatedAdUnitCode() {
-    // In one bidRequest, we shall find only one occurence of each adUnit code detected
-    // If not, it will be refused
-    if (prebidObject === undefined) {
+    // If Prebid.js is not found, display error
+    if (!prebidObject) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.DUPLICATED, ADAGIOERRORS.PREBIDNOTFOUND);
-    } else {
-        const duplicates = [];
-        const adgioBidsRequested = prebidBidsRequested.filter((e) => e.bidderCode?.toLowerCase()?.includes('adagio'));
+        return;
+    }
 
-        adgioBidsRequested.forEach((bidRequested) => {
-            const adUnitCodes = new Set();
-            bidRequested.bids.forEach((bid) => {
-                if (adUnitCodes.has(bid.adUnitCode)) {
-                    if (!duplicates.includes(bid.adUnitCode)) duplicates.push(bid.adUnitCode);
-                } else {
-                    adUnitCodes.add(bid.adUnitCode);
-                }
+    const duplicates = [];
+    // Filter only Adagio bidRequested events
+    const adgioBidsRequested = prebidBidsRequested.filter(e => e.bidderCode?.toLowerCase()?.includes('adagio'));
+
+    adgioBidsRequested.forEach(bidRequested => {
+        // Object to count occurrences of each adUnitCode + mediatype
+        const seen = {};
+        bidRequested.bids.forEach(bid => {
+            const code = bid.adUnitCode;
+            // Get all mediatypes for this bid (e.g. banner, video, native)
+            const types = Object.keys(bid.mediaTypes || {});
+            types.forEach(type => {
+                const key = `${code}::${type}`;
+                seen[key] = (seen[key] || 0) + 1;
             });
         });
-        if (duplicates.length !== 0) appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.DUPLICATED, `<code>${duplicates}</code>`);
-        else appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.DUPLICATED, `No duplicated found`);
+        // Add to duplicates if the same code+mediatype appears more than once
+        Object.entries(seen).forEach(([key, count]) => {
+            if (count > 1) duplicates.push(key);
+        });
+    });
+
+    if (duplicates.length) {
+        // Format output: code (mediatype)
+        const formatted = duplicates.map(str => {
+            const [code, type] = str.split('::');
+            return `<code>${code}</code> (<code>${type}</code>)`;
+        }).join(', ');
+        appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.DUPLICATED, `Duplicated found: ${formatted}`);
+    } else {
+        appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.DUPLICATED, `No duplicated found.`);
     }
 }
 
