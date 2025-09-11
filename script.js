@@ -2031,7 +2031,7 @@ function checkAdagioLocalStorage() {
         } else if (foundPrebidVersion >= 9) {
             appendCheckerRow(STATUSBADGES.NA, ADAGIOCHECK.LOCALSTORAGE, 'Localstorage not found. But not required anymore since Prebid 9.');
         } else {
-            appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.LOCALSTORAGE, `Localstorage not found: <code>${JSON.stringify(localStorage.adagio?.storageAllowed)}</code>`);
+            appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.LOCALSTORAGE, `Localstorage not found: <code>${JSON.stringify(localStorage)}</code>`);
         }
     }
 }
