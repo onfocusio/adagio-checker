@@ -1935,7 +1935,7 @@ function checkRealTimeDataProvider() {
                 return;
             }
         }
-        // If installedModules not usable, relies on ADAGIO.hasRtd
+        // If installedModules not usable, relies on ADAGIO
         else if (!adagioAdapter.hasRtd) {
             appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `<code>ADAGIO.hasRtd</code>: <code>${adagioAdapter.hasRtd}</code>`);
             return;
@@ -2427,41 +2427,39 @@ function checkAdagioCMP() {
     }
     // Gives the Consent Management strings values
     window.__tcfapi('getTCData', 2, (tcdata, success) => {
-        const cmpAdagioBidders = new Map();
-        cmpAdagioBidders.set(617, 'Adagio');
-        cmpAdagioBidders.set(58, '33Across');
-        cmpAdagioBidders.set(779, 'Adtarget');
-        cmpAdagioBidders.set(138, 'ConnectAd');
-        cmpAdagioBidders.set(90, 'E-Planning');
-        cmpAdagioBidders.set(285, 'Freewheel');
-        cmpAdagioBidders.set(149, 'Illumin / ADman');
-        cmpAdagioBidders.set(910, 'Insticator');
-        cmpAdagioBidders.set(253, 'Improve Digital');
-        cmpAdagioBidders.set(10, 'Index Exchange');
-        cmpAdagioBidders.set(14, 'Madopi');
-        cmpAdagioBidders.set(241, 'OneTag');
-        cmpAdagioBidders.set(69, 'OpenX');
-        cmpAdagioBidders.set(76, 'Pubmatic');
-        cmpAdagioBidders.set(16, 'RTB House S.A.');
-        cmpAdagioBidders.set(52, 'Rubicon');
-        cmpAdagioBidders.set(45, 'Smart Adserver');
-        cmpAdagioBidders.set(13, 'Sovrn');
-        cmpAdagioBidders.set(28, 'TripleLift');
-        // cmpAdagioBidders.set(25, 'Yahoo');
+        const cmpAdagioBidders = {
+            58: "33Across",
+            779: "Adtarget Teknoloji A.S.",
+            138: "ConnectAd Demand GmbH",
+            90: "E-Planning (Teroa)",
+            285: "Freewheel (Comcast)",
+            149: "Illumin / ADman Interactive SLU",
+            253: "Improve Digital",
+            36: "Nexxen (Unruly)",
+            617: "Onfocus (Adagio)",
+            241: "OneTag",
+            69: "OpenX",
+            76: "Pubmatic",
+            16: "RTB House",
+            52: "Rubicon",
+            45: "Smart Adserver (Equativ)",
+            13: "Sovrn",
+            28: "TripleLift"
+        };
 
         let adagioFound = false;
         let biddersNotFound = '';
 
-        for (let [key, value] of cmpAdagioBidders) {
+        for (let key in cmpAdagioBidders) {
             const consent = tcdata.vendor.consents[key];
             const legitimate = tcdata.vendor.legitimateInterests[key];
 
-            if (key === 617 && (consent || legitimate)) {
+            if (parseInt(key) === 617 && (consent || legitimate)) {
                 adagioFound = true;
             }
 
             // Build the line values per partner
-            const bidderName = '<code>' + value + ' (' + key + ')</code>';
+            const bidderName = `<code>${cmpAdagioBidders[key]} (${key})</code>`;
             const bidderConsent = consent ? STATUSBADGES.OK : STATUSBADGES.KO;
             const bidderLegitimate = legitimate ? STATUSBADGES.OK : STATUSBADGES.KO;
             appendConsentsRow(bidderName, bidderConsent, bidderLegitimate);
