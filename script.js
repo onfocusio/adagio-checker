@@ -42,8 +42,13 @@ let adagioApiKeyfound = false;
 let matchedDomainRecords = null;
 let matchedSiteNameRecords = null;
 let successRecordItems = null;
-let MY_BROKENOBJECT = null;
-let MY_GOODOBJECT = null;
+let detectedCountryCodeISO3 = null;
+
+/*************************************************************************************************************************************************************************************************************************************
+ * Enums
+ ************************************************************************************************************************************************************************************************************************************/
+// Dynamically import iabtcfcore and wait for it to resolve
+window.iabtcfcore = await import('https://esm.run/@iabtcf/core');
 
 /*************************************************************************************************************************************************************************************************************************************
  * Enums
@@ -51,23 +56,15 @@ let MY_GOODOBJECT = null;
 
 const ADAGIOSVG = Object.freeze({
     LOGO: '<svg viewBox="0 0 101 92" style="height:1.5em;"><path d="M97 88.598H84.91l-33.473-72.96-.817-1.707-6.398 13.836 28.143 60.916h-12.2l-.106-.237-21.82-47.743-6.428 13.9 15.978 34.08H35.59l-9.802-21.056-9.698 20.97H4L43.109 4H57.89L97 88.598Z"></path></svg>',
-    MANAGER:
-        '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M23 8c0 1.1-.9 2-2 2-.18 0-.35-.02-.51-.07l-3.56 3.55c.05.16.07.34.07.52 0 1.1-.9 2-2 2s-2-.9-2-2c0-.18.02-.36.07-.52l-2.55-2.55c-.16.05-.34.07-.52.07s-.36-.02-.52-.07l-4.55 4.56c.05.16.07.33.07.51 0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2c.18 0 .35.02.51.07l4.56-4.55C8.02 9.36 8 9.18 8 9c0-1.1.9-2 2-2s2 .9 2 2c0 .18-.02.36-.07.52l2.55 2.55c.16-.05.34-.07.52-.07s.36.02.52.07l3.55-3.56C19.02 8.35 19 8.18 19 8c0-1.1.9-2 2-2s2 .9 2 2z"></path></svg>',
-    CHECKER:
-        '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M19 15v4H5v-4h14m1-2H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 18.5c-.82 0-1.5-.67-1.5-1.5s.68-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM19 5v4H5V5h14m1-2H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zM7 8.5c-.82 0-1.5-.67-1.5-1.5S6.18 5.5 7 5.5s1.5.68 1.5 1.5S7.83 8.5 7 8.5z"></path></svg>',
-    ADUNITS:
-        '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zm0 14V6h10v12H7zm0 3v-1h10v1H7z"></path><path d="M16 7H8v2h8V7z"></path></svg>',
-    CONSENTS:
-        '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M13.17 4 18 8.83V20H6V4h7.17M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-2 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm4 3.43c0-.81-.48-1.53-1.22-1.85-.85-.37-1.79-.58-2.78-.58-.99 0-1.93.21-2.78.58C8.48 15.9 8 16.62 8 17.43V18h8v-.57z"></path></svg>',
+    MANAGER: '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M23 8c0 1.1-.9 2-2 2-.18 0-.35-.02-.51-.07l-3.56 3.55c.05.16.07.34.07.52 0 1.1-.9 2-2 2s-2-.9-2-2c0-.18.02-.36.07-.52l-2.55-2.55c-.16.05-.34.07-.52.07s-.36-.02-.52-.07l-4.55 4.56c.05.16.07.33.07.51 0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2c.18 0 .35.02.51.07l4.56-4.55C8.02 9.36 8 9.18 8 9c0-1.1.9-2 2-2s2 .9 2 2c0 .18-.02.36-.07.52l2.55 2.55c.16-.05.34-.07.52-.07s.36.02.52.07l3.55-3.56C19.02 8.35 19 8.18 19 8c0-1.1.9-2 2-2s2 .9 2 2z"></path></svg>',
+    CHECKER: '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M19 15v4H5v-4h14m1-2H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1v-6c0-.55-.45-1-1-1zM7 18.5c-.82 0-1.5-.67-1.5-1.5s.68-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM19 5v4H5V5h14m1-2H4c-.55 0-1 .45-1 1v6c0 .55.45 1 1 1h16c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1zM7 8.5c-.82 0-1.5-.67-1.5-1.5S6.18 5.5 7 5.5s1.5.68 1.5 1.5S7.83 8.5 7 8.5z"></path></svg>',
+    ADUNITS: '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zM7 4V3h10v1H7zm0 14V6h10v12H7zm0 3v-1h10v1H7z"></path><path d="M16 7H8v2h8V7z"></path></svg>',
+    CONSENTS: '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M13.17 4 18 8.83V20H6V4h7.17M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-2 12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm4 3.43c0-.81-.48-1.53-1.22-1.85-.85-.37-1.79-.58-2.78-.58-.99 0-1.93.21-2.78.58C8.48 15.9 8 16.62 8 17.43V18h8v-.57z"></path></svg>',
     PREBID: '<svg viewBox="0 0 24 24" style="height:1.2em"><g><g><g><path d="M19.973 4.724H.746A.743.743 0 0 1 0 3.978c0-.414.331-.746.746-.746H19.89c.415 0 .746.332.746.746.083.414-.248.746-.663.746z"/></g><g><path d="M27.35 8.868H4.391a.743.743 0 0 1-.745-.746c0-.414.331-.746.745-.746H27.35c.415 0 .746.332.746.746a.743.743 0 0 1-.746.746z"/></g><g><path d="M25.029 21.3H2.072a.743.743 0 0 1-.746-.747c0-.414.332-.745.746-.745h22.957c.414 0 .746.331.746.745 0 .332-.332.746-.746.746z"/></g><g><path d="M17.238 13.012H2.984a.743.743 0 0 1-.746-.746c0-.415.331-.746.746-.746h14.254c.415 0 .746.331.746.746a.743.743 0 0 1-.746.746z"/></g><g><path d="M23.371 17.155H7.045a.743.743 0 0 1-.746-.745c0-.415.331-.746.746-.746H23.37c.415 0 .746.331.746.746 0 .331-.331.745-.746.745z"/></g></g></g></svg>',
-    EYEOPENED:
-        '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M6.30147 15.5771C4.77832 14.2684 3.6904 12.7726 3.18002 12C3.6904 11.2274 4.77832 9.73158 6.30147 8.42294C7.87402 7.07185 9.81574 6 12 6C14.1843 6 16.1261 7.07185 17.6986 8.42294C19.2218 9.73158 20.3097 11.2274 20.8201 12C20.3097 12.7726 19.2218 14.2684 17.6986 15.5771C16.1261 16.9282 14.1843 18 12 18C9.81574 18 7.87402 16.9282 6.30147 15.5771ZM12 4C9.14754 4 6.75717 5.39462 4.99812 6.90595C3.23268 8.42276 2.00757 10.1376 1.46387 10.9698C1.05306 11.5985 1.05306 12.4015 1.46387 13.0302C2.00757 13.8624 3.23268 15.5772 4.99812 17.0941C6.75717 18.6054 9.14754 20 12 20C14.8525 20 17.2429 18.6054 19.002 17.0941C20.7674 15.5772 21.9925 13.8624 22.5362 13.0302C22.947 12.4015 22.947 11.5985 22.5362 10.9698C21.9925 10.1376 20.7674 8.42276 19.002 6.90595C17.2429 5.39462 14.8525 4 12 4ZM10 12C10 10.8954 10.8955 10 12 10C13.1046 10 14 10.8954 14 12C14 13.1046 13.1046 14 12 14C10.8955 14 10 13.1046 10 12ZM12 8C9.7909 8 8.00004 9.79086 8.00004 12C8.00004 14.2091 9.7909 16 12 16C14.2092 16 16 14.2091 16 12C16 9.79086 14.2092 8 12 8Z"></path></svg>',
-    EYECLOSED:
-        '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M19.7071 5.70711C20.0976 5.31658 20.0976 4.68342 19.7071 4.29289C19.3166 3.90237 18.6834 3.90237 18.2929 4.29289L14.032 8.55382C13.4365 8.20193 12.7418 8 12 8C9.79086 8 8 9.79086 8 12C8 12.7418 8.20193 13.4365 8.55382 14.032L4.29289 18.2929C3.90237 18.6834 3.90237 19.3166 4.29289 19.7071C4.68342 20.0976 5.31658 20.0976 5.70711 19.7071L9.96803 15.4462C10.5635 15.7981 11.2582 16 12 16C14.2091 16 16 14.2091 16 12C16 11.2582 15.7981 10.5635 15.4462 9.96803L19.7071 5.70711ZM12.518 10.0677C12.3528 10.0236 12.1792 10 12 10C10.8954 10 10 10.8954 10 12C10 12.1792 10.0236 12.3528 10.0677 12.518L12.518 10.0677ZM11.482 13.9323L13.9323 11.482C13.9764 11.6472 14 11.8208 14 12C14 13.1046 13.1046 14 12 14C11.8208 14 11.6472 13.9764 11.482 13.9323ZM15.7651 4.8207C14.6287 4.32049 13.3675 4 12 4C9.14754 4 6.75717 5.39462 4.99812 6.90595C3.23268 8.42276 2.00757 10.1376 1.46387 10.9698C1.05306 11.5985 1.05306 12.4015 1.46387 13.0302C1.92276 13.7326 2.86706 15.0637 4.21194 16.3739L5.62626 14.9596C4.4555 13.8229 3.61144 12.6531 3.18002 12C3.6904 11.2274 4.77832 9.73158 6.30147 8.42294C7.87402 7.07185 9.81574 6 12 6C12.7719 6 13.5135 6.13385 14.2193 6.36658L15.7651 4.8207ZM12 18C11.2282 18 10.4866 17.8661 9.78083 17.6334L8.23496 19.1793C9.37136 19.6795 10.6326 20 12 20C14.8525 20 17.2429 18.6054 19.002 17.0941C20.7674 15.5772 21.9925 13.8624 22.5362 13.0302C22.947 12.4015 22.947 11.5985 22.5362 10.9698C22.0773 10.2674 21.133 8.93627 19.7881 7.62611L18.3738 9.04043C19.5446 10.1771 20.3887 11.3469 20.8201 12C20.3097 12.7726 19.2218 14.2684 17.6986 15.5771C16.1261 16.9282 14.1843 18 12 18Z"></path></svg>',
-    DEBUGGING:
-        '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M4.6 15c-.9-2.6-.6-4.6-.5-5.4 2.4-1.5 5.3-2 8-1.3.7-.3 1.5-.5 2.3-.6-.1-.3-.2-.5-.3-.8h2l1.2-3.2-.9-.4-1 2.6h-1.8C13 4.8 12.1 4 11.1 3.4l2.1-2.1-.7-.7L10.1 3c-.7 0-1.5 0-2.3.1L5.4.7l-.7.7 2.1 2.1C5.7 4.1 4.9 4.9 4.3 6H2.5l-1-2.6-.9.4L1.8 7h2C3.3 8.3 3 9.6 3 11H1v1h2c0 1 .2 2 .5 3H1.8L.6 18.3l.9.3 1-2.7h1.4c.4.8 2.1 4.5 5.8 3.9-.3-.2-.5-.5-.7-.8-2.9 0-4.4-3.5-4.4-4zM9 3.9c2 0 3.7 1.6 4.4 3.8-2.9-1-6.2-.8-9 .6.7-2.6 2.5-4.4 4.6-4.4zm14.8 19.2l-4.3-4.3c2.1-2.5 1.8-6.3-.7-8.4s-6.3-1.8-8.4.7-1.8 6.3.7 8.4c2.2 1.9 5.4 1.9 7.7 0l4.3 4.3c.2.2.5.2.7 0 .2-.2.2-.5 0-.7zm-8.8-3c-2.8 0-5.1-2.3-5.1-5.1s2.3-5.1 5.1-5.1 5.1 2.3 5.1 5.1-2.3 5.1-5.1 5.1z"/><path fill="none" d="M0 0h24v24H0z"/></svg>',
-    REFRESH:
-        '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"></path></svg>',
+    EYEOPENED: '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M6.30147 15.5771C4.77832 14.2684 3.6904 12.7726 3.18002 12C3.6904 11.2274 4.77832 9.73158 6.30147 8.42294C7.87402 7.07185 9.81574 6 12 6C14.1843 6 16.1261 7.07185 17.6986 8.42294C19.2218 9.73158 20.3097 11.2274 20.8201 12C20.3097 12.7726 19.2218 14.2684 17.6986 15.5771C16.1261 16.9282 14.1843 18 12 18C9.81574 18 7.87402 16.9282 6.30147 15.5771ZM12 4C9.14754 4 6.75717 5.39462 4.99812 6.90595C3.23268 8.42276 2.00757 10.1376 1.46387 10.9698C1.05306 11.5985 1.05306 12.4015 1.46387 13.0302C2.00757 13.8624 3.23268 15.5772 4.99812 17.0941C6.75717 18.6054 9.14754 20 12 20C14.8525 20 17.2429 18.6054 19.002 17.0941C20.7674 15.5772 21.9925 13.8624 22.5362 13.0302C22.947 12.4015 22.947 11.5985 22.5362 10.9698C21.9925 10.1376 20.7674 8.42276 19.002 6.90595C17.2429 5.39462 14.8525 4 12 4ZM10 12C10 10.8954 10.8955 10 12 10C13.1046 10 14 10.8954 14 12C14 13.1046 13.1046 14 12 14C10.8955 14 10 13.1046 10 12ZM12 8C9.7909 8 8.00004 9.79086 8.00004 12C8.00004 14.2091 9.7909 16 12 16C14.2092 16 16 14.2091 16 12C16 9.79086 14.2092 8 12 8Z"></path></svg>',
+    EYECLOSED: '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M19.7071 5.70711C20.0976 5.31658 20.0976 4.68342 19.7071 4.29289C19.3166 3.90237 18.6834 3.90237 18.2929 4.29289L14.032 8.55382C13.4365 8.20193 12.7418 8 12 8C9.79086 8 8 9.79086 8 12C8 12.7418 8.20193 13.4365 8.55382 14.032L4.29289 18.2929C3.90237 18.6834 3.90237 19.3166 4.29289 19.7071C4.68342 20.0976 5.31658 20.0976 5.70711 19.7071L9.96803 15.4462C10.5635 15.7981 11.2582 16 12 16C14.2091 16 16 14.2091 16 12C16 11.2582 15.7981 10.5635 15.4462 9.96803L19.7071 5.70711ZM12.518 10.0677C12.3528 10.0236 12.1792 10 12 10C10.8954 10 10 10.8954 10 12C10 12.1792 10.0236 12.3528 10.0677 12.518L12.518 10.0677ZM11.482 13.9323L13.9323 11.482C13.9764 11.6472 14 11.8208 14 12C14 13.1046 13.1046 14 12 14C11.8208 14 11.6472 13.9764 11.482 13.9323ZM15.7651 4.8207C14.6287 4.32049 13.3675 4 12 4C9.14754 4 6.75717 5.39462 4.99812 6.90595C3.23268 8.42276 2.00757 10.1376 1.46387 10.9698C1.05306 11.5985 1.05306 12.4015 1.46387 13.0302C1.92276 13.7326 2.86706 15.0637 4.21194 16.3739L5.62626 14.9596C4.4555 13.8229 3.61144 12.6531 3.18002 12C3.6904 11.2274 4.77832 9.73158 6.30147 8.42294C7.87402 7.07185 9.81574 6 12 6C12.7719 6 13.5135 6.13385 14.2193 6.36658L15.7651 4.8207ZM12 18C11.2282 18 10.4866 17.8661 9.78083 17.6334L8.23496 19.1793C9.37136 19.6795 10.6326 20 12 20C14.8525 20 17.2429 18.6054 19.002 17.0941C20.7674 15.5772 21.9925 13.8624 22.5362 13.0302C22.947 12.4015 22.947 11.5985 22.5362 10.9698C22.0773 10.2674 21.133 8.93627 19.7881 7.62611L18.3738 9.04043C19.5446 10.1771 20.3887 11.3469 20.8201 12C20.3097 12.7726 19.2218 14.2684 17.6986 15.5771C16.1261 16.9282 14.1843 18 12 18Z"></path></svg>',
+    DEBUGGING: '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M4.6 15c-.9-2.6-.6-4.6-.5-5.4 2.4-1.5 5.3-2 8-1.3.7-.3 1.5-.5 2.3-.6-.1-.3-.2-.5-.3-.8h2l1.2-3.2-.9-.4-1 2.6h-1.8C13 4.8 12.1 4 11.1 3.4l2.1-2.1-.7-.7L10.1 3c-.7 0-1.5 0-2.3.1L5.4.7l-.7.7 2.1 2.1C5.7 4.1 4.9 4.9 4.3 6H2.5l-1-2.6-.9.4L1.8 7h2C3.3 8.3 3 9.6 3 11H1v1h2c0 1 .2 2 .5 3H1.8L.6 18.3l.9.3 1-2.7h1.4c.4.8 2.1 4.5 5.8 3.9-.3-.2-.5-.5-.7-.8-2.9 0-4.4-3.5-4.4-4zM9 3.9c2 0 3.7 1.6 4.4 3.8-2.9-1-6.2-.8-9 .6.7-2.6 2.5-4.4 4.6-4.4zm14.8 19.2l-4.3-4.3c2.1-2.5 1.8-6.3-.7-8.4s-6.3-1.8-8.4.7-1.8 6.3.7 8.4c2.2 1.9 5.4 1.9 7.7 0l4.3 4.3c.2.2.5.2.7 0 .2-.2.2-.5 0-.7zm-8.8-3c-2.8 0-5.1-2.3-5.1-5.1s2.3-5.1 5.1-5.1 5.1 2.3 5.1 5.1-2.3 5.1-5.1 5.1z"/><path fill="none" d="M0 0h24v24H0z"/></svg>',
+    REFRESH: '<svg viewBox="0 0 24 24" style="height:1.2em;"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"></path></svg>',
     INFO: '<svg viewBox="0 0 416.979 416.979" style="height:1.2em;"><path d="M356.004,61.156c-81.37-81.47-213.377-81.551-294.848-0.182c-81.47,81.371-81.552,213.379-0.181,294.85 c81.369,81.47,213.378,81.551,294.849,0.181C437.293,274.636,437.375,142.626,356.004,61.156z M237.6,340.786 c0,3.217-2.607,5.822-5.822,5.822h-46.576c-3.215,0-5.822-2.605-5.822-5.822V167.885c0-3.217,2.607-5.822,5.822-5.822h46.576 c3.215,0,5.822,2.604,5.822,5.822V340.786z M208.49,137.901c-18.618,0-33.766-15.146-33.766-33.765 c0-18.617,15.147-33.766,33.766-33.766c18.619,0,33.766,15.148,33.766,33.766C242.256,122.755,227.107,137.901,208.49,137.901z"></path></svg>',
     APIGREY: '<svg viewBox="0 0 24 24" style="height:1.2em;"><circle cx="12" cy="12" r="10" fill="grey"/></svg>',
     APIGREEN: '<svg viewBox="0 0 24 24" style="height:1.2em;"><circle cx="12" cy="12" r="10" fill="green"/></svg>',
@@ -146,7 +143,7 @@ const ADAGIOPARAMS = {
  * Main
  ************************************************************************************************************************************************************************************************************************************/
 
-function buildInterface() {
+async function buildInterface() {
     createOverlay();
     getPrebidWrappers();
     buildOverlayHtml();
@@ -1285,15 +1282,15 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     let ortb2ImpPlacement = bid?.ortb2Imp?.ext?.data?.placement;
     let ortb2ImpDivId = bid?.ortb2Imp?.ext?.data?.divId;
 
+    // Check if there's a regs.ext.gdpr param (= 1) and a user.ext.consent param (consent string)
+    let ortbGdpr = bid?.ortb2?.regs?.ext?.gdpr;
+    let ortbConsent = bid?.ortb2?.user?.ext?.consent;
+
     // Since Prebid 9.39, Adagio supports interstitial and rewarded
     let ortb2ImpInterstitial = bid?.ortb2Imp?.instl;
     let ortb2ImpRewarded = bid?.ortb2Imp?.rwdd;
     let deepOrtb2ImpInterstitial = findParam(bid, 'instl') || null;
     let deepOrtb2ImpRewarded = findParam(bid, 'rwdd') || null;
-
-    if (paramOrganizationId === undefined) {
-        MY_BROKENOBJECT = bid.params;
-    } else MY_GOODOBJECT = bid.params;
 
     // Check the organizationId
     if (paramOrganizationId === undefined) paramsCheckingArray.push([STATUSBADGES.KO, `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`, `Parameter not found.`]);
@@ -1538,7 +1535,6 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             // Check the placement
             if (hasInstreamContext) {
                 if (mediatypeVideoPlcmt === undefined || expectedInstreamPlcmt !== mediatypeVideoPlcmt) {
-                    console.log('ADG - Im hereeeee!!!!');
                     paramsCheckingArray.push([
                         STATUSBADGES.KO,
                         `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`,
@@ -1547,7 +1543,6 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
                         )}</code> for instream context (<a href="https://github.com/InteractiveAdvertisingBureau/AdCOM/blob/main/AdCOM%20v1.0%20FINAL.md#list--plcmt-subtypes---video-" target="_blank">iab</a>).`,
                     ]);
                 } else {
-                    console.log('mediatypeVideoPlcmt is defined and equal to expectedInstreamPlcmt');
                     paramsCheckingArray.push([STATUSBADGES.OK, `<code>mediaTypes.video.plcmt</code>: <code>${mediatypeVideoPlcmt}</code>`, ``]);
                 }
             } else if (hasOutstreamContext) {
@@ -1612,6 +1607,82 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
                     }
                 } else {
                     paramsCheckingArray.push([STATUSBADGES.CHECK, `<code>mediaTypes.video.protocols</code>: <code>${mediatypeVideoStartProtocols}</code>`, `No protocol detected.`]);
+                }
+            }
+        }
+
+        // GDPR - Should be in ortb2.regs.ext.gdpr and user.ext.consent
+        if (detectedCountryCodeISO3 === null) {
+            console.error('No country code detected, cannot check GDPR params.');
+        }
+        else {
+            // List of EEA countries (ISO 3166-1 alpha-3)
+            const EEACountries = [
+                'ALA', 'AUT', 'BEL', 'BGR', 'HRV', 'CYP', 'CZE', 'DNK', 'EST', 'FIN', 'FRA', 'GUF', 'DEU', 'GIB', 'GRC', 'GLP', 'GGY', 'HUN', 'ISL', 'IRL', 'IMN', 'ITA', 'JEY', 'LVA', 'LIE', 'LTU', 'LUX', 'MLT', 'MTQ', 'MYT', 'NLD', 'NOR', 'POL', 'PRT', 'REU', 'ROU', 'BLM', 'MAF', 'SPM', 'SVK', 'SVN', 'ESP', 'SWE', 'GBR'
+            ];
+
+            // Check if the user is in the EEA, only then check the GDPR params
+            if (EEACountries.includes(detectedCountryCodeISO3)) {
+                // User is in the EEA
+                if (ortbGdpr !== 1) {
+                    paramsCheckingArray.push([STATUSBADGES.KO, `<code>ortb2.regs.ext.gdpr</code>: <code>${ortbGdpr}</code>`, `Should be set to <code>1</code> for users in the EEA.`]);
+                } else {
+                    paramsCheckingArray.push([STATUSBADGES.OK, `<code>ortb2.regs.ext.gdpr</code>: <code>${ortbGdpr}</code>`, ``]);
+                }
+
+                // Check the consent string
+                const decodedConsent = iabtcfcore.TCString.decode(ortbConsent) || null;
+                if (decodedConsent === null) {
+                    paramsCheckingArray.push([STATUSBADGES.KO, `<code>ortb2.user.ext.consent</code>: <code>${ortbConsent}</code>`, `No consent string detected, should be a valid TCFv2 string for users in the EEA.`]);
+                } else {
+                    const cmpAdagioBidders = {
+                        58: '33Across',
+                        779: 'Adtarget Teknoloji A.S.',
+                        138: 'ConnectAd Demand GmbH',
+                        90: 'E-Planning (Teroa)',
+                        285: 'Freewheel (Comcast)',
+                        149: 'Illumin / ADman Interactive SLU',
+                        253: 'Improve Digital',
+                        36: 'Nexxen (Unruly)',
+                        617: 'Onfocus (Adagio)',
+                        241: 'OneTag',
+                        69: 'OpenX',
+                        76: 'Pubmatic',
+                        16: 'RTB House',
+                        52: 'Rubicon',
+                        45: 'Smart Adserver (Equativ)',
+                        13: 'Sovrn',
+                        28: 'TripleLift',
+                    }; 
+                    const missingBidders = [];
+                    let adagioMissing = false;
+                    for (const key in cmpAdagioBidders) {
+                        if (!decodedConsent.vendorConsents.has(Number(key))) {
+                            missingBidders.push(`${cmpAdagioBidders[key]} (${key})`);
+                            if (Number(key) === 617) {
+                                adagioMissing = true;
+                            }
+                        }
+                    }
+                    if (adagioMissing) {
+                        paramsCheckingArray.push([
+                            STATUSBADGES.KO,
+                            `<code>ortb2.user.ext.consent</code>`,
+                            `Missing consent for: ${missingBidders.join(', ')}`
+                        ]);
+                    } else if (missingBidders.length > 0) {
+                        paramsCheckingArray.push([
+                            STATUSBADGES.CHECK,
+                            `<code>ortb2.user.ext.consent</code>`,
+                            `Missing consent for: ${missingBidders.join(', ')}`
+                        ]);
+                    } else {
+                        paramsCheckingArray.push([
+                            STATUSBADGES.OK,
+                            `<code>ortb2.user.ext.consent</code>: <code>${ortbConsent.substring(0, 20)}...</code>`,
+                            `All Adagio partners present`
+                        ]);
+                    }
                 }
             }
         }
@@ -1709,8 +1780,8 @@ async function runChecks() {
     checkDuplicatedAdUnitCode();
     // checkSupplyChainObject(); HIDING SSC AS NOT CORRECTLY IMPLEMENTED ATM
     checkCurrencyModule();
-    checkConsentMetadata();
-    checkAdagioCMP();
+    // checkConsentMetadata(); TO BE DISPLAY DIRECTLY IN THE ADUNIT TABLE
+    // checkAdagioCMP(); TO BE DISPLAY DIRECTLY IN THE ADUNIT TABLE
     checkFloorPriceModule();
     checkDsaTransparency();
 }
@@ -1814,11 +1885,12 @@ async function checkCurrentLocation() {
     const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
 
     // Fetch the country code using ipapi.co
-    fetch('https://ipapi.co/json/')
+    await fetch('https://ipapi.co/json/')
         .then((response) => response.json())
         .then((data) => {
             const countryCode = data.country_code;
             const countryName = data.country_name;
+            detectedCountryCodeISO3 = data.country_code_iso3;
             // Convert country code to emoji using a function
             const countryEmoji = getFlagEmoji(countryCode);
             if (countryName !== 'France') {
@@ -2025,9 +2097,17 @@ function checkAdagioLocalStorage() {
 
         // Check the local storage configuration
         if (isStorageAllowed(localStorage.standard?.storageAllowed)) {
-            appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.LOCALSTORAGE, `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorage.standard?.storageAllowed)}</code>`);
+            appendCheckerRow(
+                STATUSBADGES.OK,
+                ADAGIOCHECK.LOCALSTORAGE,
+                `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorage.standard?.storageAllowed)}</code>`
+            );
         } else if (isStorageAllowed(localStorage.adagio?.storageAllowed)) {
-            appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.LOCALSTORAGE, `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorage.adagio?.storageAllowed)}</code>`);
+            appendCheckerRow(
+                STATUSBADGES.OK,
+                ADAGIOCHECK.LOCALSTORAGE,
+                `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorage.adagio?.storageAllowed)}</code>`
+            );
         } else if (foundPrebidVersion >= 9) {
             appendCheckerRow(STATUSBADGES.NA, ADAGIOCHECK.LOCALSTORAGE, 'Localstorage not found. But not required anymore since Prebid 9.');
         } else {
@@ -2250,16 +2330,16 @@ function checkDuplicatedAdUnitCode() {
 
     const duplicates = [];
     // Filter only Adagio bidRequested events
-    const adgioBidsRequested = prebidBidsRequested.filter(e => e.bidderCode?.toLowerCase()?.includes('adagio'));
+    const adgioBidsRequested = prebidBidsRequested.filter((e) => e.bidderCode?.toLowerCase()?.includes('adagio'));
 
-    adgioBidsRequested.forEach(bidRequested => {
+    adgioBidsRequested.forEach((bidRequested) => {
         // Object to count occurrences of each adUnitCode + mediatype
         const seen = {};
-        bidRequested.bids.forEach(bid => {
+        bidRequested.bids.forEach((bid) => {
             const code = bid.adUnitCode;
             // Get all mediatypes for this bid (e.g. banner, video, native)
             const types = Object.keys(bid.mediaTypes || {});
-            types.forEach(type => {
+            types.forEach((type) => {
                 const key = `${code}::${type}`;
                 seen[key] = (seen[key] || 0) + 1;
             });
@@ -2272,10 +2352,12 @@ function checkDuplicatedAdUnitCode() {
 
     if (duplicates.length) {
         // Format output: code (mediatype)
-        const formatted = duplicates.map(str => {
-            const [code, type] = str.split('::');
-            return `<code>${code}</code> (<code>${type}</code>)`;
-        }).join(', ');
+        const formatted = duplicates
+            .map((str) => {
+                const [code, type] = str.split('::');
+                return `<code>${code}</code> (<code>${type}</code>)`;
+            })
+            .join(', ');
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.DUPLICATED, `Duplicated found: ${formatted}`);
     } else {
         appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.DUPLICATED, `No duplicated found.`);
@@ -2396,85 +2478,6 @@ function checkConsentMetadata() {
     } else {
         appendCheckerRow(STATUSBADGES.CHECK, 'Consent metadata', `<code>${prebidWrapper[0]}.getConsentMetadata()</code>: <code>${JSON.stringify(consentMetadata)}</code>`);
     }
-}
-
-function checkGgprConsentString() {
-    // Has been found or not
-    let hasCstString = false;
-    // Checks if bids have been requested
-    if (prebidBidsRequested !== undefined) {
-        // Loop on the bidrequests
-        prebidBidsRequested.forEach((bidRequested) => {
-            // Look for consent string
-            let cstString = bidRequested?.gdprConsent?.consentString;
-            // Checks if not empty
-            if (cstString !== undefined && !hasCstString) {
-                appendCheckerRow(STATUSBADGES.OK, 'GDPR consent string', `<code>${cstString}</code>`);
-                hasCstString = true;
-            }
-        });
-    } else {
-        appendCheckerRow(STATUSBADGES.KO, 'GDPR consent string', `<code>${prebidBidsRequested}</code>`);
-    }
-}
-
-function checkAdagioCMP() {
-    // Based on Adagio resellers, ensure resellers CMP is present in the tcfapi configuration
-    if (typeof window.__tcfapi !== 'function') {
-        appendCheckerRow(STATUSBADGES.KO, 'Consent management platform', '<code>window.__tcfapi</code> function is not defined');
-        appendConsentsRow(STATUSBADGES.KO, 'Consent management platform', '<code>window.__tcfapi</code> function is not defined');
-        return;
-    }
-    // Gives the Consent Management strings values
-    window.__tcfapi('getTCData', 2, (tcdata, success) => {
-        const cmpAdagioBidders = {
-            58: "33Across",
-            779: "Adtarget Teknoloji A.S.",
-            138: "ConnectAd Demand GmbH",
-            90: "E-Planning (Teroa)",
-            285: "Freewheel (Comcast)",
-            149: "Illumin / ADman Interactive SLU",
-            253: "Improve Digital",
-            36: "Nexxen (Unruly)",
-            617: "Onfocus (Adagio)",
-            241: "OneTag",
-            69: "OpenX",
-            76: "Pubmatic",
-            16: "RTB House",
-            52: "Rubicon",
-            45: "Smart Adserver (Equativ)",
-            13: "Sovrn",
-            28: "TripleLift"
-        };
-
-        let adagioFound = false;
-        let biddersNotFound = '';
-
-        for (let key in cmpAdagioBidders) {
-            const consent = tcdata.vendor.consents[key];
-            const legitimate = tcdata.vendor.legitimateInterests[key];
-
-            if (parseInt(key) === 617 && (consent || legitimate)) {
-                adagioFound = true;
-            }
-
-            // Build the line values per partner
-            const bidderName = `<code>${cmpAdagioBidders[key]} (${key})</code>`;
-            const bidderConsent = consent ? STATUSBADGES.OK : STATUSBADGES.KO;
-            const bidderLegitimate = legitimate ? STATUSBADGES.OK : STATUSBADGES.KO;
-            appendConsentsRow(bidderName, bidderConsent, bidderLegitimate);
-
-            // Build the log string of partners CMP to add
-            if (!consent) biddersNotFound = biddersNotFound + bidderName + '; ';
-        }
-
-        if (biddersNotFound !== '') {
-            if (!adagioFound) appendCheckerRow(STATUSBADGES.KO, 'Consent management platform', `Missing: ${biddersNotFound}`);
-            else appendCheckerRow(STATUSBADGES.CHECK, 'Consent management platform', `Missing: ${biddersNotFound}`);
-        } else {
-            appendCheckerRow(STATUSBADGES.OK, 'Consent management platform', 'Adagio consent: <code>true</code>');
-        }
-    });
 }
 
 function checkDsaTransparency() {
