@@ -743,6 +743,9 @@ function appendAdUnitsRow(bidders, bids) {
         }
     } else alertTextDiv.innerHTML += `<small><kbd> 0</kbd></small>`;
 
+    // will hold the computed status for each adunit
+    const computedAdunitsStatus = []
+
     // Fill the table section
     bids.forEach((bid) => {
         // Gather the initial info: code, type, bidder
@@ -756,7 +759,12 @@ function appendAdUnitsRow(bidders, bids) {
         // Build the bid checking array and compute the adunit status
         let paramsCheckingArray = [];
         if (bidderAdagioDetected) buildParamsCheckingArray(bid, paramsCheckingArray);
-        const status = bidderAdagioDetected ? computeAdUnitStatus(paramsCheckingArray) : STATUSBADGES.NA;
+        // Extract all the status values (first element of each array) from paramsCheckingArray
+        const extractedStatus = paramsCheckingArray.map(item => item[0]);
+        const status = bidderAdagioDetected ? computeAdUnitStatus(extractedStatus) : STATUSBADGES.NA;
+
+        // Store the computed status for the adunit
+        if (bidderAdagioDetected) computedAdunitsStatus.push(status);
 
         // Create the row
         const newRow = chkr_ovrl.overlayFrameDoc.createElement('tr');
@@ -813,6 +821,9 @@ function appendAdUnitsRow(bidders, bids) {
             toggleBidRow(newInput, bidder);
         });
     });
+
+    // return the computed status for each adunit
+    return computedAdunitsStatus;
 }
 
 function toggleBidRow(inputbidder, bidder) {
@@ -1154,7 +1165,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             divIdRes = paramAdUnitElementId;
             divIdDetails = 'Recommendation: Setup the new divId param in ortb2Imp.';
         } else {
-            divIdStatus = STATUSBADGES.KO;
+            divIdStatus = STATUSBADGES.CHECK;
             divIdSetup = 'ortb2Imp.ext.data.divId';
             divIdRes = undefined;
             divIdDetails = '';
@@ -1166,7 +1177,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             divIdRes = paramAdUnitElementId;
             divIdDetails = '';
         } else {
-            divIdStatus = STATUSBADGES.KO;
+            divIdStatus = STATUSBADGES.CHECK;
             divIdSetup = 'params.adUnitElementId';
             divIdRes = undefined;
             divIdDetails = '';
@@ -1521,13 +1532,13 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             }
         } else if (deepOrtb2ImpInterstitial !== null) {
             paramsCheckingArray.push([
-                chkr_wrp.prebidVersionDetected < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+                chkr_wrp.prebidVersionDetected < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.INFO,
                 `<code>${deepOrtb2ImpInterstitial.path}</code>: <code>${deepOrtb2ImpInterstitial.value}</code>`,
                 'Misplaced, should be in <code>ortb2Imp.instl</code>.',
             ]);
         } else {
             paramsCheckingArray.push([
-                chkr_wrp.prebidVersionDetected < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+                chkr_wrp.prebidVersionDetected < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.INFO,
                 `<code>ortb2Imp.instl</code>: <code>undefined</code>`,
                 'No interstitial parameter detected.',
             ]);
@@ -1558,10 +1569,11 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 
 function computeAdUnitStatus(paramsCheckingArray) {
     // The array contains X item with the following structure: [string, string, string] (html code)
-    const statuses = [STATUSBADGES.OK, STATUSBADGES.INFO, STATUSBADGES.CHECK, STATUSBADGES.KO]; // Priority ranking
-    // Check the full array to get the highest status (is it ko, check, ok)
-    const highestStatus = paramsCheckingArray.reduce((highest, current) => (statuses.indexOf(current[0]) > statuses.indexOf(highest) ? current[0] : highest), STATUSBADGES.OK);
-    return highestStatus;
+    if (paramsCheckingArray.includes(STATUSBADGES.KO)) return STATUSBADGES.KO;
+    else if (paramsCheckingArray.includes(STATUSBADGES.CHECK)) return STATUSBADGES.CHECK;
+    else if (paramsCheckingArray.includes(STATUSBADGES.UPDATE)) return STATUSBADGES.UPDATE;
+    else if (paramsCheckingArray.includes(STATUSBADGES.INFO)) return STATUSBADGES.INFO;
+    else return STATUSBADGES.OK;
 }
 
 // Deep search for a specific parameter in the bid object
@@ -2050,9 +2062,9 @@ function checkUserIds() {
             STATUSBADGES.OK,
             ADAGIOCHECK.USERIDS,
             `
-            • Installed / present: <code>${totalInstalledUserIds}/${presentUserIdsCount} (${percentagePresent.toFixed(2)}%)</code><br>
-            • Found uids: <code>${presentUserIdsNames.join(', ')}</code>
-        `
+                • Installed / present: <code>${totalInstalledUserIds}/${presentUserIdsCount} (${percentagePresent.toFixed(2)}%)</code><br>
+                • Found uids: <code>${presentUserIdsNames.join(', ')}</code>
+            `
         );
     } else {
         // Indicate that no user IDs are present
@@ -2108,31 +2120,48 @@ function checkAdagioAdUnitParams() {
         totalPrebidAdUnitsCodes = prebidAdUnitsCodes.size;
         totalPrebidAdagioAdUnitsCode = prebidAdagioAdUnitsCodes.length;
 
-        if (totalPrebidAdUnitsCodes === 0) {
-            appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.ADUNITS, `<kbd>${totalPrebidAdUnitsCodes}</kbd> adUnits(s) found`);
-        } else if (totalPrebidAdUnitsCodes > 0 && totalPrebidAdagioAdUnitsCode === 0) {
-            appendCheckerRow(
-                STATUSBADGES.KO,
-                ADAGIOCHECK.ADUNITS,
-                `Adagio called for <kbd>${totalPrebidAdagioAdUnitsCode}</kbd> adUnit(s) out of <kbd>${totalPrebidAdUnitsCodes}</kbd> adUnits(s) found`
-            );
-        } else if (totalPrebidAdUnitsCodes > 0 && totalPrebidAdagioAdUnitsCode > 0) {
-            if (totalPrebidAdUnitsCodes > totalPrebidAdagioAdUnitsCode) {
-                appendCheckerRow(
-                    STATUSBADGES.CHECK,
-                    ADAGIOCHECK.ADUNITS,
-                    `Adagio called for <kbd>${totalPrebidAdagioAdUnitsCode}</kbd> adUnit(s) out of <kbd>${totalPrebidAdUnitsCodes}</kbd> adUnits(s) found`
-                );
-            } else {
-                appendCheckerRow(
-                    STATUSBADGES.OK,
-                    ADAGIOCHECK.ADUNITS,
-                    `Adagio called for <kbd>${totalPrebidAdagioAdUnitsCode}</kbd> adUnit(s) out of <kbd>${totalPrebidAdUnitsCodes}</kbd> adUnits(s) found`
-                );
-            }
-        }
         // Fill the Adunits table with all the requested bids
-        appendAdUnitsRow(prebidBidders, prebidBids);
+        const computedAdunitsStatus = appendAdUnitsRow(prebidBidders, prebidBids);
+
+        // Compute the final adunits status (KO, CHECK, OK)
+        console.log('computedAdunitsStatus', computedAdunitsStatus);
+        const finalComputedAdunitsStatus = computeAdUnitStatus(computedAdunitsStatus);
+        console.log('finalComputedAdunitsStatus', finalComputedAdunitsStatus);
+        
+        // Compute the adunits counting status (KO, CHECK, OK)
+        let adagioAdunitsStatus = STATUSBADGES.OK;
+        if (totalPrebidAdUnitsCodes === 0) adagioAdunitsStatus = STATUSBADGES.KO;
+        else if (totalPrebidAdagioAdUnitsCode === 0) adagioAdunitsStatus = STATUSBADGES.KO;
+        else if (totalPrebidAdUnitsCodes > totalPrebidAdagioAdUnitsCode) adagioAdunitsStatus = STATUSBADGES.CHECK;
+
+        // Count occurrences of each unique status in computedAdunitsStatus
+        const statusCounts = computedAdunitsStatus.reduce((acc, status) => {
+            acc[status] = (acc[status] || 0) + 1;
+            return acc;
+        }, {});
+
+        // Build a summary string for status counts
+        const statusSummary = Object.entries(statusCounts)
+            .map(([status, count]) => `${status} (${count})`)
+            .join(', ');
+
+        // Compile the status and display the infos.
+        const resultStatus = computeAdUnitStatus([finalComputedAdunitsStatus, adagioAdunitsStatus]);
+        if (totalPrebidAdUnitsCodes === 0) {
+            appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.ADUNITS, `<code>${totalPrebidAdUnitsCodes}</code> adUnits(s) found`);
+        } else {
+            let details = `
+                • Adagio called for <code>${totalPrebidAdagioAdUnitsCode}</code> adUnit(s) out of <code>${totalPrebidAdUnitsCodes}</code> adUnits(s) found<br>
+            `;
+            if (totalPrebidAdagioAdUnitsCode > 0) {
+                details += `• Params status: ${statusSummary}<br>`;
+            }
+            appendCheckerRow(
+                resultStatus,
+                ADAGIOCHECK.ADUNITS,
+                details
+            );
+        }
     }
 }
 
