@@ -1,19 +1,39 @@
 /*************************************************************************************************************************************************************************************************************************************
+ * Global variables v2
+ ************************************************************************************************************************************************************************************************************************************/
+
+// Overlay iframe html object, and iframe document
+const chkr_ovrl = {
+    overlayFrame: undefined,        // HTML iframe element for the overlay
+    buttonFrame: undefined,         // HTML iframe element for the button
+    overlayFrameDoc: undefined,     // Document object for the overlay iframe
+    buttonFrameDoc: undefined,      // Document object for the button iframe
+    overlayVisible: true,          // Overlay current state
+    activeTab: undefined            // Active tab name
+}
+
+// Prebid.js wrapper objects, and window.ADAGIO object
+const chkr_wrp = {
+    prebidObject: undefined,          // Prebid.js object
+    prebidWrappers: [],              // Arrays of [wrapper, window] : window[wrapper]
+    prebidWrapper: undefined,         // Current Prebid.js wrapper selected
+    adagioAdapter: undefined,         // Adagio adapter object (window.ADAGIO)
+    prebidVersionDetected: undefined, // Prebid.js version detected
+}
+
+// Adagio API variables
+const chkr_api = {
+    apiKeyDetected: false,
+    matchedDomainsRecords: null,
+    matchedSiteNameRecords: null,
+    successRecordItems: null,
+    detectedCountryCodeIso3: null
+}
+
+/*************************************************************************************************************************************************************************************************************************************
  * Global variables
  ************************************************************************************************************************************************************************************************************************************/
-// Overlay iframe html object, and iframe document
-let overlayFrame = undefined;
-let buttonFrame = undefined;
-let overlayFrameDoc = undefined;
-let buttonFrameDoc = undefined;
-// Overlay current state
-let overlayVisible = true;
-// Prebid.js object, and window.ADAGIO object and events
-let prebidObject = undefined;
-let prebidWrappers = []; // arrays of [wrapper, window] : window[wrapper]
-let prebidWrapper = undefined;
-let adagioAdapter = undefined;
-let foundPrebidVersion = undefined;
+
 // Prebid events, bids and adUnits
 let prebidEvents = undefined;
 let prebidBidsRequested = undefined;
@@ -31,16 +51,8 @@ let totalAdagioAdUnitsCodes = 0;
 let totalAdagioPbjsAdUnitsCodes = 0;
 let organizationIds = [];
 let siteNames = [];
-// Active tab (from button html element)
-let activeTab = undefined;
 // Variables for draggable iframe
 let isAdgWindowDragging = false;
-// Adagio API key detected
-let adagioApiKeyfound = false;
-let matchedDomainRecords = null;
-let matchedSiteNameRecords = null;
-let successRecordItems = null;
-let detectedCountryCodeISO3 = null;
 
 /*************************************************************************************************************************************************************************************************************************************
  * Enums
@@ -136,12 +148,12 @@ async function buildInterface() {
     makeIframeDraggable();
 
     // If at least one Prebid wrapper found, run the checks
-    if (prebidWrappers.length > 0) {
+    if (chkr_wrp.prebidWrappers.length > 0) {
         runChecks();
     } else {
         // Fill the alert with number of orgIds found
         const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(' ', '-');
-        const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
+        const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
         alertTextDiv.innerHTML += `<small>• No Prebid wrapper detected... </small><br>`;
     }
 }
@@ -154,49 +166,45 @@ buildInterface();
 
 function createOverlay() {
     // create a new button element
-    buttonFrame = window.document.createElement('iframe');
-    buttonFrame.setAttribute('id', 'adagio-button-frame');
-    buttonFrame.style.position = 'fixed';
-    buttonFrame.style.top = '10px';
-    buttonFrame.style.right = '10px';
-    buttonFrame.style.width = '45px';
-    buttonFrame.style.height = '45px';
-    buttonFrame.style.zIndex = '2147483647';
-    buttonFrame.style.backgroundColor = 'rgb(47, 55, 87)';
-    buttonFrame.style.border = 'none';
-    buttonFrame.style.borderRadius = '10px';
-    buttonFrame.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
-    buttonFrame.style.display = 'block';
-    window.document.body.appendChild(buttonFrame);
+    chkr_ovrl.buttonFrame = window.document.createElement('iframe');
+    chkr_ovrl.buttonFrame.setAttribute('id', 'adagio-button-frame');
+    chkr_ovrl.buttonFrame.style.position = 'fixed';
+    chkr_ovrl.buttonFrame.style.top = '10px';
+    chkr_ovrl.buttonFrame.style.right = '10px';
+    chkr_ovrl.buttonFrame.style.width = '45px';
+    chkr_ovrl.buttonFrame.style.height = '45px';
+    chkr_ovrl.buttonFrame.style.zIndex = '2147483647';
+    chkr_ovrl.buttonFrame.style.backgroundColor = 'rgb(47, 55, 87)';
+    chkr_ovrl.buttonFrame.style.border = 'none';
+    chkr_ovrl.buttonFrame.style.borderRadius = '10px';
+    chkr_ovrl.buttonFrame.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
+    chkr_ovrl.buttonFrame.style.display = 'block';
+    window.document.body.appendChild(chkr_ovrl.buttonFrame);
 
     // create a new iframe element
-    overlayFrame = window.document.createElement('iframe');
-    buttonFrame.setAttribute('id', 'adagio-overlay-frame');
-    overlayFrame.classList.add('adagio-overlay');
-    overlayFrame.style.position = 'fixed';
-    overlayFrame.style.top = '10px';
-    overlayFrame.style.left = '10px';
-    overlayFrame.style.width = '1000px';
-    overlayFrame.style.height = '95%';
-    overlayFrame.style.zIndex = '2147483647';
-    overlayFrame.style.backgroundColor = 'transparent';
-    overlayFrame.style.border = 'none';
-    overlayFrame.style.borderRadius = '10px';
-    overlayFrame.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
-    overlayFrame.style.resize = 'both';
-    overlayFrame.style.display = 'block';
-    window.document.body.appendChild(overlayFrame);
+    chkr_ovrl.overlayFrame = window.document.createElement('iframe');
+    chkr_ovrl.buttonFrame.setAttribute('id', 'adagio-overlay-frame');
+    chkr_ovrl.overlayFrame.classList.add('adagio-overlay');
+    chkr_ovrl.overlayFrame.style.position = 'fixed';
+    chkr_ovrl.overlayFrame.style.top = '10px';
+    chkr_ovrl.overlayFrame.style.left = '10px';
+    chkr_ovrl.overlayFrame.style.width = '1000px';
+    chkr_ovrl.overlayFrame.style.height = '95%';
+    chkr_ovrl.overlayFrame.style.zIndex = '2147483647';
+    chkr_ovrl.overlayFrame.style.backgroundColor = 'transparent';
+    chkr_ovrl.overlayFrame.style.border = 'none';
+    chkr_ovrl.overlayFrame.style.borderRadius = '10px';
+    chkr_ovrl.overlayFrame.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
+    chkr_ovrl.overlayFrame.style.resize = 'both';
+    chkr_ovrl.overlayFrame.style.display = 'block';
+    window.document.body.appendChild(chkr_ovrl.overlayFrame);
 
-    if (!overlayVisible) overlayFrame.style.display = 'none';
-    else buttonFrame.style.opacity = '0.4';
+    if (!chkr_ovrl.overlayVisible) chkr_ovrl.overlayFrame.style.display = 'none';
+    else chkr_ovrl.buttonFrame.style.opacity = '0.4';
 
     // get the iframe document objects
-    buttonFrameDoc = buttonFrame.contentDocument || buttonFrame.contentWindow.document;
-    overlayFrameDoc = overlayFrame.contentDocument || overlayFrame.contentWindow.document;
-
-    // set the background color
-    // overlayFrameDoc.body.style.setProperty('--primary', 'rgb(246, 247, 248)');
-    // overlayFrameDoc.body.style.setProperty('--primary-hover', 'rgb(246, 247, 248)');
+    chkr_ovrl.buttonFrameDoc = chkr_ovrl.buttonFrame.contentDocument || chkr_ovrl.buttonFrame.contentWindow.document;
+    chkr_ovrl.overlayFrameDoc = chkr_ovrl.overlayFrame.contentDocument || chkr_ovrl.overlayFrame.contentWindow.document;
 }
 
 function getPrebidWrappers() {
@@ -208,9 +216,9 @@ function getPrebidWrappers() {
             if (
                 instance?.version &&
                 typeof instance.getEvents === 'function' &&
-                !prebidWrappers.some(([existingWrapper, existingWindow]) => existingWrapper === wrapper && existingWindow === windowObj)
+                !chkr_wrp.prebidWrappers.some(([existingWrapper, existingWindow]) => existingWrapper === wrapper && existingWindow === windowObj)
             ) {
-                prebidWrappers.push([wrapper, windowObj]);
+                chkr_wrp.prebidWrappers.push([wrapper, windowObj]);
             }
         });
     };
@@ -229,21 +237,21 @@ function getPrebidWrappers() {
     });
 
     // Check ADAGIO versions for hidden wrappers, using addWrappers for consistency
-    if (adagioAdapter !== undefined && adagioAdapter?.versions !== undefined) {
+    if (chkr_wrp.adagioAdapter !== undefined && chkr_wrp.adagioAdapter?.versions !== undefined) {
         addWrappers(
             window,
-            Object.keys(adagioAdapter.versions).filter((item) => item !== 'adagiojs')
+            Object.keys(chkr_wrp.adagioAdapter.versions).filter((item) => item !== 'adagiojs')
         );
     }
 
     // Pre-select the wrapper based on adagio bidrequests, or name 'pbjs'
-    if (prebidWrappers.length !== 0) {
+    if (chkr_wrp.prebidWrappers.length !== 0) {
         let maxAdagioBids,
             maxBids = 0;
         let maxAdagioBidsWrapper,
             maxBidsWrapper = null; // prebidWrappers[0];
 
-        prebidWrappers.forEach(([wrapper, win]) => {
+        chkr_wrp.prebidWrappers.forEach(([wrapper, win]) => {
             const instance = win[wrapper];
             if (instance?.getEvents) {
                 const bids = instance.getEvents()?.filter((event) => event.eventType === 'bidRequested') || [];
@@ -262,9 +270,9 @@ function getPrebidWrappers() {
         });
 
         // Select the wrapper based on priority: most Adagio bids > most bids > first wrapper
-        if (prebidWrapper === undefined && prebidObject === undefined) {
-            prebidWrapper = maxAdagioBids > 0 ? maxAdagioBidsWrapper : maxBids > 0 ? maxBidsWrapper : prebidWrappers[0];
-            prebidObject = prebidWrapper[1][prebidWrapper[0]];
+        if (chkr_wrp.prebidWrapper === undefined && chkr_wrp.prebidObject === undefined) {
+            chkr_wrp.prebidWrapper = maxAdagioBids > 0 ? maxAdagioBidsWrapper : maxBids > 0 ? maxBidsWrapper : chkr_wrp.prebidWrappers[0];
+            chkr_wrp.prebidObject = chkr_wrp.prebidWrapper[1][chkr_wrp.prebidWrapper[0]];
         }
     }
 }
@@ -276,7 +284,7 @@ async function loadModules() {
 
 function buildOverlayHtml() {
     // append pico style
-    const picoStyle = overlayFrameDoc.createElement('link');
+    const picoStyle = chkr_ovrl.overlayFrameDoc.createElement('link');
     picoStyle.setAttribute('rel', 'stylesheet');
     picoStyle.setAttribute('href', 'https://unpkg.com/@picocss/pico@1.5.7/css/pico.min.css');
 
@@ -285,7 +293,7 @@ function buildOverlayHtml() {
     nav.appendChild(buildAdagioLogo());
 
     // create second unordered list inside navigation
-    const ul = overlayFrameDoc.createElement('ul');
+    const ul = chkr_ovrl.overlayFrameDoc.createElement('ul');
     ul.appendChild(buildTabButton(ADAGIOTABSNAME.CHECKER, ADAGIOSVG.CHECKER, true));
     ul.appendChild(buildTabButton(ADAGIOTABSNAME.ADUNITS, ADAGIOSVG.ADUNITS, false));
     ul.appendChild(buildApiButton('API status', ADAGIOSVG.APIGREY, true));
@@ -297,13 +305,13 @@ function buildOverlayHtml() {
     nav.appendChild(ul);
 
     // append main containers to iframeDoc body
-    overlayFrameDoc.head.appendChild(picoStyle);
-    overlayFrameDoc.body.appendChild(nav);
+    chkr_ovrl.overlayFrameDoc.head.appendChild(picoStyle);
+    chkr_ovrl.overlayFrameDoc.body.appendChild(nav);
 }
 
 function buildNavBar() {
     // create navigation element
-    const nav = overlayFrameDoc.createElement('nav');
+    const nav = chkr_ovrl.overlayFrameDoc.createElement('nav');
     nav.classList.add('container-fluid');
     nav.setAttribute('id', 'adagio-nav');
     nav.style.zIndex = '99';
@@ -319,30 +327,30 @@ function buildNavBar() {
 
 function buildAdagioButton() {
     // button to hide and show the iframe
-    const a = buttonFrameDoc.createElement('a');
+    const a = chkr_ovrl.buttonFrameDoc.createElement('a');
     a.innerHTML = ADAGIOSVG.LOGO;
     a.style.fill = 'white';
-    buttonFrameDoc.body.appendChild(a);
+    chkr_ovrl.buttonFrameDoc.body.appendChild(a);
 
-    buttonFrameDoc.querySelector('html').style.cursor = 'pointer';
-    buttonFrameDoc.querySelector('html').addEventListener('click', () => {
-        if (overlayVisible) {
-            overlayVisible = false;
-            overlayFrame.style.display = 'none';
-            buttonFrame.style.opacity = '';
+    chkr_ovrl.buttonFrameDoc.querySelector('html').style.cursor = 'pointer';
+    chkr_ovrl.buttonFrameDoc.querySelector('html').addEventListener('click', () => {
+        if (chkr_ovrl.overlayVisible) {
+            chkr_ovrl.overlayVisible = false;
+            chkr_ovrl.overlayFrame.style.display = 'none';
+            chkr_ovrl.buttonFrame.style.opacity = '';
         } else {
-            overlayVisible = true;
-            overlayFrame.style.display = '';
-            buttonFrame.style.opacity = '0.4';
+            chkr_ovrl.overlayVisible = true;
+            chkr_ovrl.overlayFrame.style.display = '';
+            chkr_ovrl.buttonFrame.style.opacity = '0.4';
         }
     });
 }
 
 function buildAdagioLogo() {
     // create first unordered list inside navigation
-    const ul = overlayFrameDoc.createElement('ul');
-    const li = overlayFrameDoc.createElement('li');
-    const a = overlayFrameDoc.createElement('a');
+    const ul = chkr_ovrl.overlayFrameDoc.createElement('ul');
+    const li = chkr_ovrl.overlayFrameDoc.createElement('li');
+    const a = chkr_ovrl.overlayFrameDoc.createElement('a');
     a.setAttribute('href', ADAGIOLINKS.WEBSITE);
     a.setAttribute('target', '_blank');
     a.innerHTML = ADAGIOSVG.LOGO;
@@ -353,14 +361,14 @@ function buildAdagioLogo() {
 
 function buildTabButton(name, svg, isactive) {
     const tabName = name.toLowerCase().replace(' ', '-');
-    const li = overlayFrameDoc.createElement('li');
-    const tabButton = overlayFrameDoc.createElement('button');
+    const li = chkr_ovrl.overlayFrameDoc.createElement('li');
+    const tabButton = chkr_ovrl.overlayFrameDoc.createElement('button');
     tabButton.setAttribute('id', `${tabName}-button`);
     tabButton.innerHTML = svg;
     tabButton.innerHTML += ` ${name} `;
     tabButton.addEventListener('click', () => switchTab(tabName));
     if (!isactive) tabButton.classList.add('outline');
-    else activeTab = tabName;
+    else chkr_ovrl.activeTab = tabName;
     tabButton.style.padding = '0.3em';
     tabButton.style.textTransform = 'uppercase';
     tabButton.style.fontSize = '0.85em';
@@ -370,11 +378,11 @@ function buildTabButton(name, svg, isactive) {
 
 function buildPrebidButton(name, svg, isactive) {
     // Get the number of wrapper found
-    let nbWrappers = prebidWrappers.length;
+    let nbWrappers = chkr_wrp.prebidWrappers.length;
 
     // As website can use different wrapper for Prebid, this button allows to switch between them
-    const li = overlayFrameDoc.createElement('li');
-    const button = overlayFrameDoc.createElement('button');
+    const li = chkr_ovrl.overlayFrameDoc.createElement('li');
+    const button = chkr_ovrl.overlayFrameDoc.createElement('button');
     button.setAttribute('title', name);
     // Disabled button if no wrapper found
     if (!isactive || nbWrappers === 0) button.disabled = true;
@@ -387,7 +395,7 @@ function buildPrebidButton(name, svg, isactive) {
     button.style.padding = '0.3em';
 
     // If more than one wrapper, display a badge with the number of wrappers found
-    const badge = overlayFrameDoc.createElement('span');
+    const badge = chkr_ovrl.overlayFrameDoc.createElement('span');
     badge.style.position = 'absolute';
     badge.style.top = '-10px';
     badge.style.right = '-10px';
@@ -401,15 +409,15 @@ function buildPrebidButton(name, svg, isactive) {
     if (nbWrappers < 2) badge.style.display = 'none';
 
     // On click, a modal appears to select the wrapper and work on the according Prebid object
-    const dialog = overlayFrameDoc.createElement('dialog');
+    const dialog = chkr_ovrl.overlayFrameDoc.createElement('dialog');
     dialog.setAttribute('open', false);
-    const article = overlayFrameDoc.createElement('article');
-    const header = overlayFrameDoc.createElement('header');
-    const closeLink = overlayFrameDoc.createElement('a');
+    const article = chkr_ovrl.overlayFrameDoc.createElement('article');
+    const header = chkr_ovrl.overlayFrameDoc.createElement('header');
+    const closeLink = chkr_ovrl.overlayFrameDoc.createElement('a');
     closeLink.setAttribute('aria-label', 'Close');
     closeLink.classList.add('close');
     header.innerHTML = 'Prebid wrappers detected';
-    const paragraph = overlayFrameDoc.createElement('p');
+    const paragraph = chkr_ovrl.overlayFrameDoc.createElement('p');
 
     // Add eventlistner to show and hide the modal
     closeLink.addEventListener('click', () => {
@@ -422,7 +430,7 @@ function buildPrebidButton(name, svg, isactive) {
     // Append elements
     li.appendChild(button);
     button.appendChild(badge);
-    overlayFrameDoc.body.appendChild(dialog);
+    chkr_ovrl.overlayFrameDoc.body.appendChild(dialog);
     dialog.appendChild(article);
     article.appendChild(header);
     header.appendChild(closeLink);
@@ -431,28 +439,28 @@ function buildPrebidButton(name, svg, isactive) {
     // Fill the modal with the list Prebid wrappers found
     for (let i = 0; i < nbWrappers; i++) {
         // Create the radio button for the current wrapper item
-        const item = prebidWrappers[i];
+        const item = chkr_wrp.prebidWrappers[i];
 
-        const wrapperItem = overlayFrameDoc.createElement('div');
-        const itemInput = overlayFrameDoc.createElement('input');
+        const wrapperItem = chkr_ovrl.overlayFrameDoc.createElement('div');
+        const itemInput = chkr_ovrl.overlayFrameDoc.createElement('input');
         itemInput.setAttribute('type', 'radio');
         itemInput.setAttribute('value', i);
         itemInput.setAttribute('name', 'radio-group'); // added the 'name' attribute
         // itemInput.setAttribute('id', `${item.replace(' ', '-')}-wrapper`)
-        const itemLabel = overlayFrameDoc.createElement('label');
+        const itemLabel = chkr_ovrl.overlayFrameDoc.createElement('label');
         itemLabel.setAttribute('for', i);
         itemLabel.innerHTML = item[0];
-        if (prebidWrappers[i][1] !== window) itemLabel.innerHTML += ' (iframe)';
+        if (chkr_wrp.prebidWrappers[i][1] !== window) itemLabel.innerHTML += ' (iframe)';
 
         // If current wrapper is the used one at the moment, check the radio
-        if (prebidWrapper[0] === item[0] && Object.is(prebidWrapper[1], item[1])) {
+        if (chkr_wrp.prebidWrapper[0] === item[0] && Object.is(chkr_wrp.prebidWrapper[1], item[1])) {
             itemInput.checked = true;
         }
 
         itemInput.addEventListener('click', function () {
             if (itemInput.checked) {
-                prebidWrapper = prebidWrappers[itemInput.value];
-                prebidObject = prebidWrapper[1][prebidWrapper[0]];
+                chkr_wrp.prebidWrapper = chkr_wrp.prebidWrappers[itemInput.value];
+                chkr_wrp.prebidObject = chkr_wrp.prebidWrapper[1][chkr_wrp.prebidWrapper[0]];
                 refreshChecker();
             }
         });
@@ -467,8 +475,8 @@ function buildPrebidButton(name, svg, isactive) {
 }
 
 function buildOverlayButton(name, svg, isactive) {
-    const li = overlayFrameDoc.createElement('li');
-    const button = overlayFrameDoc.createElement('button');
+    const li = chkr_ovrl.overlayFrameDoc.createElement('li');
+    const button = chkr_ovrl.overlayFrameDoc.createElement('button');
     button.setAttribute('title', name);
     if (!isactive) button.disabled = true;
     button.innerHTML = svg;
@@ -481,8 +489,8 @@ function buildOverlayButton(name, svg, isactive) {
 }
 
 function buildDebuggingButton(name, svg, isactive) {
-    const li = overlayFrameDoc.createElement('li');
-    const button = overlayFrameDoc.createElement('button');
+    const li = chkr_ovrl.overlayFrameDoc.createElement('li');
+    const button = chkr_ovrl.overlayFrameDoc.createElement('button');
     button.setAttribute('title', name);
     if (!isactive) button.disabled = true;
     button.innerHTML = svg;
@@ -495,8 +503,8 @@ function buildDebuggingButton(name, svg, isactive) {
 }
 
 function buildApiButton(name, svg, isactive) {
-    const li = overlayFrameDoc.createElement('li');
-    const button = overlayFrameDoc.createElement('button');
+    const li = chkr_ovrl.overlayFrameDoc.createElement('li');
+    const button = chkr_ovrl.overlayFrameDoc.createElement('button');
     button.setAttribute('id', 'apiButton');
     button.setAttribute('title', name);
     if (!isactive) button.disabled = true;
@@ -509,8 +517,8 @@ function buildApiButton(name, svg, isactive) {
 }
 
 function buildRefreshButton(name, svg, isactive) {
-    const li = overlayFrameDoc.createElement('li');
-    const button = overlayFrameDoc.createElement('button');
+    const li = chkr_ovrl.overlayFrameDoc.createElement('li');
+    const button = chkr_ovrl.overlayFrameDoc.createElement('button');
     button.setAttribute('title', name);
     if (!isactive) button.disabled = true;
     button.innerHTML = svg;
@@ -527,25 +535,25 @@ function createCheckerDiv() {
     const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(' ', '-');
 
     // create main container element
-    const mainContainer = overlayFrameDoc.createElement('main');
+    const mainContainer = chkr_ovrl.overlayFrameDoc.createElement('main');
     mainContainer.classList.add('container-fluid');
     mainContainer.setAttribute('id', `${tabName}-container`);
     mainContainer.style.paddingTop = '5rem';
     mainContainer.style.paddingBottom = '0';
 
     // create headings container
-    const headings = overlayFrameDoc.createElement('div');
+    const headings = chkr_ovrl.overlayFrameDoc.createElement('div');
     headings.classList.add('headings');
 
-    const h2 = overlayFrameDoc.createElement('h2');
+    const h2 = chkr_ovrl.overlayFrameDoc.createElement('h2');
     h2.textContent = 'Integration checker';
-    const h3 = overlayFrameDoc.createElement('h3');
+    const h3 = chkr_ovrl.overlayFrameDoc.createElement('h3');
     h3.textContent = 'Expectations for a proper Adagio integration';
     headings.appendChild(h2);
     headings.appendChild(h3);
 
     // create the alert article and text
-    const alertContainer = overlayFrameDoc.createElement('article');
+    const alertContainer = chkr_ovrl.overlayFrameDoc.createElement('article');
     alertContainer.style.padding = '1em';
     alertContainer.style.marginLeft = '';
     alertContainer.style.marginRight = '';
@@ -554,28 +562,28 @@ function createCheckerDiv() {
     alertContainer.style.color = COLOR.YELLOWTEXT;
     alertContainer.style.backgroundColor = COLOR.YELLOWBACKGROUND;
 
-    const alertTextDiv = overlayFrameDoc.createElement('div');
+    const alertTextDiv = chkr_ovrl.overlayFrameDoc.createElement('div');
     alertTextDiv.setAttribute('id', `${tabName}-alert`);
     alertContainer.appendChild(alertTextDiv);
 
     // create table element
-    const table = overlayFrameDoc.createElement('table');
-    const thead = overlayFrameDoc.createElement('thead');
-    const tr = overlayFrameDoc.createElement('tr');
-    const th1 = overlayFrameDoc.createElement('th');
+    const table = chkr_ovrl.overlayFrameDoc.createElement('table');
+    const thead = chkr_ovrl.overlayFrameDoc.createElement('thead');
+    const tr = chkr_ovrl.overlayFrameDoc.createElement('tr');
+    const th1 = chkr_ovrl.overlayFrameDoc.createElement('th');
     th1.setAttribute('scope', 'col');
     th1.textContent = 'Status';
-    const th2 = overlayFrameDoc.createElement('th');
+    const th2 = chkr_ovrl.overlayFrameDoc.createElement('th');
     th2.setAttribute('scope', 'col');
     th2.textContent = 'Name';
-    const th3 = overlayFrameDoc.createElement('th');
+    const th3 = chkr_ovrl.overlayFrameDoc.createElement('th');
     th3.setAttribute('scope', 'col');
     th3.textContent = 'Details';
     tr.appendChild(th1);
     tr.appendChild(th2);
     tr.appendChild(th3);
     thead.appendChild(tr);
-    const tbody = overlayFrameDoc.createElement('tbody');
+    const tbody = chkr_ovrl.overlayFrameDoc.createElement('tbody');
     tbody.setAttribute('id', `${tabName}-tbody`);
     table.appendChild(thead);
     table.appendChild(tbody);
@@ -586,7 +594,7 @@ function createCheckerDiv() {
     mainContainer.appendChild(table);
 
     // append the container to the body
-    overlayFrameDoc.body.appendChild(mainContainer);
+    chkr_ovrl.overlayFrameDoc.body.appendChild(mainContainer);
 }
 
 function createAdUnitsDiv() {
@@ -594,7 +602,7 @@ function createAdUnitsDiv() {
     const tabName = ADAGIOTABSNAME.ADUNITS.toLowerCase().replace(' ', '-');
 
     // create main container element
-    const mainContainer = overlayFrameDoc.createElement('main');
+    const mainContainer = chkr_ovrl.overlayFrameDoc.createElement('main');
     mainContainer.classList.add('container-fluid');
     mainContainer.setAttribute('id', `${tabName}-container`);
     mainContainer.style.display = 'none';
@@ -602,17 +610,17 @@ function createAdUnitsDiv() {
     mainContainer.style.paddingBottom = '0';
 
     // create headings container
-    const headings = overlayFrameDoc.createElement('div');
+    const headings = chkr_ovrl.overlayFrameDoc.createElement('div');
     headings.classList.add('headings');
-    const h2 = overlayFrameDoc.createElement('h2');
+    const h2 = chkr_ovrl.overlayFrameDoc.createElement('h2');
     h2.textContent = 'AdUnits';
-    const h3 = overlayFrameDoc.createElement('h3');
+    const h3 = chkr_ovrl.overlayFrameDoc.createElement('h3');
     h3.textContent = 'Bid requested for each adUnit and by bidders';
     headings.appendChild(h2);
     headings.appendChild(h3);
 
     // create the alert article
-    const alertContainer = overlayFrameDoc.createElement('article');
+    const alertContainer = chkr_ovrl.overlayFrameDoc.createElement('article');
     alertContainer.style.padding = '1em';
     alertContainer.style.marginLeft = '';
     alertContainer.style.marginRight = '';
@@ -621,36 +629,36 @@ function createAdUnitsDiv() {
     alertContainer.style.color = COLOR.YELLOWTEXT;
     alertContainer.style.backgroundColor = COLOR.YELLOWBACKGROUND;
 
-    const alertTextDiv = overlayFrameDoc.createElement('div');
+    const alertTextDiv = chkr_ovrl.overlayFrameDoc.createElement('div');
     alertTextDiv.setAttribute('id', `${tabName}-alert`);
     alertContainer.appendChild(alertTextDiv);
 
     // create bidder filter
-    const bidderFilter = overlayFrameDoc.createElement('details');
+    const bidderFilter = chkr_ovrl.overlayFrameDoc.createElement('details');
     bidderFilter.setAttribute('role', 'list');
-    const selectFilter = overlayFrameDoc.createElement('summary');
+    const selectFilter = chkr_ovrl.overlayFrameDoc.createElement('summary');
     selectFilter.setAttribute('aria-haspopup', 'listbox');
     selectFilter.textContent = 'Filter requested bids by bidders';
-    const ulFilter = overlayFrameDoc.createElement('ul');
+    const ulFilter = chkr_ovrl.overlayFrameDoc.createElement('ul');
     ulFilter.setAttribute('role', 'listbox');
     ulFilter.setAttribute('id', 'bidderFilter');
     bidderFilter.appendChild(selectFilter);
     bidderFilter.appendChild(ulFilter);
 
     // create table element
-    const table = overlayFrameDoc.createElement('table');
-    const thead = overlayFrameDoc.createElement('thead');
-    const tr = overlayFrameDoc.createElement('tr');
-    const th0 = overlayFrameDoc.createElement('th');
+    const table = chkr_ovrl.overlayFrameDoc.createElement('table');
+    const thead = chkr_ovrl.overlayFrameDoc.createElement('thead');
+    const tr = chkr_ovrl.overlayFrameDoc.createElement('tr');
+    const th0 = chkr_ovrl.overlayFrameDoc.createElement('th');
     th0.setAttribute('scope', 'col');
     th0.textContent = 'Status';
-    const th1 = overlayFrameDoc.createElement('th');
+    const th1 = chkr_ovrl.overlayFrameDoc.createElement('th');
     th1.setAttribute('scope', 'col');
     th1.textContent = 'Code';
-    const th2 = overlayFrameDoc.createElement('th');
+    const th2 = chkr_ovrl.overlayFrameDoc.createElement('th');
     th2.setAttribute('scope', 'col');
     th2.textContent = 'Mediatypes';
-    const th3 = overlayFrameDoc.createElement('th');
+    const th3 = chkr_ovrl.overlayFrameDoc.createElement('th');
     th3.setAttribute('scope', 'col');
     th3.textContent = '🔎 Bidder params';
     tr.appendChild(th0);
@@ -659,7 +667,7 @@ function createAdUnitsDiv() {
     tr.appendChild(th3);
     thead.appendChild(tr);
 
-    const tbody = overlayFrameDoc.createElement('tbody');
+    const tbody = chkr_ovrl.overlayFrameDoc.createElement('tbody');
     tbody.setAttribute('id', `${tabName}-tbody`);
     table.appendChild(thead);
     table.appendChild(tbody);
@@ -671,40 +679,40 @@ function createAdUnitsDiv() {
     mainContainer.appendChild(table);
 
     // append the container to the body
-    overlayFrameDoc.body.appendChild(mainContainer);
+    chkr_ovrl.overlayFrameDoc.body.appendChild(mainContainer);
 }
 
 function switchTab(tabName) {
     // switch visible div and button outline
-    if (tabName !== activeTab) {
+    if (tabName !== chkr_ovrl.activeTab) {
         goTopPage();
-        const activeTabButton = overlayFrameDoc.getElementById(`${activeTab}-button`);
-        const activeTabContainer = overlayFrameDoc.getElementById(`${activeTab}-container`);
-        const targetTabButton = overlayFrameDoc.getElementById(`${tabName}-button`);
-        const targetTabContainer = overlayFrameDoc.getElementById(`${tabName}-container`);
+        const activeTabButton = chkr_ovrl.overlayFrameDoc.getElementById(`${chkr_ovrl.activeTab}-button`);
+        const activeTabContainer = chkr_ovrl.overlayFrameDoc.getElementById(`${chkr_ovrl.activeTab}-container`);
+        const targetTabButton = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-button`);
+        const targetTabContainer = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-container`);
         targetTabButton.classList.remove('outline');
         activeTabButton.classList.add('outline');
         targetTabContainer.style.display = '';
         activeTabContainer.style.display = 'none';
-        activeTab = tabName;
+        chkr_ovrl.activeTab = tabName;
     }
 }
 
 function goTopPage() {
-    overlayFrameDoc.body.scrollTop = 0;
+    chkr_ovrl.overlayFrameDoc.body.scrollTop = 0;
 }
 
 function appendCheckerRow(status, name, details) {
     // build id name
     const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(' ', '-');
     // get the tbody element
-    const tableBody = overlayFrameDoc.getElementById(`${tabName}-tbody`);
+    const tableBody = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-tbody`);
     // Create the row
-    const newRow = overlayFrameDoc.createElement('tr');
+    const newRow = chkr_ovrl.overlayFrameDoc.createElement('tr');
     // Create the cells
-    const statusCell = overlayFrameDoc.createElement('td');
-    const nameCell = overlayFrameDoc.createElement('td');
-    const detailsCell = overlayFrameDoc.createElement('td');
+    const statusCell = chkr_ovrl.overlayFrameDoc.createElement('td');
+    const nameCell = chkr_ovrl.overlayFrameDoc.createElement('td');
+    const detailsCell = chkr_ovrl.overlayFrameDoc.createElement('td');
     // Fill the cells
     statusCell.innerHTML = status;
     nameCell.innerHTML = name;
@@ -724,8 +732,8 @@ function appendAdUnitsRow(bidders, bids) {
     // build id name
     const tabName = ADAGIOTABSNAME.ADUNITS.toLowerCase().replace(' ', '-');
     // gets working element element
-    const tableBody = overlayFrameDoc.getElementById(`${tabName}-tbody`);
-    const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
+    const tableBody = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-tbody`);
+    const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
 
     // fill the article section
     alertTextDiv.innerHTML = '<small>Adunit(s) found:</small> ';
@@ -751,7 +759,7 @@ function appendAdUnitsRow(bidders, bids) {
         const status = bidderAdagioDetected ? computeAdUnitStatus(paramsCheckingArray) : STATUSBADGES.NA;
 
         // Create the row
-        const newRow = overlayFrameDoc.createElement('tr');
+        const newRow = chkr_ovrl.overlayFrameDoc.createElement('tr');
         newRow.classList.add(`${bidderId.replace(' ', '-')}-bid`);
         // hides the row if adagio found
         if (adagioId !== '' && adagioId !== bidderId) {
@@ -759,11 +767,11 @@ function appendAdUnitsRow(bidders, bids) {
         }
 
         // Create the cells
-        const statusCell = overlayFrameDoc.createElement('td');
-        const codeCell = overlayFrameDoc.createElement('td');
-        const mediatypesCell = overlayFrameDoc.createElement('td');
-        const bidderIdCell = overlayFrameDoc.createElement('td');
-        const bidderParamButton = overlayFrameDoc.createElement('kbd');
+        const statusCell = chkr_ovrl.overlayFrameDoc.createElement('td');
+        const codeCell = chkr_ovrl.overlayFrameDoc.createElement('td');
+        const mediatypesCell = chkr_ovrl.overlayFrameDoc.createElement('td');
+        const bidderIdCell = chkr_ovrl.overlayFrameDoc.createElement('td');
+        const bidderParamButton = chkr_ovrl.overlayFrameDoc.createElement('kbd');
         bidderParamButton.addEventListener('click', () => createBidderParamsModal(bid, paramsCheckingArray, bidderAdagioDetected));
         bidderParamButton.style.cursor = 'pointer';
 
@@ -785,12 +793,12 @@ function appendAdUnitsRow(bidders, bids) {
     });
 
     // fill the filter dropdown list
-    const bidderFilter = overlayFrameDoc.getElementById('bidderFilter');
+    const bidderFilter = chkr_ovrl.overlayFrameDoc.getElementById('bidderFilter');
 
     bidders.forEach((bidder) => {
-        const libidder = overlayFrameDoc.createElement('li');
-        const labbidder = overlayFrameDoc.createElement('label');
-        const inputbidder = overlayFrameDoc.createElement('input');
+        const libidder = chkr_ovrl.overlayFrameDoc.createElement('li');
+        const labbidder = chkr_ovrl.overlayFrameDoc.createElement('label');
+        const inputbidder = chkr_ovrl.overlayFrameDoc.createElement('input');
         inputbidder.setAttribute('type', 'checkbox');
         inputbidder.setAttribute('id', `${bidder.replace(' ', '-')}-bidder`);
         bidderFilter.appendChild(libidder);
@@ -798,7 +806,7 @@ function appendAdUnitsRow(bidders, bids) {
         labbidder.appendChild(inputbidder);
         labbidder.innerHTML += `<code>${bidder}</code>`;
 
-        const newInput = overlayFrameDoc.getElementById(`${bidder.replace(' ', '-')}-bidder`);
+        const newInput = chkr_ovrl.overlayFrameDoc.getElementById(`${bidder.replace(' ', '-')}-bidder`);
         if (adagioId !== '' && adagioId !== bidder) newInput.checked = false;
         else newInput.checked = true;
         newInput.addEventListener('click', function () {
@@ -809,7 +817,7 @@ function appendAdUnitsRow(bidders, bids) {
 
 function toggleBidRow(inputbidder, bidder) {
     // Depending on checkbox, hide or show bidrequested for the bidder
-    const bidderRows = overlayFrameDoc.getElementsByClassName(`${bidder.replace(' ', '-')}-bid`);
+    const bidderRows = chkr_ovrl.overlayFrameDoc.getElementsByClassName(`${bidder.replace(' ', '-')}-bid`);
     for (const bidderRow of bidderRows) {
         if (inputbidder.checked === false) {
             bidderRow.style.display = 'none';
@@ -859,15 +867,15 @@ function displayAdunits(eyeButton) {
 
 function createBidderParamsModal(bid, paramsCheckingArray, bidderAdagioDetected) {
     // Create a dialog window showing the params of the bidrequest.
-    const dialog = overlayFrameDoc.createElement('dialog');
+    const dialog = chkr_ovrl.overlayFrameDoc.createElement('dialog');
     dialog.setAttribute('open', true);
 
-    const article = overlayFrameDoc.createElement('article');
+    const article = chkr_ovrl.overlayFrameDoc.createElement('article');
     article.style.maxWidth = '100%';
-    const header = overlayFrameDoc.createElement('header');
+    const header = chkr_ovrl.overlayFrameDoc.createElement('header');
     header.innerHTML = `<code>${bid.bidder}</code>: <code>${bid.adUnitCode} (${Object.keys(bid.mediaTypes)})</code>`;
     header.style.marginBottom = '0px';
-    const closeLink = overlayFrameDoc.createElement('a');
+    const closeLink = chkr_ovrl.overlayFrameDoc.createElement('a');
     closeLink.setAttribute('aria-label', 'Close');
     closeLink.classList.add('close');
     closeLink.addEventListener('click', () => {
@@ -879,23 +887,23 @@ function createBidderParamsModal(bid, paramsCheckingArray, bidderAdagioDetected)
 
     // If the bidder is Adagio, we display the params checking
     if (bidderAdagioDetected) {
-        const parametersCheckTable = overlayFrameDoc.createElement('p');
+        const parametersCheckTable = chkr_ovrl.overlayFrameDoc.createElement('p');
         createParametersCheckTable(parametersCheckTable, paramsCheckingArray);
         article.appendChild(parametersCheckTable);
     }
 
     // Display the bidrequest json from pbjs.getEvents()
-    const paragraph = overlayFrameDoc.createElement('p');
+    const paragraph = chkr_ovrl.overlayFrameDoc.createElement('p');
     paragraph.innerHTML = `<pre><code class="language-json">${JSON.stringify(bid, null, 2)}</code></pre>`;
 
     article.appendChild(paragraph);
     dialog.appendChild(article);
-    overlayFrameDoc.body.appendChild(dialog);
+    chkr_ovrl.overlayFrameDoc.body.appendChild(dialog);
 }
 
 function makeIframeDraggable() {
     // Gets elements IDs
-    const navbar = overlayFrameDoc.getElementById('adagio-nav');
+    const navbar = chkr_ovrl.overlayFrameDoc.getElementById('adagio-nav');
     let targetElement = undefined;
 
     // Set up start x, y
@@ -905,7 +913,7 @@ function makeIframeDraggable() {
     navbar.addEventListener('mousedown', startDragging);
     navbar.addEventListener('mouseup', stopDragging);
     navbar.addEventListener('mouseover', updateCursor);
-    overlayFrame.addEventListener('mouseup', stopDragging);
+    chkr_ovrl.overlayFrame.addEventListener('mouseup', stopDragging);
 
     function updateCursor(e) {
         targetElement = e.target.tagName;
@@ -919,7 +927,7 @@ function makeIframeDraggable() {
         if (targetElement === 'NAV' || targetElement === 'UL' || targetElement === 'LI') {
             isAdgWindowDragging = true;
             navbar.style.cursor = 'grabbing';
-            overlayFrame.style.opacity = '0.4';
+            chkr_ovrl.overlayFrame.style.opacity = '0.4';
             startX = e.clientX;
             startY = e.clientY;
         }
@@ -928,20 +936,20 @@ function makeIframeDraggable() {
     function stopDragging() {
         isAdgWindowDragging = false;
         navbar.style.cursor = 'grab';
-        overlayFrame.style.opacity = '';
+        chkr_ovrl.overlayFrame.style.opacity = '';
     }
 
-    overlayFrameDoc.addEventListener('mousemove', function (e) {
+    chkr_ovrl.overlayFrameDoc.addEventListener('mousemove', function (e) {
         if (!isAdgWindowDragging) {
             return;
         }
         const deltaX = e.clientX - startX;
         const deltaY = e.clientY - startY;
-        const iframeRect = overlayFrame.getBoundingClientRect();
+        const iframeRect = chkr_ovrl.overlayFrame.getBoundingClientRect();
         const iframeX = iframeRect.left;
         const iframeY = iframeRect.top;
-        overlayFrame.style.left = iframeX + deltaX + 'px';
-        overlayFrame.style.top = iframeY + deltaY + 'px';
+        chkr_ovrl.overlayFrame.style.left = iframeX + deltaX + 'px';
+        chkr_ovrl.overlayFrame.style.top = iframeY + deltaY + 'px';
     });
 }
 
@@ -971,7 +979,7 @@ function base64Decode(base64String) {
 function createParametersCheckTable(paragraph, paramsCheckingArray) {
     // Create the alert text
     // create the alert article
-    const alertContainer = overlayFrameDoc.createElement('article');
+    const alertContainer = chkr_ovrl.overlayFrameDoc.createElement('article');
     alertContainer.style.padding = '1em';
     alertContainer.style.marginLeft = '';
     alertContainer.style.marginRight = '';
@@ -981,16 +989,16 @@ function createParametersCheckTable(paragraph, paramsCheckingArray) {
     alertContainer.style.backgroundColor = COLOR.YELLOWBACKGROUND;
 
     // Create the parameter checker table
-    const table = overlayFrameDoc.createElement('table');
-    const thead = overlayFrameDoc.createElement('thead');
-    const tr = overlayFrameDoc.createElement('tr');
-    const th1 = overlayFrameDoc.createElement('th');
+    const table = chkr_ovrl.overlayFrameDoc.createElement('table');
+    const thead = chkr_ovrl.overlayFrameDoc.createElement('thead');
+    const tr = chkr_ovrl.overlayFrameDoc.createElement('tr');
+    const th1 = chkr_ovrl.overlayFrameDoc.createElement('th');
     th1.setAttribute('scope', 'col');
     th1.textContent = 'Status';
-    const th2 = overlayFrameDoc.createElement('th');
+    const th2 = chkr_ovrl.overlayFrameDoc.createElement('th');
     th2.setAttribute('scope', 'col');
     th2.textContent = 'Parameter';
-    const th3 = overlayFrameDoc.createElement('th');
+    const th3 = chkr_ovrl.overlayFrameDoc.createElement('th');
     th3.setAttribute('scope', 'col');
     th3.textContent = 'Details';
     tr.appendChild(th1);
@@ -998,7 +1006,7 @@ function createParametersCheckTable(paragraph, paramsCheckingArray) {
     tr.appendChild(th3);
     thead.appendChild(tr);
 
-    const tbody = overlayFrameDoc.createElement('tbody');
+    const tbody = chkr_ovrl.overlayFrameDoc.createElement('tbody');
     table.appendChild(thead);
     table.appendChild(tbody);
 
@@ -1016,11 +1024,11 @@ function createParametersCheckTable(paragraph, paramsCheckingArray) {
 
 function appendParametersCheckerTableRow(tbody, status, parameter, details) {
     // Create the row
-    const newRow = overlayFrameDoc.createElement('tr');
+    const newRow = chkr_ovrl.overlayFrameDoc.createElement('tr');
     // Create the cells
-    const statusCell = overlayFrameDoc.createElement('td');
-    const parameterCell = overlayFrameDoc.createElement('td');
-    const detailsCell = overlayFrameDoc.createElement('td');
+    const statusCell = chkr_ovrl.overlayFrameDoc.createElement('td');
+    const parameterCell = chkr_ovrl.overlayFrameDoc.createElement('td');
+    const detailsCell = chkr_ovrl.overlayFrameDoc.createElement('td');
     // Fill the cells
     statusCell.innerHTML = status;
     parameterCell.innerHTML = parameter;
@@ -1039,12 +1047,12 @@ function computeBadgeToDisplay(isError, minVersion, maxVersion) {
     const max = maxVersion === null ? Infinity : maxVersion;
 
     if (isError === 'warn') {
-        if (foundPrebidVersion >= min && foundPrebidVersion <= max) {
+        if (chkr_wrp.prebidVersionDetected >= min && chkr_wrp.prebidVersionDetected <= max) {
             return STATUSBADGES.CHECK;
         }
         return STATUSBADGES.INFO;
     } else if (isError) {
-        if (foundPrebidVersion >= min && foundPrebidVersion <= max) {
+        if (chkr_wrp.prebidVersionDetected >= min && chkr_wrp.prebidVersionDetected <= max) {
             return STATUSBADGES.KO;
         }
         return STATUSBADGES.INFO;
@@ -1055,9 +1063,9 @@ function computeBadgeToDisplay(isError, minVersion, maxVersion) {
 
 function catchBidRequestsGlobalParams() {
     // Catch orgIds detected in the Adagio prebid traffic (used by API and adUnits tab)
-    if (prebidWrapper !== undefined) {
+    if (chkr_wrp.prebidWrapper !== undefined) {
         // Gets lists of Prebid events
-        prebidEvents = prebidObject.getEvents();
+        prebidEvents = chkr_wrp.prebidObject.getEvents();
         // Gets bidrequest arguments
         prebidBidsRequested = prebidEvents.filter((e) => e.eventType === 'bidRequested').map((e) => e.args);
         // Gets flat list of bids
@@ -1123,8 +1131,8 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     if (paramSite === undefined) paramsCheckingArray.push([STATUSBADGES.KO, `<code>params.site</code>: <code>${paramSite}</code>`, 'Parameter not found.']);
     else {
         if (paramSite.trim() !== paramSite) paramsCheckingArray.push([STATUSBADGES.KO, `<code>params.site</code>: <code>${paramSite}</code>`, `Space character detected.`]);
-        else if (adagioApiKeyfound && successRecordItems !== null) paramsCheckingArray.push([STATUSBADGES.OK, `<code>params.site</code>: <code>${paramSite}</code>`, ``]);
-        else if (adagioApiKeyfound && successRecordItems === null)
+        else if (chkr_api.apiKeyDetected && chkr_api.successRecordItems !== null) paramsCheckingArray.push([STATUSBADGES.OK, `<code>params.site</code>: <code>${paramSite}</code>`, ``]);
+        else if (chkr_api.apiKeyDetected && chkr_api.successRecordItems === null)
             paramsCheckingArray.push([STATUSBADGES.KO, `<code>params.site</code>: <code>${paramSite}</code>`, `No API record found, check logs.`]);
         else paramsCheckingArray.push([STATUSBADGES.INFO, `<code>params.site</code>: <code>${paramSite}</code>`, 'No API loaded for checking.']);
     }
@@ -1134,7 +1142,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     let divIdSetup = '';
     let divIdRes = '';
     // AdUnitElementId (2/3): First checks if a value is found
-    if (foundPrebidVersion >= 9) {
+    if (chkr_wrp.prebidVersionDetected >= 9) {
         if (ortb2ImpDivId !== undefined) {
             divIdStatus = STATUSBADGES.OK;
             divIdSetup = 'ortb2Imp.ext.data.divId';
@@ -1179,7 +1187,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
     let placementRes = '';
     let placementDetails = '';
     // Placement (2/3): First checks if a value is found
-    if (foundPrebidVersion >= 10) {
+    if (chkr_wrp.prebidVersionDetected >= 10) {
         if (paramPlacement !== undefined) {
             placementStatus = STATUSBADGES.OK;
             placementSetup = 'params.placement';
@@ -1196,7 +1204,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             placementRes = undefined;
             placementDetails = '';
         }
-    } else if (foundPrebidVersion >= 9) {
+    } else if (chkr_wrp.prebidVersionDetected >= 9) {
         if (ortb2ImpPlacement !== undefined) {
             placementStatus = STATUSBADGES.OK;
             placementSetup = 'ortb2Imp.ext.data.placement';
@@ -1429,7 +1437,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
         }
 
         // GDPR - Should be in ortb2.regs.ext.gdpr and user.ext.consent
-        if (detectedCountryCodeISO3 === null) {
+        if (chkr_api.detectedCountryCodeIso3 === null) {
             console.error('No country code detected, cannot check GDPR params.');
         }
         else {
@@ -1439,7 +1447,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
             ];
 
             // Check if the user is in the EEA, only then check the GDPR params
-            if (EEACountries.includes(detectedCountryCodeISO3)) {
+            if (EEACountries.includes(chkr_api.detectedCountryCodeIso3)) {
                 // User is in the EEA
                 if (ortbGdpr !== 1) {
                     paramsCheckingArray.push([STATUSBADGES.KO, `<code>ortb2.regs.ext.gdpr</code>: <code>${ortbGdpr}</code>`, `Should be set to <code>1</code> for users in the EEA.`]);
@@ -1448,7 +1456,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
                 }
 
                 // Check the consent string
-                const decodedConsent = iabtcfcore.TCString.decode(ortbConsent) || null;
+                let decodedConsent = ortbConsent !== undefined ? iabtcfcore.TCString.decode(ortbConsent) : null;
                 if (decodedConsent === null) {
                     paramsCheckingArray.push([STATUSBADGES.KO, `<code>ortb2.user.ext.consent</code>: <code>${ortbConsent}</code>`, `No consent string detected, should be a valid TCFv2 string for users in the EEA.`]);
                 } else {
@@ -1506,20 +1514,20 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 
         // Interstitial - Supported since Prebid 9.39, should be in ortb2Imp.
         if (ortb2ImpInterstitial !== undefined) {
-            if (foundPrebidVersion < 9.39) {
+            if (chkr_wrp.prebidVersionDetected < 9.39) {
                 paramsCheckingArray.push([STATUSBADGES.INFO, `<code>ortb2Imp.instl</code>: <code>${ortb2ImpInterstitial}</code>`, 'Not supported before Prebid 9.39.']);
             } else {
                 paramsCheckingArray.push([STATUSBADGES.OK, `<code>ortb2Imp.instl</code>: <code>${ortb2ImpInterstitial}</code>`, '']);
             }
         } else if (deepOrtb2ImpInterstitial !== null) {
             paramsCheckingArray.push([
-                foundPrebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+                chkr_wrp.prebidVersionDetected < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
                 `<code>${deepOrtb2ImpInterstitial.path}</code>: <code>${deepOrtb2ImpInterstitial.value}</code>`,
                 'Misplaced, should be in <code>ortb2Imp.instl</code>.',
             ]);
         } else {
             paramsCheckingArray.push([
-                foundPrebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+                chkr_wrp.prebidVersionDetected < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
                 `<code>ortb2Imp.instl</code>: <code>undefined</code>`,
                 'No interstitial parameter detected.',
             ]);
@@ -1527,19 +1535,19 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 
         // Rewarded - Supported since Prebid 9.39, should be in ortb2Imp.
         if (ortb2ImpRewarded !== undefined) {
-            if (foundPrebidVersion < 9.39) {
+            if (chkr_wrp.prebidVersionDetected < 9.39) {
                 paramsCheckingArray.push([STATUSBADGES.INFO, `<code>ortb2Imp.rwdd</code>: <code>${ortb2ImpRewarded}</code>`, 'Not supported before Prebid 9.39.']);
             } else {
                 paramsCheckingArray.push([STATUSBADGES.OK, `<code>ortb2Imp.rwdd</code>: <code>${ortb2ImpRewarded}</code>`, '']);
             }
         } else if (deepOrtb2ImpRewarded !== null) {
             paramsCheckingArray.push([
-                foundPrebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
+                chkr_wrp.prebidVersionDetected < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK,
                 `<code>${deepOrtb2ImpRewarded.path}</code>: <code>${deepOrtb2ImpRewarded.value}</code>`,
                 'Misplaced, should be in <code>ortb2Imp.rwdd</code>',
             ]);
         } else {
-            paramsCheckingArray.push([foundPrebidVersion < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK, `<code>ortb2Imp.rwdd</code>: <code>undefined</code>`, 'No rewarded parameter detected.']);
+            paramsCheckingArray.push([chkr_wrp.prebidVersionDetected < 9.39 ? STATUSBADGES.INFO : STATUSBADGES.CHECK, `<code>ortb2Imp.rwdd</code>: <code>undefined</code>`, 'No rewarded parameter detected.']);
         }
 
         if (mediatypeNative !== undefined) {
@@ -1602,7 +1610,7 @@ async function runChecks() {
 
 async function checkAdagioAPI() {
     // Ready to udapte the alert div
-    const apiButtonElement = overlayFrameDoc.getElementById(`apiButton`);
+    const apiButtonElement = chkr_ovrl.overlayFrameDoc.getElementById(`apiButton`);
 
     // button.setAttribute("title", name);
     /// button.innerHTML = svg;
@@ -1620,7 +1628,7 @@ async function checkAdagioAPI() {
         return;
     } else {
         // Declare the API as found
-        adagioApiKeyfound = true;
+        chkr_api.apiKeyDetected = true;
     }
 
     // Declare the necessary variables
@@ -1639,18 +1647,18 @@ async function checkAdagioAPI() {
 
         if (orgIdApiDataResponse !== null && orgIdApiDataResponse.records !== null) {
             // Check if the records provides a domain match and a sitename match
-            matchedDomainRecords = orgIdApiDataResponse.records.filter((record) => window.location.hostname.includes(record.domain)) || null;
-            matchedSiteNameRecords = orgIdApiDataResponse.records.filter((record) => siteNames.includes(record.name)) || null;
-            successRecordItems = matchedDomainRecords.filter((domainRecord) => matchedSiteNameRecords.filter((siteNameRecord) => domainRecord === siteNameRecord)) || null;
+            chkr_api.matchedDomainsRecords = orgIdApiDataResponse.records.filter((record) => window.location.hostname.includes(record.domain)) || null;
+            chkr_api.matchedSiteNameRecords = orgIdApiDataResponse.records.filter((record) => siteNames.includes(record.name)) || null;
+            chkr_api.successRecordItems = chkr_api.matchedDomainsRecords.filter((domainRecord) => chkr_api.matchedSiteNameRecords.filter((siteNameRecord) => domainRecord === siteNameRecord)) || null;
 
             // Check display API status regarding record results.
-            if (matchedDomainRecords === null) {
+            if (chkr_api.matchedDomainsRecords === null) {
                 apiButtonElement.innerHTML = ADAGIOSVG.APIORANGE;
                 apiButtonElement.setAttribute('title', `Adagio API - No manager domain match: '${window.location.hostname}'.`);
-            } else if (matchedSiteNameRecords === null) {
+            } else if (chkr_api.matchedSiteNameRecords === null) {
                 apiButtonElement.innerHTML = ADAGIOSVG.APIORANGE;
                 apiButtonElement.setAttribute('title', `Adagio API - No manager sitename match: ${siteNames}'.`);
-            } else if (successRecordItems === null) {
+            } else if (chkr_api.successRecordItems === null) {
                 apiButtonElement.innerHTML = ADAGIOSVG.APIORANGE;
                 apiButtonElement.setAttribute('title', `Adagio API - No manager domain and sitename match: '${window.location.hostname}' / '${siteNames}'.`);
             } else {
@@ -1670,7 +1678,7 @@ async function runAdagioAPI(queryString) {
 
     // Ready to udapte the alert div
     const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(' ', '-');
-    const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
+    const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
 
     // Making the GET request using fetch()
     try {
@@ -1696,7 +1704,7 @@ async function runAdagioAPI(queryString) {
 async function checkCurrentLocation() {
     // Fill the alert with number of orgIds found
     const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(' ', '-');
-    const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
+    const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
 
     // Fetch the country code using ipapi.co
     await fetch('https://ipapi.co/json/')
@@ -1704,7 +1712,7 @@ async function checkCurrentLocation() {
         .then((data) => {
             const countryCode = data.country_code;
             const countryName = data.country_name;
-            detectedCountryCodeISO3 = data.country_code_iso3;
+            chkr_api.detectedCountryCodeIso3 = data.country_code_iso3;
             // Convert country code to emoji using a function
             const countryEmoji = getFlagEmoji(countryCode);
             if (countryName !== 'France') {
@@ -1750,25 +1758,22 @@ function checkAdServer() {
 
 function checkPrebidVersion() {
     // Catch the Prebid version number from the wrapper object.
-    if (prebidWrapper === undefined) {
+    if (chkr_wrp.prebidWrapper === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.PREBID, `<code>window._pbjsGlobals</code>: <code>undefined</code>`);
     } else {
-        foundPrebidVersion = prebidObject.version.replace('v', '').split('-')[0].split('.').slice(0, 2).join('.');
-        appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.PREBID, `<code>window._pbjsGlobals</code>: <code>${prebidWrapper[0]} (${prebidObject.version})</code>`);
-        if (typeof prebidObject.getEvents === 'function') {
-            prebidEvents = prebidObject.getEvents();
-        }
+        chkr_wrp.prebidVersionDetected = chkr_wrp.prebidObject.version.replace('v', '').split('-')[0].split('.').slice(0, 2).join('.');
+        appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.PREBID, `<code>window._pbjsGlobals</code>: <code>${chkr_wrp.prebidWrapper[0]} (${chkr_wrp.prebidObject.version})</code>`);
     }
 }
 
 function checkAdagioModule() {
     // Gets ADAGIO adapter object
-    adagioAdapter = window.ADAGIO;
+    chkr_wrp.adagioAdapter = window.ADAGIO;
 
     // Gets wrapper name integrity
-    if (adagioAdapter !== undefined) {
-        const pbjsAdUnits = adagioAdapter.pbjsAdUnits;
-        let adagioJsVersion = adagioAdapter.versions.adagiojs;
+    if (chkr_wrp.adagioAdapter !== undefined) {
+        const pbjsAdUnits = chkr_wrp.adagioAdapter.pbjsAdUnits;
+        let adagioJsVersion = chkr_wrp.adagioAdapter.versions.adagiojs;
 
         // Define and set checker item status
         let adagioModuleStatus = STATUSBADGES.OK;
@@ -1780,11 +1785,11 @@ function checkAdagioModule() {
         }
         // Define and set wrapper integrity log
         let wrapperIntegrityLog = `• Wrapper integrity: <code>🟢 Successed</code>`;
-        let brokenWrapperStringName = `${prebidWrapper[0]}AdUnits`;
-        if (pbjsAdUnits === undefined || !Array.isArray(pbjsAdUnits) || (pbjsAdUnits.length === 0 && adagioAdapter[`${prebidWrapper[0]}AdUnits`] !== undefined && prebidWrapper[0] !== 'pbjs')) {
+        let brokenWrapperStringName = `${chkr_wrp.prebidWrapper[0]}AdUnits`;
+        if (pbjsAdUnits === undefined || !Array.isArray(pbjsAdUnits) || (pbjsAdUnits.length === 0 && chkr_wrp.adagioAdapter[`${chkr_wrp.prebidWrapper[0]}AdUnits`] !== undefined && chkr_wrp.prebidWrapper[0] !== 'pbjs')) {
             wrapperIntegrityLog = `• Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`;
             adagioModuleStatus = STATUSBADGES.CHECK;
-        } else if (adagioAdapter[brokenWrapperStringName] !== undefined && prebidWrapper[0] !== 'pbjs') {
+        } else if (chkr_wrp.adagioAdapter[brokenWrapperStringName] !== undefined && chkr_wrp.prebidWrapper[0] !== 'pbjs') {
             wrapperIntegrityLog = `• Wrapper integrity: <code>🟠 Fixed: Try to contact client for bad behavior.</code>`;
         }
         // Display the final log
@@ -1797,14 +1802,14 @@ function checkAdagioModule() {
 function checkRealTimeDataProvider() {
     // Since Prebid 9, the RTD module and Adagio provider are necessary for our visibility/repackaging optimization.
     // It requires the module and the Adagio provider module to be installed and configured.
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.RDTMODULE, ADAGIOERRORS.PREBIDNOTFOUND);
         return;
     }
     // Ensure the module is built through ADAGIO
-    if (adagioAdapter !== undefined) {
+    if (chkr_wrp.adagioAdapter !== undefined) {
         // First try to load installedModules
-        const prebidInstalledModules = prebidObject.installedModules;
+        const prebidInstalledModules = chkr_wrp.prebidObject.installedModules;
         if (prebidInstalledModules !== undefined && prebidInstalledModules.length !== 0) {
             // Get the modules from the installedModules array
             const hasRtdModule = prebidInstalledModules.includes('rtdModule');
@@ -1822,13 +1827,13 @@ function checkRealTimeDataProvider() {
             }
         }
         // If installedModules not usable, relies on ADAGIO
-        else if (!adagioAdapter.hasRtd) {
-            appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `<code>ADAGIO.hasRtd</code>: <code>${adagioAdapter.hasRtd}</code>`);
+        else if (!chkr_wrp.adagioAdapter.hasRtd) {
+            appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `<code>ADAGIO.hasRtd</code>: <code>${chkr_wrp.adagioAdapter.hasRtd}</code>`);
             return;
         }
     }
     // Ensure that the rtd module exists in the wrapper configuration
-    const prebidRtdModule = prebidObject.getConfig('realTimeData');
+    const prebidRtdModule = chkr_wrp.prebidObject.getConfig('realTimeData');
     if (prebidRtdModule !== undefined) {
         // Validate RTD provider and configuration
         if (prebidRtdModule.dataProviders !== undefined) {
@@ -1854,16 +1859,16 @@ function checkRealTimeDataProvider() {
             appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `No RTD providers configured: <code>${JSON.stringify(prebidRtdModule)}</code>`);
         }
     } else {
-        appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `<code>${prebidWrapper[0]}.getConfig('realTimeData')</code>: <code>${prebidRtdModule}</code>`);
+        appendCheckerRow(computeBadgeToDisplay(true, 9, null), ADAGIOCHECK.RDTMODULE, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('realTimeData')</code>: <code>${prebidRtdModule}</code>`);
     }
 }
 
 function checkFirstPartyData() {
     // Since Prebid 9, the pagetype and category Adagio parameters are to be stored in the first-party data (ortb2).
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.ORTB2, ADAGIOERRORS.PREBIDNOTFOUND);
     } else {
-        const prebidOrtb2 = prebidObject.getConfig('ortb2');
+        const prebidOrtb2 = chkr_wrp.prebidObject.getConfig('ortb2');
         if (prebidOrtb2 !== undefined) {
             // Try to get pagetype and category
             let dataPagetype = prebidOrtb2?.site?.ext?.data?.pagetype;
@@ -1875,28 +1880,28 @@ function checkFirstPartyData() {
             else if (dataCategory === undefined) appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `Missing 'category': <code>ortb2.site.ext.data.category</code>`);
             else appendCheckerRow(computeBadgeToDisplay(false, 9, null), ADAGIOCHECK.ORTB2, `<code>${JSON.stringify(prebidOrtb2)}</code>`);
         } else {
-            appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`);
+            appendCheckerRow(computeBadgeToDisplay('warn', 9, null), ADAGIOCHECK.ORTB2, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`);
         }
     }
 }
 
 function checkTransactionIdentifiers() {
     // Is off by default since Prebid 9.
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.TIDS, ADAGIOERRORS.PREBIDNOTFOUND);
     } else {
-        const enableTIDs = prebidObject.getConfig('enableTIDs');
-        appendCheckerRow(computeBadgeToDisplay(!enableTIDs, 9, null), ADAGIOCHECK.TIDS, `<code>${prebidWrapper[0]}.getConfig('enableTIDs')</code>: <code>${enableTIDs}</code>`);
+        const enableTIDs = chkr_wrp.prebidObject.getConfig('enableTIDs');
+        appendCheckerRow(computeBadgeToDisplay(!enableTIDs, 9, null), ADAGIOCHECK.TIDS, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('enableTIDs')</code>: <code>${enableTIDs}</code>`);
     }
 }
 
 function checkAdagioLocalStorage() {
     // Localstorage requieres pbjs
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.LOCALSTORAGE, ADAGIOERRORS.PREBIDNOTFOUND);
     } else {
         // Is local storage enabled?
-        const localStorage = prebidObject.bidderSettings;
+        const localStorage = chkr_wrp.prebidObject.bidderSettings;
 
         // Internal function to check if storageAllowed is correctly configured
         function isStorageAllowed(value) {
@@ -1914,15 +1919,15 @@ function checkAdagioLocalStorage() {
             appendCheckerRow(
                 STATUSBADGES.OK,
                 ADAGIOCHECK.LOCALSTORAGE,
-                `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorage.standard?.storageAllowed)}</code>`
+                `<code>${chkr_wrp.prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorage.standard?.storageAllowed)}</code>`
             );
         } else if (isStorageAllowed(localStorage.adagio?.storageAllowed)) {
             appendCheckerRow(
                 STATUSBADGES.OK,
                 ADAGIOCHECK.LOCALSTORAGE,
-                `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorage.adagio?.storageAllowed)}</code>`
+                `<code>${chkr_wrp.prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorage.adagio?.storageAllowed)}</code>`
             );
-        } else if (foundPrebidVersion >= 9) {
+        } else if (chkr_wrp.prebidVersionDetected >= 9) {
             appendCheckerRow(STATUSBADGES.NA, ADAGIOCHECK.LOCALSTORAGE, 'Localstorage not found. But not required anymore since Prebid 9.');
         } else {
             appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.LOCALSTORAGE, `Localstorage not found: <code>${JSON.stringify(localStorage)}</code>`);
@@ -1932,15 +1937,15 @@ function checkAdagioLocalStorage() {
 
 function checkDeviceAccess() {
     // The device access is necessary for the TIDs since Prebid 9
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.DEVICEACCESS, ADAGIOERRORS.PREBIDNOTFOUND);
     } else {
         // Is local storage enabled?
-        const deviceAccess = prebidObject.getConfig('deviceAccess');
+        const deviceAccess = chkr_wrp.prebidObject.getConfig('deviceAccess');
         appendCheckerRow(
             computeBadgeToDisplay(deviceAccess ? false : true, 9, null),
             ADAGIOCHECK.DEVICEACCESS,
-            `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`
+            `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`
         );
     }
 }
@@ -1948,12 +1953,12 @@ function checkDeviceAccess() {
 function checkAdagioUserSync() {
     // Adagio strongly recommends enabling user syncing through iFrames.
     // This functionality improves DSP user match rates and increases the bid rate and bid price.
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.USERSYNC, ADAGIOERRORS.PREBIDNOTFOUND);
     } else {
-        const prebidUserSync = prebidObject.getConfig('userSync');
+        const prebidUserSync = chkr_wrp.prebidObject.getConfig('userSync');
         if (prebidUserSync === undefined) {
-            appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.USERSYNC, `<code>${prebidWrapper[0]}.getConfig('userSync')</code>: <code>${prebidUserSync}</code>`);
+            appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.USERSYNC, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('userSync')</code>: <code>${prebidUserSync}</code>`);
         } else {
             const prebidUserSyncIframe = prebidUserSync?.filterSettings?.iframe;
             const prebidUserSyncAll = prebidUserSync?.filterSettings?.all;
@@ -1979,54 +1984,54 @@ function checkAdagioUserSync() {
 }
 
 function checkAdagioAnalyticsModule() {
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.ANALYTICS, ADAGIOERRORS.PREBIDNOTFOUND);
         return;
     }
     // The wrapper object never references information related to the analytics, we can only rely on the ADAGIO objct information
-    if (adagioAdapter === undefined) {
-        appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.ANALYTICS, `<code>window.ADAGIO</code>: <code>${adagioAdapter}</code>`);
+    if (chkr_wrp.adagioAdapter === undefined) {
+        appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.ANALYTICS, `<code>window.ADAGIO</code>: <code>${chkr_wrp.adagioAdapter}</code>`);
         return;
     }
 
     // Prebid Analytics is ready to use since Prebid 8.14
     // And additional 'options' parameters are required since Prebid 9
-    let hasEligibleVersion = foundPrebidVersion > 8.14;
-    let hasPrebidNineVersion = foundPrebidVersion > 9;
-    let hasEnabledAnalytics = adagioAdapter.versions?.adagioAnalyticsAdapter;
+    let hasEligibleVersion = chkr_wrp.prebidVersionDetected > 8.14;
+    let hasPrebidNineVersion = chkr_wrp.prebidVersionDetected > 9;
+    let hasEnabledAnalytics = chkr_wrp.adagioAdapter.versions?.adagioAnalyticsAdapter;
 
-    if (!hasEligibleVersion) appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.ANALYTICS, `<code>${prebidWrapper[0]}.version</code>: <code>${foundPrebidVersion}</code>`);
+    if (!hasEligibleVersion) appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.ANALYTICS, `<code>${chkr_wrp.prebidWrapper[0]}.version</code>: <code>${chkr_wrp.prebidVersionDetected}</code>`);
     else if (!hasEnabledAnalytics) appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.ANALYTICS, `<code>ADAGIO.versions.adagioAnalyticsAdapter</code>: <code>${hasEnabledAnalytics}</code>`);
-    else if (!hasPrebidNineVersion) appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.ANALYTICS, `Prebid version: <code>${foundPrebidVersion}</code> / Analytics: <code>${hasEnabledAnalytics}</code>`);
+    else if (!hasPrebidNineVersion) appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.ANALYTICS, `Prebid version: <code>${chkr_wrp.prebidVersionDetected}</code> / Analytics: <code>${hasEnabledAnalytics}</code>`);
     else {
         // Try to retrieve the 'options' from the analytics wrapper configuration
-        let paramOrganizationId = adagioAdapter?.options?.organizationId;
-        let paramSitename = adagioAdapter?.options?.site;
+        let paramOrganizationId = chkr_wrp.adagioAdapter?.options?.organizationId;
+        let paramSitename = chkr_wrp.adagioAdapter?.options?.site;
 
         // Options are necessary for Adagio to get the analytics even if the Adagio bidder adapter is not loaded
         if (!paramOrganizationId || !paramSitename) {
-            appendCheckerRow(STATUSBADGES.CHECK, ADAGIOCHECK.ANALYTICS, `Missing parameters: <code>${prebidWrapper[0]}.enableAnalytics.options</code> should contain 'organizationId' and 'site'`);
+            appendCheckerRow(STATUSBADGES.CHECK, ADAGIOCHECK.ANALYTICS, `Missing parameters: <code>${chkr_wrp.prebidWrapper[0]}.enableAnalytics.options</code> should contain 'organizationId' and 'site'`);
         } else {
-            appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.ANALYTICS, `Options: <code>${adagioAdapter?.options}</code>`);
+            appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.ANALYTICS, `Options: <code>${chkr_wrp.adagioAdapter?.options}</code>`);
         }
     }
 }
 
 function checkUserIds() {
     // Check if Prebid wrapper is present
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.USERIDS, ADAGIOERRORS.PREBIDNOTFOUND);
         return;
     }
 
     // Check if Get User IDs function is enabled
-    if (typeof prebidObject.getUserIdsAsEids !== 'function') {
-        appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.USERIDS, `<code>${prebidWrapper[0]}.getUserIdsAsEids()</code> is not a function`);
+    if (typeof chkr_wrp.prebidObject.getUserIdsAsEids !== 'function') {
+        appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.USERIDS, `<code>${chkr_wrp.prebidWrapper[0]}.getUserIdsAsEids()</code> is not a function`);
         return;
     }
 
     // Count the total installed user IDs
-    const userIds = prebidObject.getUserIdsAsEids();
+    const userIds = chkr_wrp.prebidObject.getUserIdsAsEids();
     const totalInstalledUserIds = userIds.length;
     const presentUserIds = userIds.filter((userId) => userId.uids.length > 0);
 
@@ -2057,7 +2062,7 @@ function checkUserIds() {
 
 function checkAdagioAdUnitParams() {
     // Adunits requieres pbjs
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.ADUNITS, ADAGIOERRORS.PREBIDNOTFOUND);
     } else {
         // Gets bidrequest arguments
@@ -2093,17 +2098,15 @@ function checkAdagioAdUnitParams() {
         let adagioAdUnitsCodes = [];
         adagioPbjsAdUnitsCode = [];
 
-        if (adagioAdapter !== undefined) {
-            adagioAdUnitsCodes = adagioAdapter?.adUnits;
+        if (chkr_wrp.adagioAdapter !== undefined) {
+            adagioAdUnitsCodes = chkr_wrp.adagioAdapter?.adUnits;
             if (adagioAdUnitsCodes === undefined) adagioAdUnitsCodes = [];
-            adagioPbjsAdUnitsCode = adagioAdapter?.pbjsAdUnits?.map((e) => e.code);
+            adagioPbjsAdUnitsCode = chkr_wrp.adagioAdapter?.pbjsAdUnits?.map((e) => e.code);
             if (adagioPbjsAdUnitsCode === undefined) adagioPbjsAdUnitsCode = [];
         }
 
         totalPrebidAdUnitsCodes = prebidAdUnitsCodes.size;
         totalPrebidAdagioAdUnitsCode = prebidAdagioAdUnitsCodes.length;
-        totalAdagioAdUnitsCodes = adagioAdUnitsCodes.length;
-        totalAdagioPbjsAdUnitsCodes = adagioPbjsAdUnitsCode.length;
 
         if (totalPrebidAdUnitsCodes === 0) {
             appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.ADUNITS, `<kbd>${totalPrebidAdUnitsCodes}</kbd> adUnits(s) found`);
@@ -2135,7 +2138,7 @@ function checkAdagioAdUnitParams() {
 
 function checkDuplicatedAdUnitCode() {
     // If Prebid.js is not found, display error
-    if (!prebidObject) {
+    if (!chkr_wrp.prebidObject) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.DUPLICATED, ADAGIOERRORS.PREBIDNOTFOUND);
         return;
     }
@@ -2184,7 +2187,7 @@ async function checkPublisher() {
 
     // Fill the alert with number of orgIds found
     const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(' ', '-');
-    const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
+    const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
 
     if (organizationIds.length > 0) {
         // Fetch the adagio sellers.json
@@ -2208,42 +2211,42 @@ async function checkPublisher() {
 
 function checkFloorPriceModule() {
     // Floor price requiere Prebid as it is a Prebid module
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.FLOORS, ADAGIOERRORS.PREBIDNOTFOUND);
     }
     // Floor price module allow to share the lower price acceptable for an adUnit with the bidders
     else {
-        const prebidFloorPrice = prebidObject.getConfig('floors');
+        const prebidFloorPrice = chkr_wrp.prebidObject.getConfig('floors');
         if (prebidFloorPrice !== undefined) {
             appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.FLOORS, `<code>${JSON.stringify(prebidFloorPrice)}</code>`);
         } else {
-            appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.FLOORS, `<code>${prebidWrapper[0]}.getConfig('floors')</code>: <code>${prebidFloorPrice}</code>`);
+            appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.FLOORS, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('floors')</code>: <code>${prebidFloorPrice}</code>`);
         }
     }
 }
 
 function checkCurrencyModule() {
     // Currency requiere Prebid as it is a Prebid module
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.CURRENCY, ADAGIOERRORS.PREBIDNOTFOUND);
     }
     // Currency module allow to bid regardless of the adServer currency. It's mandatory when the adServer currency isn't USD
     else {
-        const prebidCurrency = prebidObject.getConfig('currency');
+        const prebidCurrency = chkr_wrp.prebidObject.getConfig('currency');
         if (prebidCurrency !== undefined) {
             appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.CURRENCY, `<code>${JSON.stringify(prebidCurrency)}</code>`);
         } else {
-            appendCheckerRow(STATUSBADGES.CHECK, ADAGIOCHECK.CURRENCY, `<code>${prebidWrapper[0]}.getConfig('currency')</code>: <code>${prebidCurrency}</code>`);
+            appendCheckerRow(STATUSBADGES.CHECK, ADAGIOCHECK.CURRENCY, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('currency')</code>: <code>${prebidCurrency}</code>`);
         }
     }
 }
 
 function checkDsaTransparency() {
     // Since Prebid 9, the pagetype and category Adagio parameters are to be stored in the first-party data (ortb2).
-    if (prebidObject === undefined) {
+    if (chkr_wrp.prebidObject === undefined) {
         appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.DSA, ADAGIOERRORS.PREBIDNOTFOUND);
     } else {
-        const prebidOrtb2 = prebidObject.getConfig('ortb2');
+        const prebidOrtb2 = chkr_wrp.prebidObject.getConfig('ortb2');
         if (prebidOrtb2 !== undefined) {
             let dsa = prebidOrtb2?.regs?.ext?.dsa;
             let dsarequired = prebidOrtb2?.regs?.ext?.dsa?.dsarequired;
@@ -2251,14 +2254,14 @@ function checkDsaTransparency() {
             let datatopub = prebidOrtb2?.regs?.ext?.dsa?.datatopub;
             let transparency = prebidOrtb2?.regs?.ext?.dsa?.transparency;
 
-            if (dsa === undefined) appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.DSA, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
+            if (dsa === undefined) appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.DSA, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
             else {
                 if (dsarequired === undefined || pubrender === undefined || datatopub === undefined || transparency === undefined)
-                    appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.DSA, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
-                else appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.DSA, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
+                    appendCheckerRow(STATUSBADGES.KO, ADAGIOCHECK.DSA, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
+                else appendCheckerRow(STATUSBADGES.OK, ADAGIOCHECK.DSA, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
             }
         } else {
-            appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.DSA, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`);
+            appendCheckerRow(STATUSBADGES.INFO, ADAGIOCHECK.DSA, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`);
         }
     }
 }
