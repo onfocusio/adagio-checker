@@ -67,6 +67,35 @@ export async function checkAdagioAPI() {
     }
 }
 
+async function runAdagioAPI(queryString) {
+    // URL of the API endpoint
+    const url = `https://api.adagio.io/api/v1/groups/1/websites?${queryString}`;
+
+    // Ready to udapte the alert div
+    const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(' ', '-');
+    const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
+
+    // Making the GET request using fetch()
+    try {
+        const response = await fetch(url, {
+            method: 'GET', // HTTP method
+            headers: {
+                Authorization: `Bearer ${ADAGIO_KEY}`, // Adding the Bearer token in the header
+            },
+        });
+        if (!response.ok) {
+            // alertTextDiv.innerHTML += `<small>• Adagio API - <code>🔴 ${response.status}</code></small><br>`;
+            throw new Error(response.status);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.log(error);
+        alertTextDiv.innerHTML += `<small>• Adagio API - <code>🔴 Error on loading: ${error}</code></small><br>`;
+        return null;
+    }
+}
+
 export async function checkPublisher() {
     // Fetch the Adagio seller.json to ensure that the orgId refers to an existing organization
     let adagioSellersJsonUrl = 'https://adagio.io/sellers.json';
