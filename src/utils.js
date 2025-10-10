@@ -72,7 +72,7 @@ async function runAdagioAPI(queryString) {
     const url = `https://api.adagio.io/api/v1/groups/1/websites?${queryString}`;
 
     // Ready to udapte the alert div
-    const tabName = ADAGIOTABSNAME.CHECKER.toLowerCase().replace(' ', '-');
+    const tabName = chkr_tabs.checker.toLowerCase().replace(' ', '-');
     const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
 
     // Making the GET request using fetch()
