@@ -1,33 +1,32 @@
 import { chkr_ovrl, chkr_wrp, chkr_api, chkr_vars } from './variables.js';
 import { chkr_svg, chkr_tabs, chkr_colors, chkr_badges } from './enums.js';
+import { runApp } from './main.js';
 import * as utils from './utils.js';
-import { buildInterface } from './main.js';
 import { TCString } from '@iabtcf/core';
+
+/*************************************************************************************************************************************************************************************************************************************
+ * Main
+ ************************************************************************************************************************************************************************************************************************************/
+
+export async function buildInterface() {
+    // Get the Prebid wrappers
+    utils.getPrebidWrappers();
+
+    // Build the interface
+    createOverlay();
+    buildOverlayHtml();
+    createCheckerDiv();
+    createAdUnitsDiv();
+    makeIframeDraggable();
+}
 
 /*************************************************************************************************************************************************************************************************************************************
  * Exported function
  ************************************************************************************************************************************************************************************************************************************/
 
 export function createOverlay() {
-    // create a new button element
-    chkr_ovrl.buttonFrame = window.document.createElement('iframe');
-    chkr_ovrl.buttonFrame.setAttribute('id', 'adagio-button-frame');
-    chkr_ovrl.buttonFrame.style.position = 'fixed';
-    chkr_ovrl.buttonFrame.style.top = '10px';
-    chkr_ovrl.buttonFrame.style.right = '10px';
-    chkr_ovrl.buttonFrame.style.width = '45px';
-    chkr_ovrl.buttonFrame.style.height = '45px';
-    chkr_ovrl.buttonFrame.style.zIndex = '2147483647';
-    chkr_ovrl.buttonFrame.style.backgroundColor = 'rgb(47, 55, 87)';
-    chkr_ovrl.buttonFrame.style.border = 'none';
-    chkr_ovrl.buttonFrame.style.borderRadius = '10px';
-    chkr_ovrl.buttonFrame.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
-    chkr_ovrl.buttonFrame.style.display = 'block';
-    window.document.body.appendChild(chkr_ovrl.buttonFrame);
-
     // create a new iframe element
     chkr_ovrl.overlayFrame = window.document.createElement('iframe');
-    chkr_ovrl.buttonFrame.setAttribute('id', 'adagio-overlay-frame');
     chkr_ovrl.overlayFrame.classList.add('adagio-overlay');
     chkr_ovrl.overlayFrame.style.position = 'fixed';
     chkr_ovrl.overlayFrame.style.top = '10px';
@@ -43,11 +42,7 @@ export function createOverlay() {
     chkr_ovrl.overlayFrame.style.display = 'block';
     window.document.body.appendChild(chkr_ovrl.overlayFrame);
 
-    if (!chkr_ovrl.overlayVisible) chkr_ovrl.overlayFrame.style.display = 'none';
-    else chkr_ovrl.buttonFrame.style.opacity = '0.4';
-
     // get the iframe document objects
-    chkr_ovrl.buttonFrameDoc = chkr_ovrl.buttonFrame.contentDocument || chkr_ovrl.buttonFrame.contentWindow.document;
     chkr_ovrl.overlayFrameDoc = chkr_ovrl.overlayFrame.contentDocument || chkr_ovrl.overlayFrame.contentWindow.document;
 }
 
@@ -76,27 +71,6 @@ export function buildOverlayHtml() {
     // append main containers to iframeDoc body
     chkr_ovrl.overlayFrameDoc.head.appendChild(picoStyle);
     chkr_ovrl.overlayFrameDoc.body.appendChild(nav);
-}
-
-export function buildAdagioButton() {
-    // button to hide and show the iframe
-    const a = chkr_ovrl.buttonFrameDoc.createElement('a');
-    a.innerHTML = chkr_svg.logo;
-    a.style.fill = 'white';
-    chkr_ovrl.buttonFrameDoc.body.appendChild(a);
-
-    chkr_ovrl.buttonFrameDoc.querySelector('html').style.cursor = 'pointer';
-    chkr_ovrl.buttonFrameDoc.querySelector('html').addEventListener('click', () => {
-        if (chkr_ovrl.overlayVisible) {
-            chkr_ovrl.overlayVisible = false;
-            chkr_ovrl.overlayFrame.style.display = 'none';
-            chkr_ovrl.buttonFrame.style.opacity = '';
-        } else {
-            chkr_ovrl.overlayVisible = true;
-            chkr_ovrl.overlayFrame.style.display = '';
-            chkr_ovrl.buttonFrame.style.opacity = '0.4';
-        }
-    });
 }
 
 export function createCheckerDiv() {
@@ -1234,16 +1208,12 @@ function displayAdunits(eyeButton) {
     });
 }
 
-function refreshChecker() {
-    // Remove the adagio-button-frame and adagio-overlay-frame elements if they exist
-    const buttonFrameElement = document.getElementById('adagio-button-frame');
-    if (buttonFrameElement) {
-        buttonFrameElement.remove();
-    }
+async function refreshChecker() {
+    // First remove the existing overlay
     const overlayFrameElement = document.getElementById('adagio-overlay-frame');
     if (overlayFrameElement) {
         overlayFrameElement.remove();
     }
     // Then re-run the checker
-    buildInterface();
+    await runApp();
 }

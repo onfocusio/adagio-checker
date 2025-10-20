@@ -1,10 +1,7 @@
 // Overlay iframe html object, and iframe document
 export const chkr_ovrl = {
     overlayFrame: undefined,                // HTML iframe element for the overlay
-    buttonFrame: undefined,                 // HTML iframe element for the button
     overlayFrameDoc: undefined,             // Document object for the overlay iframe
-    buttonFrameDoc: undefined,              // Document object for the button iframe
-    overlayVisible: true,                   // Overlay current state
     activeTab: undefined,                   // Active tab name
     isDragged: false                        // Is the iframe being dragged
 }

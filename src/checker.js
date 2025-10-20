@@ -1,79 +1,59 @@
 import { chkr_wrp, chkr_vars } from './variables.js';
-import { chkr_titles, chkr_badges, chkr_errors } from './enums.js'; 
-import * as htmlFunctions from './htmlFunctions.js';
+import { chkr_titles, chkr_badges, chkr_errors } from './enums.js';
+import * as htmlFunctions from './interface.js';
 import * as utils from './utils.js';
+
+/*************************************************************************************************************************************************************************************************************************************
+ * Main
+ ************************************************************************************************************************************************************************************************************************************/
+
+export async function runChecks() {
+    catchBidRequestsGlobalParams();
+    await utils.checkAdagioAPI();
+    await utils.checkPublisher();
+    await utils.checkCurrentLocation();
+    checkAdServer();
+    checkPrebidVersion();
+    checkAdagioModule();
+    checkAdagioAdUnitParams();
+    checkRealTimeDataProvider();
+    checkDeviceAccess();
+    checkAdagioUserSync();
+    checkAdagioLocalStorage();
+    checkAdagioAnalyticsModule();
+    checkUserIds();
+    checkDuplicatedAdUnitCode();
+    checkCurrencyModule();
+    checkFloorPriceModule();
+    checkDsaTransparency();
+}
 
 /*************************************************************************************************************************************************************************************************************************************
  * Exported function
  ************************************************************************************************************************************************************************************************************************************/
 
-export function getPrebidWrappers() {
-    // Helper function to check and push valid wrappers, ensuring no duplicates
-    const addWrappers = (windowObj, wrapperList) => {
-        wrapperList.forEach((wrapper) => {
-            const instance = windowObj[wrapper];
-            // Only add the wrapper if it's valid and not already in prebidWrappers
-            if (
-                instance?.version &&
-                typeof instance.getEvents === 'function' &&
-                !chkr_wrp.prebidWrappers.some(([existingWrapper, existingWindow]) => existingWrapper === wrapper && existingWindow === windowObj)
-            ) {
-                chkr_wrp.prebidWrappers.push([wrapper, windowObj]);
-            }
-        });
-    };
+export function checkAdServer() {
+    // The adserver is a key component of the auction, knowing it help us in our troubleshooting
+    // By default, we support only GAM, SAS and APN for the viewability.
+    const adServers = new Map();
+    adServers.set('Google Ad Manager', typeof window?.googletag?.pubads === 'function');
+    adServers.set('Smart AdServer', typeof window?.sas?.events?.on === 'function');
+    adServers.set('Appnexus', typeof window?.apntag?.onEvent === 'function');
 
-    // Check top window for Prebid wrappers
-    if (window._pbjsGlobals) addWrappers(window, window._pbjsGlobals);
-
-    // Check iframes for Prebid wrappers
-    Array.from(window.document.getElementsByTagName(`iframe`)).forEach((iframe) => {
-        try {
-            const iframeDoc = iframe.contentWindow;
-            if (iframeDoc._pbjsGlobals) addWrappers(iframeDoc, iframeDoc._pbjsGlobals);
-        } catch (e) {
-            // Ignore iframe access errors (cross-origin or others)
+    // Loop on the map to check if value != undefined
+    let stringAdServer = '';
+    for (let [key, value] of adServers) {
+        if (value != false) {
+            if (stringAdServer === '') stringAdServer += `<code>${key}</code>`;
+            else stringAdServer += `, <code>${key}</code>`;
         }
-    });
-
-    // Check ADAGIO versions for hidden wrappers, using addWrappers for consistency
-    if (chkr_wrp.adagioAdapter !== undefined && chkr_wrp.adagioAdapter?.versions !== undefined) {
-        addWrappers(
-            window,
-            Object.keys(chkr_wrp.adagioAdapter.versions).filter((item) => item !== 'adagiojs')
-        );
     }
 
-    // Pre-select the wrapper based on adagio bidrequests, or name 'pbjs'
-    if (chkr_wrp.prebidWrappers.length !== 0) {
-        let maxAdagioBids,
-            maxBids = 0;
-        let maxAdagioBidsWrapper,
-            maxBidsWrapper = null; // prebidWrappers[0];
-
-        chkr_wrp.prebidWrappers.forEach(([wrapper, win]) => {
-            const instance = win[wrapper];
-            if (instance?.getEvents) {
-                const bids = instance.getEvents()?.filter((event) => event.eventType === 'bidRequested') || [];
-                const bidsCount = bids.length;
-                const adagioBidsCount = bids.filter((bid) => bid.bidder?.toLowerCase().includes('adagio')).length;
-
-                if (bidsCount >= maxBids) {
-                    maxBids = bidsCount;
-                    maxBidsWrapper = [wrapper, win];
-                }
-                if (adagioBidsCount >= maxAdagioBids) {
-                    maxAdagioBids = adagioBidsCount;
-                    maxAdagioBidsWrapper = [wrapper, win];
-                }
-            }
-        });
-
-        // Select the wrapper based on priority: most Adagio bids > most bids > first wrapper
-        if (chkr_wrp.prebidWrapper === undefined && chkr_wrp.prebidObject === undefined) {
-            chkr_wrp.prebidWrapper = maxAdagioBids > 0 ? maxAdagioBidsWrapper : maxBids > 0 ? maxBidsWrapper : chkr_wrp.prebidWrappers[0];
-            chkr_wrp.prebidObject = chkr_wrp.prebidWrapper[1][chkr_wrp.prebidWrapper[0]];
-        }
+    // Display the adserver checking result
+    if (stringAdServer === '') {
+        htmlFunctions.appendCheckerRow(chkr_badges.check, chkr_titles.adserver, `No supported adserver: the viewability measurement may not work`);
+    } else {
+        htmlFunctions.appendCheckerRow(chkr_badges.ok, chkr_titles.adserver, `${stringAdServer}`);
     }
 }
 
@@ -141,7 +121,11 @@ export function checkAdagioModule() {
         // Define and set wrapper integrity log
         let wrapperIntegrityLog = `• Wrapper integrity: <code>🟢 Successed</code>`;
         let brokenWrapperStringName = `${chkr_wrp.prebidWrapper[0]}AdUnits`;
-        if (pbjsAdUnits === undefined || !Array.isArray(pbjsAdUnits) || (pbjsAdUnits.length === 0 && chkr_wrp.adagioAdapter[`${chkr_wrp.prebidWrapper[0]}AdUnits`] !== undefined && chkr_wrp.prebidWrapper[0] !== 'pbjs')) {
+        if (
+            pbjsAdUnits === undefined ||
+            !Array.isArray(pbjsAdUnits) ||
+            (pbjsAdUnits.length === 0 && chkr_wrp.adagioAdapter[`${chkr_wrp.prebidWrapper[0]}AdUnits`] !== undefined && chkr_wrp.prebidWrapper[0] !== 'pbjs')
+        ) {
             wrapperIntegrityLog = `• Wrapper integrity: <code>🔴 Failed: Viewability / Analytics won't work.</code>`;
             adagioModuleStatus = chkr_badges.check;
         } else if (chkr_wrp.adagioAdapter[brokenWrapperStringName] !== undefined && chkr_wrp.prebidWrapper[0] !== 'pbjs') {
@@ -207,7 +191,7 @@ export function checkAdagioAdUnitParams() {
 
         // Compute the final adunits status (KO, CHECK, OK)
         const finalComputedAdunitsStatus = utils.computeAdUnitStatus(computedAdunitsStatus);
-        
+
         // Compute the adunits counting status (KO, CHECK, OK)
         let adagioAdunitsStatus = chkr_badges.ok;
         if (chkr_vars.totalPrebidAdUnitsCodes === 0) adagioAdunitsStatus = chkr_badges.ko;
@@ -236,11 +220,7 @@ export function checkAdagioAdUnitParams() {
             if (chkr_vars.totalPrebidAdagioAdUnitsCode > 0) {
                 details += `• Params status: ${statusSummary}<br>`;
             }
-            htmlFunctions.appendCheckerRow(
-                resultStatus,
-                chkr_titles.adunits,
-                details
-            );
+            htmlFunctions.appendCheckerRow(resultStatus, chkr_titles.adunits, details);
         }
     }
 }
@@ -292,20 +272,36 @@ export function checkRealTimeDataProvider() {
                 let paramsSite = adagioRtdProvider?.params?.site;
                 // Check if params are well configured
                 if (paramsOrgId === undefined)
-                    htmlFunctions.appendCheckerRow(computeBadgeToDisplay(true, 9, null), chkr_titles.rtdmodule, `Missing 'organizationId' parameter: <code>${JSON.stringify(adagioRtdProvider)}</code>`);
+                    htmlFunctions.appendCheckerRow(
+                        computeBadgeToDisplay(true, 9, null),
+                        chkr_titles.rtdmodule,
+                        `Missing 'organizationId' parameter: <code>${JSON.stringify(adagioRtdProvider)}</code>`
+                    );
                 else if (paramsSite === undefined)
                     htmlFunctions.appendCheckerRow(computeBadgeToDisplay(true, 9, null), chkr_titles.rtdmodule, `Missing 'site' parameter: <code>${JSON.stringify(adagioRtdProvider)}</code>`);
                 else if (!chkr_vars.siteNames.includes(paramsSite) || !chkr_vars.organizationIds.includes(paramsOrgId))
-                    htmlFunctions.appendCheckerRow(computeBadgeToDisplay(true, 9, null), chkr_titles.rtdmodule, `Parameters doesn't match with bids.params: <code>${JSON.stringify(adagioRtdProvider)}</code>`);
+                    htmlFunctions.appendCheckerRow(
+                        computeBadgeToDisplay(true, 9, null),
+                        chkr_titles.rtdmodule,
+                        `Parameters doesn't match with bids.params: <code>${JSON.stringify(adagioRtdProvider)}</code>`
+                    );
                 else htmlFunctions.appendCheckerRow(computeBadgeToDisplay(false, 9, null), chkr_titles.rtdmodule, `<code>${JSON.stringify(adagioRtdProvider)}</code>`);
             } else {
-                htmlFunctions.appendCheckerRow(computeBadgeToDisplay(true, 9, null), chkr_titles.rtdmodule, `No Adagio RTD provider configured: <code>${JSON.stringify(prebidRtdModule.dataProviders)}</code>`);
+                htmlFunctions.appendCheckerRow(
+                    computeBadgeToDisplay(true, 9, null),
+                    chkr_titles.rtdmodule,
+                    `No Adagio RTD provider configured: <code>${JSON.stringify(prebidRtdModule.dataProviders)}</code>`
+                );
             }
         } else {
             htmlFunctions.appendCheckerRow(computeBadgeToDisplay(true, 9, null), chkr_titles.rtdmodule, `No RTD providers configured: <code>${JSON.stringify(prebidRtdModule)}</code>`);
         }
     } else {
-        htmlFunctions.appendCheckerRow(computeBadgeToDisplay(true, 9, null), chkr_titles.rtdmodule, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('realTimeData')</code>: <code>${prebidRtdModule}</code>`);
+        htmlFunctions.appendCheckerRow(
+            computeBadgeToDisplay(true, 9, null),
+            chkr_titles.rtdmodule,
+            `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('realTimeData')</code>: <code>${prebidRtdModule}</code>`
+        );
     }
 }
 
@@ -414,9 +410,11 @@ export function checkAdagioAnalyticsModule() {
     let hasPrebidNineVersion = chkr_wrp.prebidVersionDetected > 9;
     let hasEnabledAnalytics = chkr_wrp.adagioAdapter.versions?.adagioAnalyticsAdapter;
 
-    if (!hasEligibleVersion) htmlFunctions.appendCheckerRow(chkr_badges.info, chkr_titles.analytics, `<code>${chkr_wrp.prebidWrapper[0]}.version</code>: <code>${chkr_wrp.prebidVersionDetected}</code>`);
+    if (!hasEligibleVersion)
+        htmlFunctions.appendCheckerRow(chkr_badges.info, chkr_titles.analytics, `<code>${chkr_wrp.prebidWrapper[0]}.version</code>: <code>${chkr_wrp.prebidVersionDetected}</code>`);
     else if (!hasEnabledAnalytics) htmlFunctions.appendCheckerRow(chkr_badges.info, chkr_titles.analytics, `<code>ADAGIO.versions.adagioAnalyticsAdapter</code>: <code>${hasEnabledAnalytics}</code>`);
-    else if (!hasPrebidNineVersion) htmlFunctions.appendCheckerRow(chkr_badges.ok, chkr_titles.analytics, `Prebid version: <code>${chkr_wrp.prebidVersionDetected}</code> / Analytics: <code>${hasEnabledAnalytics}</code>`);
+    else if (!hasPrebidNineVersion)
+        htmlFunctions.appendCheckerRow(chkr_badges.ok, chkr_titles.analytics, `Prebid version: <code>${chkr_wrp.prebidVersionDetected}</code> / Analytics: <code>${hasEnabledAnalytics}</code>`);
     else {
         // Try to retrieve the 'options' from the analytics wrapper configuration
         let paramOrganizationId = chkr_wrp.adagioAdapter?.options?.organizationId;
@@ -424,7 +422,11 @@ export function checkAdagioAnalyticsModule() {
 
         // Options are necessary for Adagio to get the analytics even if the Adagio bidder adapter is not loaded
         if (!paramOrganizationId || !paramSitename) {
-            htmlFunctions.appendCheckerRow(chkr_badges.check, chkr_titles.analytics, `Missing parameters: <code>${chkr_wrp.prebidWrapper[0]}.enableAnalytics.options</code> should contain 'organizationId' and 'site'`);
+            htmlFunctions.appendCheckerRow(
+                chkr_badges.check,
+                chkr_titles.analytics,
+                `Missing parameters: <code>${chkr_wrp.prebidWrapper[0]}.enableAnalytics.options</code> should contain 'organizationId' and 'site'`
+            );
         } else {
             htmlFunctions.appendCheckerRow(chkr_badges.ok, chkr_titles.analytics, `Options: <code>${chkr_wrp.adagioAdapter?.options}</code>`);
         }
@@ -562,7 +564,8 @@ export function checkDsaTransparency() {
             let datatopub = prebidOrtb2?.regs?.ext?.dsa?.datatopub;
             let transparency = prebidOrtb2?.regs?.ext?.dsa?.transparency;
 
-            if (dsa === undefined) htmlFunctions.appendCheckerRow(chkr_badges.info, chkr_titles.dsa, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
+            if (dsa === undefined)
+                htmlFunctions.appendCheckerRow(chkr_badges.info, chkr_titles.dsa, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
             else {
                 if (dsarequired === undefined || pubrender === undefined || datatopub === undefined || transparency === undefined)
                     htmlFunctions.appendCheckerRow(chkr_badges.ko, chkr_titles.dsa, `<code>${chkr_wrp.prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);

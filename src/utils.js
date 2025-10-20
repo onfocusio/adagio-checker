@@ -1,10 +1,79 @@
-import { chkr_ovrl, chkr_api, chkr_vars } from './variables.js';
-import { chkr_tabs, chkr_svg, chkr_badges, chkr_titles } from './enums.js'
-import * as htmlFunctions from './htmlFunctions.js';
+import { chkr_ovrl, chkr_api, chkr_vars, chkr_wrp } from './variables.js';
+import { chkr_tabs, chkr_svg, chkr_badges } from './enums.js';
 
 /*************************************************************************************************************************************************************************************************************************************
  * Exported function
  ************************************************************************************************************************************************************************************************************************************/  
+
+export function getPrebidWrappers() {
+    // Helper function to check and push valid wrappers, ensuring no duplicates
+    const addWrappers = (windowObj, wrapperList) => {
+        wrapperList.forEach((wrapper) => {
+            const instance = windowObj[wrapper];
+            // Only add the wrapper if it's valid and not already in prebidWrappers
+            if (
+                instance?.version &&
+                typeof instance.getEvents === 'function' &&
+                !chkr_wrp.prebidWrappers.some(([existingWrapper, existingWindow]) => existingWrapper === wrapper && existingWindow === windowObj)
+            ) {
+                chkr_wrp.prebidWrappers.push([wrapper, windowObj]);
+            }
+        });
+    };
+
+    // Check top window for Prebid wrappers
+    if (window._pbjsGlobals) addWrappers(window, window._pbjsGlobals);
+
+    // Check iframes for Prebid wrappers
+    Array.from(window.document.getElementsByTagName(`iframe`)).forEach((iframe) => {
+        try {
+            const iframeDoc = iframe.contentWindow;
+            if (iframeDoc._pbjsGlobals) addWrappers(iframeDoc, iframeDoc._pbjsGlobals);
+        } catch (e) {
+            // Ignore iframe access errors (cross-origin or others)
+        }
+    });
+
+    // Check ADAGIO versions for hidden wrappers, using addWrappers for consistency
+    if (chkr_wrp.adagioAdapter !== undefined && chkr_wrp.adagioAdapter?.versions !== undefined) {
+        addWrappers(
+            window,
+            Object.keys(chkr_wrp.adagioAdapter.versions).filter((item) => item !== 'adagiojs')
+        );
+    }
+
+    // Pre-select the wrapper based on adagio bidrequests, or name 'pbjs'
+    if (chkr_wrp.prebidWrappers.length !== 0) {
+        let maxAdagioBids,
+            maxBids = 0;
+        let maxAdagioBidsWrapper,
+            maxBidsWrapper = null; // prebidWrappers[0];
+
+        chkr_wrp.prebidWrappers.forEach(([wrapper, win]) => {
+            const instance = win[wrapper];
+            if (instance?.getEvents) {
+                const bids = instance.getEvents()?.filter((event) => event.eventType === 'bidRequested') || [];
+                const bidsCount = bids.length;
+                const adagioBidsCount = bids.filter((bid) => bid.bidder?.toLowerCase().includes('adagio')).length;
+
+                if (bidsCount >= maxBids) {
+                    maxBids = bidsCount;
+                    maxBidsWrapper = [wrapper, win];
+                }
+                if (adagioBidsCount >= maxAdagioBids) {
+                    maxAdagioBids = adagioBidsCount;
+                    maxAdagioBidsWrapper = [wrapper, win];
+                }
+            }
+        });
+
+        // Select the wrapper based on priority: most Adagio bids > most bids > first wrapper
+        if (chkr_wrp.prebidWrapper === undefined && chkr_wrp.prebidObject === undefined) {
+            chkr_wrp.prebidWrapper = maxAdagioBids > 0 ? maxAdagioBidsWrapper : maxBids > 0 ? maxBidsWrapper : chkr_wrp.prebidWrappers[0];
+            chkr_wrp.prebidObject = chkr_wrp.prebidWrapper[1][chkr_wrp.prebidWrapper[0]];
+        }
+    }
+}
 
 export async function checkAdagioAPI() {
     // Ready to udapte the alert div
@@ -153,31 +222,6 @@ export async function checkCurrentLocation() {
             .split('')
             .map((char) => 127397 + char.charCodeAt());
         return String.fromCodePoint(...codePoints);
-    }
-}
-
-export function checkAdServer() {
-    // The adserver is a key component of the auction, knowing it help us in our troubleshooting
-    // By default, we support only GAM, SAS and APN for the viewability.
-    const adServers = new Map();
-    adServers.set('Google Ad Manager', typeof window?.googletag?.pubads === 'function');
-    adServers.set('Smart AdServer', typeof window?.sas?.events?.on === 'function');
-    adServers.set('Appnexus', typeof window?.apntag?.onEvent === 'function');
-
-    // Loop on the map to check if value != undefined
-    let stringAdServer = '';
-    for (let [key, value] of adServers) {
-        if (value != false) {
-            if (stringAdServer === '') stringAdServer += `<code>${key}</code>`;
-            else stringAdServer += `, <code>${key}</code>`;
-        }
-    }
-
-    // Display the adserver checking result
-    if (stringAdServer === '') {
-        htmlFunctions.appendCheckerRow(chkr_badges.check, chkr_titles.adserver, `No supported adserver: the viewability measurement may not work`);
-    } else {
-        htmlFunctions.appendCheckerRow(chkr_badges.ok, chkr_titles.adserver, `${stringAdServer}`);
     }
 }
 
