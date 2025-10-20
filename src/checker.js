@@ -92,6 +92,8 @@ export function catchBidRequestsGlobalParams() {
 }
 
 export function checkPrebidVersion() {
+    // First clear previous version (in case of refresh)
+    chkr_wrp.prebidVersionDetected = undefined;
     // Catch the Prebid version number from the wrapper object.
     if (chkr_wrp.prebidWrapper === undefined) {
         htmlFunctions.appendCheckerRow(chkr_badges.ko, chkr_titles.prebid, `<code>window._pbjsGlobals</code>: <code>undefined</code>`);
