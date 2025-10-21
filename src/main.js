@@ -1,22 +1,21 @@
-import { buildInterface } from './interface.js';
-import { runChecks } from './checker.js';
-import { chkr_ovrl, chkr_wrp } from './variables.js';
-import { chkr_tabs } from './enums.js';
+import { buildApp, appendHomeContainer } from './app.js';
+import { setPrebidWrapper, prebidObject, runChecks } from './checker.js';
 
-export async function runApp() {
+export async function main() {
+    // Get the Prebid wrappers
+    setPrebidWrapper();
+
     // Build the iframe container and web-app interface
-    buildInterface();
+    buildApp();
 
     // If at least one Prebid wrapper found, run the checks
-    if (chkr_wrp.prebidWrappers.length > 0) {
+    if (prebidObject !== undefined) {
         await runChecks();
     } else {
-        // Fill the alert with number of orgIds found
-        const tabName = chkr_tabs.checker.toLowerCase().replace(' ', '-');
-        const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
-        alertTextDiv.innerHTML += `<small>• No Prebid wrapper detected... </small><br>`;
+        // No Prebid wrapper found, show alert
+        appendHomeContainer(`No Prebid wrapper detected...`);
     }
 }
 
 // Run the app
-runApp();
+main();

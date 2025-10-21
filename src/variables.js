@@ -6,15 +6,6 @@ export const chkr_ovrl = {
     isDragged: false                        // Is the iframe being dragged
 }
 
-// Prebid.js wrapper objects
-export const chkr_wrp = {
-    prebidObject: undefined,                // Prebid.js object
-    prebidWrappers: [],                     // Arrays of [wrapper, window] : window[wrapper]
-    prebidWrapper: undefined,               // Current Prebid.js wrapper selected
-    adagioAdapter: undefined,               // Adagio adapter object (window.ADAGIO)
-    prebidVersionDetected: undefined,       // Prebid.js version detected
-}
-
 // Adagio API variables
 export const chkr_api = {
     apiKeyDetected: false,                  // Is API key detected on the page (via bookmarklet)
@@ -35,11 +26,4 @@ export const chkr_vars = {
     prebidAdagioAdUnitsCodes: undefined,
     adagioBidsRequested: undefined,
     adagioPbjsAdUnitsCode: [],
-    prebidAdagioParams: undefined,
-    totalPrebidAdUnitsCodes: 0,
-    totalPrebidAdagioAdUnitsCode: 0,
-    totalAdagioAdUnitsCodes: 0,
-    totalAdagioPbjsAdUnitsCodes: 0,
-    organizationIds: [],
-    siteNames: []
 }
