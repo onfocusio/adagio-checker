@@ -1,14 +1,14 @@
-import { chkr_api } from './variables.js';
 import { chkr_svg, chkr_tabs, chkr_colors, chkr_badges } from './enums.js';
-import { prebidWrappers, prebidWrapper, prebidObject, prebidVersionDetected, switchToSelectedPrebidWrapper } from './checker.js';
+import { prebidWrappers, prebidWrapper, prebidVersionDetected, switchToSelectedPrebidWrapper } from './checker.js';
+import { apiKeyDetected, successRecordsItems,  } from './api.js';
 import { main } from './main.js';
-import * as utils from './utils.js';
+import { loadDebuggingMode, computeAdUnitStatus, detectedCountryCodeIso3 } from './utils.js';
 import { TCString } from '@iabtcf/core';
 
 export let overlayFrame = undefined;     // HTML iframe element for the overlay
 export let overlayFrameDoc = undefined;  // Document object for the overlay iframe
-let activeTab = undefined;        // Active tab name
-let isDragged = false;           // Is the iframe being dragged
+let activeTab = undefined;               // Active tab name
+let isDragged = false;                   // Is the iframe being dragged
 
 /*************************************************************************************************************************************************************************************************************************************
  * Main
@@ -347,7 +347,7 @@ export function appendAdUnitsRow(bidders, bids, prebidAdagioBidsRequested) {
 		if (bidderAdagioDetected) buildParamsCheckingArray(bid, paramsCheckingArray);
 		// Extract all the status values (first element of each array) from paramsCheckingArray
 		const extractedStatus = paramsCheckingArray.map((item) => item[0]);
-		const status = bidderAdagioDetected ? utils.computeAdUnitStatus(extractedStatus) : chkr_badges.na;
+		const status = bidderAdagioDetected ? computeAdUnitStatus(extractedStatus) : chkr_badges.na;
 
 		// Store the computed status for the adunit
 		if (bidderAdagioDetected) computedAdunitsStatus.push(status);
@@ -577,7 +577,7 @@ function buildDebuggingButton(name, svg, isactive) {
 	button.setAttribute('title', name);
 	if (!isactive) button.disabled = true;
 	button.innerHTML = svg;
-	button.addEventListener('click', () => utils.loadDebuggingMode());
+	button.addEventListener('click', () => loadDebuggingMode());
 	button.classList.add('outline');
 	button.style.borderColor = 'transparent';
 	button.style.padding = '0.3em';
@@ -635,8 +635,8 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 	if (paramSite === undefined) paramsCheckingArray.push([chkr_badges.ko, `<code>params.site</code>: <code>${paramSite}</code>`, 'Parameter not found.']);
 	else {
 		if (paramSite.trim() !== paramSite) paramsCheckingArray.push([chkr_badges.ko, `<code>params.site</code>: <code>${paramSite}</code>`, `Space character detected.`]);
-		else if (chkr_api.apiKeyDetected && chkr_api.successRecordItems !== null) paramsCheckingArray.push([chkr_badges.ok, `<code>params.site</code>: <code>${paramSite}</code>`, ``]);
-		else if (chkr_api.apiKeyDetected && chkr_api.successRecordItems === null) paramsCheckingArray.push([chkr_badges.ko, `<code>params.site</code>: <code>${paramSite}</code>`, `No API record found, check logs.`]);
+		else if (apiKeyDetected && successRecordsItems !== null) paramsCheckingArray.push([chkr_badges.ok, `<code>params.site</code>: <code>${paramSite}</code>`, ``]);
+		else if (apiKeyDetected && successRecordsItems === null) paramsCheckingArray.push([chkr_badges.ko, `<code>params.site</code>: <code>${paramSite}</code>`, `No API record found, check logs.`]);
 		else paramsCheckingArray.push([chkr_badges.info, `<code>params.site</code>: <code>${paramSite}</code>`, 'No API loaded for checking.']);
 	}
 
@@ -899,14 +899,14 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 		}
 
 		// GDPR - Should be in ortb2.regs.ext.gdpr and user.ext.consent
-		if (chkr_api.detectedCountryCodeIso3 === null) {
+		if (detectedCountryCodeIso3 === null) {
 			console.error('No country code detected, cannot check GDPR params.');
 		} else {
 			// List of EEA countries (ISO 3166-1 alpha-3)
 			const EEACountries = ['ALA', 'AUT', 'BEL', 'BGR', 'HRV', 'CYP', 'CZE', 'DNK', 'EST', 'FIN', 'FRA', 'GUF', 'DEU', 'GIB', 'GRC', 'GLP', 'GGY', 'HUN', 'ISL', 'IRL', 'IMN', 'ITA', 'JEY', 'LVA', 'LIE', 'LTU', 'LUX', 'MLT', 'MTQ', 'MYT', 'NLD', 'NOR', 'POL', 'PRT', 'REU', 'ROU', 'BLM', 'MAF', 'SPM', 'SVK', 'SVN', 'ESP', 'SWE', 'GBR'];
 
 			// Check if the user is in the EEA, only then check the GDPR params
-			if (EEACountries.includes(chkr_api.detectedCountryCodeIso3)) {
+			if (EEACountries.includes(detectedCountryCodeIso3)) {
 				// User is in the EEA
 				if (ortbGdpr !== 1) {
 					paramsCheckingArray.push([chkr_badges.ko, `<code>ortb2.regs.ext.gdpr</code>: <code>${ortbGdpr}</code>`, `Should be set to <code>1</code> for users in the EEA.`]);
