@@ -1,5 +1,6 @@
-import { chkr_ovrl, chkr_api } from './variables.js';
+import { chkr_api } from './variables.js';
 import { chkr_tabs, chkr_svg, chkr_badges } from './enums.js';
+import { overlayFrameDoc } from './app.js';
 
 /*************************************************************************************************************************************************************************************************************************************
  * Exported function
@@ -7,7 +8,7 @@ import { chkr_tabs, chkr_svg, chkr_badges } from './enums.js';
 
 export async function checkAdagioAPI(organizationIds, siteNames) {
     // Ready to udapte the alert div
-    const apiButtonElement = chkr_ovrl.overlayFrameDoc.getElementById(`apiButton`);
+    const apiButtonElement = overlayFrameDoc.getElementById(`apiButton`);
 
     // Ensure user launched the bookmarket with the ADAGIO_KEY set up
     if (typeof ADAGIO_KEY === 'undefined' || ADAGIO_KEY === '') {
@@ -64,7 +65,7 @@ async function runAdagioAPI(queryString) {
 
     // Ready to udapte the alert div
     const tabName = chkr_tabs.checker.toLowerCase().replace(' ', '-');
-    const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
+    const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
 
     // Making the GET request using fetch()
     try {
@@ -95,7 +96,7 @@ export async function checkPublisher(organizationIds) {
 
     // Fill the alert with number of orgIds found
     const tabName = chkr_tabs.checker.toLowerCase().replace(' ', '-');
-    const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
+    const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
 
     if (organizationIds.length > 0) {
         // Fetch the adagio sellers.json
@@ -120,7 +121,7 @@ export async function checkPublisher(organizationIds) {
 export async function checkCurrentLocation() {
     // Fill the alert with number of orgIds found
     const tabName = chkr_tabs.checker.toLowerCase().replace(' ', '-');
-    const alertTextDiv = chkr_ovrl.overlayFrameDoc.getElementById(`${tabName}-alert`);
+    const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
 
     // Fetch the country code using ipapi.co
     await fetch('https://ipapi.co/json/')

@@ -55,7 +55,3 @@ export const chkr_titles = Object.freeze({
     rtdmodule: '9️⃣ Real time data (RTD)',
     dsa: 'DSA Transparency',
 });
-
-export const chkr_errors = Object.freeze({
-    prebidnotfound: 'Prebid.js not found',
-});
