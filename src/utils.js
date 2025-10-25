@@ -7,7 +7,7 @@ export let detectedCountryCodeIso3; // Detected country code (alpha-3)
  * Exported function
  ************************************************************************************************************************************************************************************************************************************/
 
-export async function checkPublisher(orgSitePairs) {
+export async function fetchPublishersFromOrgIds(orgIds) {
 	// Fetch the Adagio seller.json to ensure that the orgId refers to an existing organization
 	let adagioSellersJsonUrl = 'https://adagio.io/sellers.json';
 	let adagioSellersJson = null;
@@ -15,7 +15,7 @@ export async function checkPublisher(orgSitePairs) {
     // Build the result string (set the default value)
 	let strBuilder = `No organization detected... Try to refresh the checker or the page.`;
 
-	if (orgSitePairs.length > 0) {
+	if (orgIds.length > 0) {
 		// Fetch the adagio sellers.json
 		try {
 			// Fetch the adagio sellers.json
@@ -26,9 +26,10 @@ export async function checkPublisher(orgSitePairs) {
 			const orgHtmlList = [];
 
 			// Loop through the organizationIds to build the HTML list
-			for (const { organizationId, site } of orgSitePairs) {
-				const matched = adagioSellersJson?.sellers.filter((e) => e.seller_id === organizationId);
-				const org = matched && matched[0] ? matched[0] : { name: organizationId, seller_id: organizationId, seller_type: 'unknown' };
+			for (const orgId of orgIds) {
+                console.log('Checking organizationId:', orgId);
+				const matched = adagioSellersJson?.sellers.filter((e) => e.seller_id === orgId);
+				const org = matched && matched[0] ? matched[0] : { name: orgId, seller_id: orgId, seller_type: 'unknown' };
 				orgHtmlList.push(`<code>${org.name} (${org.seller_id}) - ${org.seller_type}</code>`);
 			}
 
@@ -44,7 +45,7 @@ export async function checkPublisher(orgSitePairs) {
 	appendHomeContainer(strBuilder);
 }
 
-export async function checkCurrentLocation() {
+export async function fetchCurrentLocationData() {
     // Reset the detected country code
     detectedCountryCodeIso3 = null;
 

@@ -1,66 +1,43 @@
-import { chkr_tabs, chkr_svg, chkr_badges } from './enums.js';
-import { overlayFrameDoc } from './app.js';
-
-// Adagio API variables
-export let apiKeyDetected = (typeof ADAGIO_KEY !== 'undefined' && ADAGIO_KEY) ? true : false; // Is API key detected on the page (via bookmarklet)
-export let successRecordsItems; // API response for successful record items
-
 /*************************************************************************************************************************************************************************************************************************************
  * Exported function
  ************************************************************************************************************************************************************************************************************************************/
 
-export async function checkAdagioAPI(orgSitePairs) {
-	// Ready to udapte the alert div
-	const apiButtonElement = overlayFrameDoc.getElementById(`apiButton`);
-
+export async function fetchApiInventoryRecords(bidReqOrgSitePairs) {
     // Clear the successRecordItems array
-    successRecordsItems = [];
+    const apiRecordsItems = new Set();
 
-	// Ensure user launched the bookmarket with the ADAGIO_KEY set up
-	if (!apiKeyDetected) {
-		// Ensure the ADAGIO_KEY is defined
-		apiButtonElement.innerHTML = chkr_svg.api_red;
-		apiButtonElement.setAttribute('title', "Adagio API - 'ADAGIO_KEY' is empty / not defined in the bookmarklet.");
-		return;
-	}
+	// If no organizationId / site pairs, exit
+	if (bidReqOrgSitePairs.length) {
+        // Catch all the organizationId records from the Adagio API to manage subdomains cases
+        for (const { organizationId, site } of bidReqOrgSitePairs) {
+            // Build the query string
+            const hostname = window.location.hostname;
+            const queryString = `filter=publisher_id||$eq||${encodeURIComponent(organizationId)}&search=${encodeURIComponent(hostname)}`;
 
-	// Launch the API call for the organizationIds
-	if (orgSitePairs.length === 0) {
-		apiButtonElement.innerHTML = chkr_svg.api_orange;
-		apiButtonElement.setAttribute('title', 'Adagio API - No organizationId / siteName detected in traffic.');
-		return;
-	} 
+            // Run the Adagio API call
+	        const url = `https://api.adagio.io/api/v1/groups/1/websites?${queryString}`;
+            const orgIdApiDataResponse = await runAdagioApiQuery(url); // => data //.records
 
-    // API key detected and organizationIds found - Ready to query
-    apiButtonElement.innerHTML = chkr_svg.api_green;
-    apiButtonElement.setAttribute('title', `Adagio API - Ready to query data.`);
+            // If results detected, process them
+            if (orgIdApiDataResponse !== null) {
+                // Check if the records provides a domain match and a sitename match
+                const matchedDomainsRecords = orgIdApiDataResponse.records.filter((record) => hostname.includes(record.domain)) || null;
+                const matchedSiteNameRecords = orgIdApiDataResponse.records.filter((record) => site === record.name) || null;
+                const successRecordsItems = matchedDomainsRecords.filter((domainRecord) => matchedSiteNameRecords.filter((siteNameRecord) => domainRecord === siteNameRecord)) || [];
 
-	// Catch all the organizationId records from the Adagio API to manage subdomains cases
-	for (const { organizationId, site } of orgSitePairs) {
-        // Build the query string
-		let queryString = `filter=publisher_id||$eq||${encodeURIComponent(organizationId)}`;
+                // If at least one record matched, add it to the apiRecordsItems set
+                if (successRecordsItems.length) {
+                    successRecordsItems.forEach((item) => apiRecordsItems.add(item));
+                }
+            }
+        }
+    };
 
-        // Run the Adagio API call
-		let orgIdApiDataResponse = await runAdagioAPI(queryString); // => data //.records
-
-        // Analyze the API response
-		if (orgIdApiDataResponse !== null && orgIdApiDataResponse.records !== null) {
-			// Check if the records provides a domain match and a sitename match
-			let matchedDomainsRecords = orgIdApiDataResponse.records.filter((record) => window.location.hostname.includes(record.domain)) || null;
-			let matchedSiteNameRecords = orgIdApiDataResponse.records.filter((record) => site === record.name) || null;
-			successRecordsItems.push(...matchedDomainsRecords.filter((domainRecord) => matchedSiteNameRecords.filter((siteNameRecord) => domainRecord === siteNameRecord)) || null);
-		}
-	}
+    // Return the set of unique matching records
+    return apiRecordsItems;
 }
 
-async function runAdagioAPI(queryString) {
-	// URL of the API endpoint
-	const url = `https://api.adagio.io/api/v1/groups/1/websites?${queryString}`;
-
-	// Ready to udapte the alert div
-	const tabName = chkr_tabs.checker.toLowerCase().replace(' ', '-');
-	const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
-
+export async function runAdagioApiQuery(url) {
 	// Making the GET request using fetch()
 	try {
 		const response = await fetch(url, {
@@ -69,15 +46,10 @@ async function runAdagioAPI(queryString) {
 				Authorization: `Bearer ${ADAGIO_KEY}`, // Adding the Bearer token in the header
 			},
 		});
-		if (!response.ok) {
-			// alertTextDiv.innerHTML += `<small>• Adagio API - <code>🔴 ${response.status}</code></small><br>`;
-			throw new Error(response.status);
-		}
-		const data = await response.json();
-		return data;
+		if (!response.ok) throw new Error(response.status);
+		return await response.json();
 	} catch (error) {
-		console.log(error);
-		alertTextDiv.innerHTML += `<small>• Adagio API - <code>🔴 Error on loading: ${error}</code></small><br>`;
+        console.error('Error fetching Adagio API:', error);
 		return null;
 	}
 }

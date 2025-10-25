@@ -1,6 +1,5 @@
 import { chkr_svg, chkr_tabs, chkr_colors, chkr_badges } from './enums.js';
 import { prebidWrappers, prebidWrapper, prebidVersionDetected, switchToSelectedPrebidWrapper } from './checker.js';
-import { apiKeyDetected, successRecordsItems,  } from './api.js';
 import { main } from './main.js';
 import { loadDebuggingMode, computeAdUnitStatus, detectedCountryCodeIso3 } from './utils.js';
 import { TCString } from '@iabtcf/core';
@@ -63,7 +62,6 @@ export function buildOverlayHtml() {
 	const ul = overlayFrameDoc.createElement('ul');
 	ul.appendChild(buildTabButton(chkr_tabs.checker, chkr_svg.checker, true));
 	ul.appendChild(buildTabButton(chkr_tabs.adunits, chkr_svg.adunits, false));
-	ul.appendChild(buildApiButton('API status', chkr_svg.api_grey, true));
 	ul.appendChild(buildPrebidButton('Prebid versions detected', chkr_svg.prebid, true));
 	ul.appendChild(buildDebuggingButton('Enable debbug mode and reload page', chkr_svg.debbuging, true));
 	ul.appendChild(buildRefreshButton('Refresh', chkr_svg.refresh, true));
@@ -309,10 +307,10 @@ export function appendHomeContainer(htmlContent) {
 	alertTextDiv.innerHTML += `<small>• ${htmlContent}</small><br>`;
 }
 
-export function appendAdUnitsRow(bidders, bids, prebidAdagioBidsRequested) {
+export function appendAdUnitsRow(prebidBidders, prebidBidRequested, prebidAdagioBidRequested, apiRecordsItems) {
 	// check if Adagio is detected and get bidder name
 	let adagioId = '';
-	if (prebidAdagioBidsRequested.length > 0) adagioId = prebidAdagioBidsRequested[0].bidder;
+	if (prebidAdagioBidRequested.length > 0) adagioId = prebidAdagioBidRequested[0].bidder;
 
 	// build id name
 	const tabName = chkr_tabs.adunits.toLowerCase().replace(' ', '-');
@@ -321,19 +319,19 @@ export function appendAdUnitsRow(bidders, bids, prebidAdagioBidsRequested) {
 	const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
 
     // Get unique adUnit codes (filter out falsy values)
-    const prebidAdUnitsCodes = Array.isArray(bids)
-        ? [...new Set(bids.map(b => b?.adUnitCode).filter(Boolean))]
+    const prebidAdUnitsCodes = Array.isArray(prebidBidRequested)
+        ? [...new Set(prebidBidRequested.map(b => b?.adUnitCode).filter(Boolean))]
         : [];
 
-    // Display adunits found
+    // Display adunits detected
     const codesHtml = prebidAdUnitsCodes.map(code => `<small> <code>${code}</code>;</small>`).join(' ');
-    alertTextDiv.innerHTML += `<small>Adunit(s) found:</small>${codesHtml ? ' ' + codesHtml : '<small><kbd>0</kbd></small>'}<br>`;
+    alertTextDiv.innerHTML += `<small>Adunit(s):</small>${codesHtml ? ' ' + codesHtml : '<small><kbd>0</kbd></small>'}<br>`;
 
 	// Will hold the computed status for each adunit
 	const computedAdunitsStatus = [];
 
 	// Fill the table section
-	bids.forEach((bid) => {
+	prebidBidRequested.forEach((bid) => {
 		// Gather the initial info: code, type, bidder
 		const adUnitCode = bid.adUnitCode;
 		const mediaTypes = bid.mediaTypes;
@@ -344,7 +342,7 @@ export function appendAdUnitsRow(bidders, bids, prebidAdagioBidsRequested) {
 
 		// Build the bid checking array and compute the adunit status
 		let paramsCheckingArray = [];
-		if (bidderAdagioDetected) buildParamsCheckingArray(bid, paramsCheckingArray);
+		if (bidderAdagioDetected) buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems);
 		// Extract all the status values (first element of each array) from paramsCheckingArray
 		const extractedStatus = paramsCheckingArray.map((item) => item[0]);
 		const status = bidderAdagioDetected ? computeAdUnitStatus(extractedStatus) : chkr_badges.na;
@@ -355,7 +353,7 @@ export function appendAdUnitsRow(bidders, bids, prebidAdagioBidsRequested) {
 		// Create the row
 		const newRow = overlayFrameDoc.createElement('tr');
 		newRow.classList.add(`${bidderId.replace(' ', '-')}-bid`);
-		// hides the row if adagio found
+		// hides the row if adagio detected
 		if (adagioId !== '' && adagioId !== bidderId) {
 			newRow.style.display = 'none';
 		}
@@ -389,7 +387,7 @@ export function appendAdUnitsRow(bidders, bids, prebidAdagioBidsRequested) {
 	// fill the filter dropdown list
 	const bidderFilter = overlayFrameDoc.getElementById('bidderFilter');
 
-	bidders.forEach((bidder) => {
+	prebidBidders.forEach((bidder) => {
 		const libidder = overlayFrameDoc.createElement('li');
 		const labbidder = overlayFrameDoc.createElement('label');
 		const inputbidder = overlayFrameDoc.createElement('input');
@@ -477,14 +475,14 @@ function buildApiButton(name, svg, isactive) {
 }
 
 function buildPrebidButton(name, svg, isactive) {
-	// Get the number of wrapper found
+	// Get the number of wrapper detected
 	let nbWrappers = prebidWrappers.length;
 
 	// As website can use different wrapper for Prebid, this button allows to switch between them
 	const li = overlayFrameDoc.createElement('li');
 	const button = overlayFrameDoc.createElement('button');
 	button.setAttribute('title', name);
-	// Disabled button if no wrapper found
+	// Disabled button if no wrapper detected
 	if (!isactive || nbWrappers === 0) button.disabled = true;
 	button.innerHTML = svg;
 	button.classList.add('outline');
@@ -493,7 +491,7 @@ function buildPrebidButton(name, svg, isactive) {
 	button.style.display = 'inline-block';
 	button.style.padding = '0.3em';
 
-	// If more than one wrapper, display a badge with the number of wrappers found
+	// If more than one wrapper, display a badge with the number of wrappers detected
 	const badge = overlayFrameDoc.createElement('span');
 	badge.style.position = 'absolute';
 	badge.style.top = '-10px';
@@ -535,7 +533,7 @@ function buildPrebidButton(name, svg, isactive) {
 	header.appendChild(closeLink);
 	article.appendChild(paragraph);
 
-	// Fill the modal with the list Prebid wrappers found
+	// Fill the modal with the list Prebid wrappers detected
 	for (let i = 0; i < nbWrappers; i++) {
 		// Create the radio button for the current wrapper item
 		const item = prebidWrappers[i];
@@ -599,7 +597,7 @@ function buildRefreshButton(name, svg, isactive) {
 	return li;
 }
 
-function buildParamsCheckingArray(bid, paramsCheckingArray) {
+function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
 	// Check the adagio bidder params (orgId and site in params)
 	let paramOrganizationId = bid?.params?.organizationId;
 	if (paramOrganizationId !== undefined) paramOrganizationId = paramOrganizationId.toString();
@@ -622,7 +620,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 	let deepOrtb2ImpRewarded = findParam(bid, 'rwdd') || null;
 
 	// Check the organizationId
-	if (paramOrganizationId === undefined) paramsCheckingArray.push([chkr_badges.ko, `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`, `Parameter not found.`]);
+	if (paramOrganizationId === undefined) paramsCheckingArray.push([chkr_badges.ko, `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`, `Parameter not detected.`]);
 	else {
 		if (typeof paramOrganizationId === 'string' && !/^\d{4}$/.test(paramOrganizationId)) {
 			paramsCheckingArray.push([chkr_badges.check, `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`, `Should be a 4-digit integer or string (e.g., 1000 or '1000').`]);
@@ -632,12 +630,11 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 	}
 
 	// Check the site name
-	if (paramSite === undefined) paramsCheckingArray.push([chkr_badges.ko, `<code>params.site</code>: <code>${paramSite}</code>`, 'Parameter not found.']);
+	if (paramSite === undefined) paramsCheckingArray.push([chkr_badges.ko, `<code>params.site</code>: <code>${paramSite}</code>`, 'Parameter not detected.']);
 	else {
 		if (paramSite.trim() !== paramSite) paramsCheckingArray.push([chkr_badges.ko, `<code>params.site</code>: <code>${paramSite}</code>`, `Space character detected.`]);
-		else if (apiKeyDetected && successRecordsItems !== null) paramsCheckingArray.push([chkr_badges.ok, `<code>params.site</code>: <code>${paramSite}</code>`, ``]);
-		else if (apiKeyDetected && successRecordsItems === null) paramsCheckingArray.push([chkr_badges.ko, `<code>params.site</code>: <code>${paramSite}</code>`, `No API record found, check logs.`]);
-		else paramsCheckingArray.push([chkr_badges.info, `<code>params.site</code>: <code>${paramSite}</code>`, 'No API loaded for checking.']);
+		else if (apiRecordsItems.size) paramsCheckingArray.push([chkr_badges.ok, `<code>params.site</code>: <code>${paramSite}</code>`, ``]);
+		else paramsCheckingArray.push([chkr_badges.ko, `<code>params.site</code>: <code>${paramSite}</code>`, `No manager inventory matched.`]);
 	}
 
 	// AdUnitElementId (1/3): Depending on the Prebid version, we don't expect the same param
@@ -645,7 +642,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 	let divIdSetup = '';
 	let divIdRes = '';
 	let divIdDetails = '';
-	// AdUnitElementId (2/3): First checks if a value is found
+	// AdUnitElementId (2/3): First checks if a value is detected
 	if (prebidVersionDetected >= 9) {
 		if (ortb2ImpDivId !== undefined) {
 			divIdStatus = chkr_badges.ok;
@@ -681,7 +678,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 	else {
 		const htlmDiv = document.getElementById(divIdRes);
 		if (divIdRes.trim() !== divIdRes) paramsCheckingArray.push([chkr_badges.check, `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`, `Space character detected.`]);
-		else if (htlmDiv === null) paramsCheckingArray.push([chkr_badges.check, `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`, `Div id not found in the page.`]);
+		else if (htlmDiv === null) paramsCheckingArray.push([chkr_badges.check, `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`, `Div id not detected in the page.`]);
 		else paramsCheckingArray.push([divIdStatus, `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`, divIdDetails]);
 	}
 
@@ -690,7 +687,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 	let placementSetup = '';
 	let placementRes = '';
 	let placementDetails = '';
-	// Placement (2/3): First checks if a value is found
+	// Placement (2/3): First checks if a value is detected
 	if (prebidVersionDetected >= 10) {
 		if (paramPlacement !== undefined) {
 			placementStatus = chkr_badges.ok;
@@ -701,7 +698,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 			placementStatus = chkr_badges.info;
 			placementSetup = 'ortb2Imp.ext.data.placement';
 			placementRes = ortb2ImpPlacement;
-			placementDetails = 'Fallback: placement found in ortb2Imp, but should be in params.placement for Prebid 10+.';
+			placementDetails = 'Fallback: placement detected in ortb2Imp, but should be in params.placement for Prebid 10+.';
 		} else {
 			placementStatus = chkr_badges.ko;
 			placementSetup = 'params.placement';
@@ -718,7 +715,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 			placementStatus = chkr_badges.info;
 			placementSetup = 'params.placement';
 			placementRes = paramPlacement;
-			placementDetails = 'Fallback: placement found in params, but should be in ortb2Imp.ext.data.placement for Prebid 9.x.';
+			placementDetails = 'Fallback: placement detected in params, but should be in ortb2Imp.ext.data.placement for Prebid 9.x.';
 		} else {
 			placementStatus = chkr_badges.ko;
 			placementSetup = 'ortb2Imp.ext.data.placement';
@@ -786,7 +783,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 				});
 				if (commonArrays.length > 0) paramsCheckingArray.push([chkr_badges.ok, `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(commonArrays)}</code>`, ``]);
 				else paramsCheckingArray.push([chkr_badges.ko, `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`, `No supported size detected.`]);
-			} else paramsCheckingArray.push([chkr_badges.ko, `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`, `No parameter found.`]);
+			} else paramsCheckingArray.push([chkr_badges.ko, `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`, `No parameter detected.`]);
 		}
 
 		if (mediatypeVideo !== undefined) {
@@ -815,8 +812,8 @@ function buildParamsCheckingArray(bid, paramsCheckingArray) {
 			if (hasOutstreamContext || hasInstreamContext) {
 				paramsCheckingArray.push([chkr_badges.ok, `<code>mediaTypes.video.context</code>: <code>${mediatypeVideoContext}</code>`, ``]);
 			} else {
-				paramsCheckingArray.push([chkr_badges.ko, `<code>mediaTypes.video.context</code>: <code>${mediatypeVideoContext}</code>`, `No supported context found.`]);
-				// If no context found, we should not check params furthermore
+				paramsCheckingArray.push([chkr_badges.ko, `<code>mediaTypes.video.context</code>: <code>${mediatypeVideoContext}</code>`, `No supported context detected.`]);
+				// If no context detected, we should not check params furthermore
 				return;
 			}
 
