@@ -27,7 +27,6 @@ export async function fetchPublishersFromOrgIds(orgIds) {
 
 			// Loop through the organizationIds to build the HTML list
 			for (const orgId of orgIds) {
-                console.log('Checking organizationId:', orgId);
 				const matched = adagioSellersJson?.sellers.filter((e) => e.seller_id === orgId);
 				const org = matched && matched[0] ? matched[0] : { name: orgId, seller_id: orgId, seller_type: 'unknown' };
 				orgHtmlList.push(`<code>${org.name} (${org.seller_id}) - ${org.seller_type}</code>`);
@@ -85,7 +84,7 @@ export function computeAdUnitStatus(paramsCheckingArray) {
 
 export function loadDebuggingMode() {
 	window.localStorage.setItem('ADAGIO_DEV_DEBUG', true);
-	let url = window.location.href.indexOf('?pbjs_debug=true') ? window.location.href + '?pbjs_debug=true' : window.location.href;
+	const url = window.location.href.indexOf('?pbjs_debug=true') ? window.location.href + '?pbjs_debug=true' : window.location.href;
 	window.location.href = url;
 }
 

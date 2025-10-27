@@ -1,7 +1,7 @@
 import { chkr_svg, chkr_tabs, chkr_colors, chkr_badges } from './enums.js';
 import { prebidWrappers, prebidWrapper, prebidVersionDetected, switchToSelectedPrebidWrapper } from './checker.js';
 import { main } from './main.js';
-import { loadDebuggingMode, computeAdUnitStatus, detectedCountryCodeIso3 } from './utils.js';
+import { loadDebuggingMode, computeAdUnitStatus, detectedCountryCodeIso3, getPrebidVersion } from './utils.js';
 import { TCString } from '@iabtcf/core';
 
 export let overlayFrame = undefined;     // HTML iframe element for the overlay
@@ -536,7 +536,10 @@ function buildPrebidButton(name, svg, isactive) {
 	// Fill the modal with the list Prebid wrappers detected
 	for (let i = 0; i < nbWrappers; i++) {
 		// Create the radio button for the current wrapper item
-		const item = prebidWrappers[i];
+		const _prebidWrapper = prebidWrappers[i];
+		const _prebidWrapperName = _prebidWrapper[0];
+		const _prebidWrapperWindow = _prebidWrapper[1];
+		const _prebidObject = _prebidWrapper[1][_prebidWrapper[0]];
 
 		const wrapperItem = overlayFrameDoc.createElement('div');
 		const itemInput = overlayFrameDoc.createElement('input');
@@ -546,11 +549,11 @@ function buildPrebidButton(name, svg, isactive) {
 		// itemInput.setAttribute('id', `${item.replace(' ', '-')}-wrapper`)
 		const itemLabel = overlayFrameDoc.createElement('label');
 		itemLabel.setAttribute('for', i);
-		itemLabel.innerHTML = item[0];
-		if (prebidWrappers[i][1] !== window) itemLabel.innerHTML += ' (iframe)';
+		itemLabel.innerHTML =  `${_prebidWrapperName} (v${getPrebidVersion(_prebidObject)})`;
+		// if (prebidWrappers[i][1] !== window) itemLabel.innerHTML += ' (iframe)';
 
 		// If current wrapper is the used one at the moment, check the radio
-		if (prebidWrapper[0] === item[0] && Object.is(prebidWrapper[1], item[1])) {
+		if (prebidWrapper[0] === _prebidWrapperName && Object.is(prebidWrapper[1], _prebidWrapperWindow)) {
 			itemInput.checked = true;
 		}
 

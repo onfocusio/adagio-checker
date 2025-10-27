@@ -33,7 +33,6 @@ export async function runChecks() {
 
     // Run all checks
     checkAdagioBidderAdapterModule();
-    // checkAdagioJs(); -- TODO: Let's fully rely on what the documentation asks, and if all good but adagio.js is missing, SE will help the user.
     checkAdagioAdUnitParams(prebidBidRequested, prebidAdagioBidRequested, apiRecordsItems);
     checkRealTimeDataModule();
     checkAdagioRealTimeDataProviderModule();
@@ -41,12 +40,15 @@ export async function runChecks() {
     checkDeviceAccess();
     checkAdagioUserSync();
     checkAdagioLocalStorage();
-    // checkAdagioAnalyticsModule(); -- TODO: Needs deeper investigation to provide meaningful checks
     checkUserIds();
     checkDuplicatedAdUnitCode(prebidEvents);
     checkCurrencyModule();
 	checkFloorPriceModule();
 	checkDsaTransparency();
+
+    // TODO: Add other checks later
+    // checkAdagioJs(); -- TODO: Let's fully rely on what the documentation asks, and if all good but adagio.js is missing, SE will help the user.
+    // checkAdagioAnalyticsModule(); -- TODO: Needs deeper investigation to provide meaningful information
 }
 
 /*************************************************************************************************************************************************************************************************************************************
