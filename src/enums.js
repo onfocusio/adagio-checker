@@ -31,22 +31,18 @@ export const chkr_badges = Object.freeze({
     check: `<kbd style="color:${chkr_colors.yellow_txt};background-color:${chkr_colors.yellow_bkg};">!?</kbd>`,
     update: `<kbd style="color:${chkr_colors.yellow_txt};background-color:${chkr_colors.yellow_bkg};">Update</kbd>`,
     info: `<kbd style="color:${chkr_colors.blue_txt};background-color:${chkr_colors.blue_bkg};">Info</kbd>`,
-    na: `<kbd style="color:${chkr_colors.grey_txt};background-color:${chkr_colors.grey_bkg};">N/A</kbd>`,
+    na: `<kbd style="color:${chkr_colors.grey_txt};background-color:${chkr_colors.grey_bkg};"> / </kbd>`,
 });
 
 export const chkr_titles = Object.freeze({
-    adserver: 'Adserver',
-    prebid: 'Prebid.js (wrapper)',
-    adapter: 'Adagio adapter',
     analytics: 'Adagio analytics',
     userids: 'User IDs (UIDs)',
     localstorage: 'Local storage',
-    deviceaccess: '9️⃣ Device access',
+    deviceaccess: 'Device access',
     adunits: 'Adunits',
-    duplicated: 'Duplicated adUnitCode',
+    duplicated: 'Adcalls duplication',
     usersync: 'User sync (iframe)',
     floors: 'Floors price module',
     currency: 'Currency module',
-    rtdmodule: '9️⃣ Real time data (RTD)',
     dsa: 'DSA Transparency',
 });

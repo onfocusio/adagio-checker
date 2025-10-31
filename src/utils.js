@@ -13,9 +13,9 @@ export async function fetchPublishersFromOrgIds(orgIds) {
 	let adagioSellersJson = null;
 
     // Build the result string (set the default value)
-	let strBuilder = `No organization detected... Try to refresh the checker or the page.`;
+	let strBuilder = `Organization: No org. detected... Try to refresh the checker or the page.`;
 
-	if (orgIds.length > 0) {
+	if (orgIds.length) {
 		// Fetch the adagio sellers.json
 		try {
 			// Fetch the adagio sellers.json
@@ -78,7 +78,7 @@ export function computeAdUnitStatus(paramsCheckingArray) {
 	if (paramsCheckingArray.includes(chkr_badges.ko)) return chkr_badges.ko;
 	else if (paramsCheckingArray.includes(chkr_badges.check)) return chkr_badges.check;
 	else if (paramsCheckingArray.includes(chkr_badges.update)) return chkr_badges.update;
-	else if (paramsCheckingArray.includes(chkr_badges.info)) return chkr_badges.info;
+	// else if (paramsCheckingArray.includes(chkr_badges.info)) return chkr_badges.info;
 	else return chkr_badges.ok;
 }
 

@@ -29,26 +29,32 @@ export async function runChecks() {
     displayWrapperIntegrity();
     await fetchPublishersFromOrgIds(uniqueOrgIds);
     displayAdServer(); // -- TODO: Adserver detection is not reliable enough yet (cannot target by wrapper)
+    displayAdagioJs();
     await displayCurrentLocation();
 
     // Run all checks
     checkAdagioBidderAdapterModule();
     checkAdagioAdUnitParams(prebidBidRequested, prebidAdagioBidRequested, apiRecordsItems);
-    checkRealTimeDataModule();
-    checkAdagioRealTimeDataProviderModule();
-    await checkRealTimeDataConfig(orgSitePairs);
+
+    if (prebidVersionDetected >= 9) {  // Since Prebid 9 the adagio.js loading is done via RTD
+        checkRealTimeDataModule();
+        checkAdagioRealTimeDataProviderModule();
+        await checkRealTimeDataConfig(orgSitePairs);
+    } else {
+        checkAdagioLocalStorage();
+    }
+
     checkDeviceAccess();
     checkAdagioUserSync();
-    checkAdagioLocalStorage();
+    checkAdCallsDuplication(prebidEvents);
+
     checkUserIds();
-    checkDuplicatedAdUnitCode(prebidEvents);
     checkCurrencyModule();
 	checkFloorPriceModule();
-	checkDsaTransparency();
 
     // TODO: Add other checks later
-    // checkAdagioJs(); -- TODO: Let's fully rely on what the documentation asks, and if all good but adagio.js is missing, SE will help the user.
     // checkAdagioAnalyticsModule(); -- TODO: Needs deeper investigation to provide meaningful information
+    // checkDsaTransparency(); -- TODO: Do the check at the adunit level
 }
 
 /*************************************************************************************************************************************************************************************************************************************
@@ -185,31 +191,28 @@ export function displayPrebidWrapper() {
 }
 
 export function checkAdagioBidderAdapterModule() {
+    let badge = chkr_badges.ko;
+    const title = 'Adagio adapter';
+    let message = `Adagio bidder adapter module is not installed.`;
+
     // If window.ADAGIO is defined, the Adagio bidder adapter module is installed
     if (ADAGIO !== undefined) {
-        appendCheckerRow(chkr_badges.ok, chkr_titles.adapter, `Adagio bidder adapter detected.`);
-    } else {
-        appendCheckerRow(chkr_badges.ko, chkr_titles.adapter, `Adagio bidder adapter module is not installed.`);
+        badge = chkr_badges.ok;
+        message = `Adagio bidder adapter detected.`;
     }
+    appendCheckerRow(badge, title, message);
 }
 
-export function checkAdagioJs() {
-    // Define the default badge, title and message for the checker row
-    let badge = '',
-        title = '',
-        message = '';
-
-    // Gets wrapper name integrity
+export function displayAdagioJs() {
+    let message = '';
+    // If ADAGIO.versions.adagiojs is defined, Adagio.js is loaded
     if (ADAGIO !== undefined && ADAGIO.versions && ADAGIO.versions.adagiojs) {
         let adagioJsVersion = ADAGIO.versions.adagiojs;
-        badge = chkr_badges.ok;
-        message = `Adagio.js script detected (${JSON.stringify(adagioJsVersion)}</code>)`;
-    } else {
-        badge = chkr_badges.ko;
-        message = `Adagio.js script is missing - Contact SE for more info.`;
+        message = `Adagio.js: 🟢 <code>v${adagioJsVersion}</code>`;
     }
-
-    appendCheckerRow(badge, title, message);
+    else if (prebidVersionDetected >= 9) message = `Adagio.js: 🔴 <code>Not loaded - Ensure RTD is setup.</code>`;
+    else message = `Adagio.js: 🔴 <code>Not loaded - Ensure localstorage is enabled.</code>`;
+    appendHomeContainer(message);
 }
 
 export function displayWrapperIntegrity() {
@@ -284,7 +287,7 @@ export function checkAdagioAdUnitParams(prebidBidRequested, prebidAdagioBidReque
 }
 
 function checkRealTimeDataModule() {
-    const sectionTitle = 'RTD module';
+    const sectionTitle = '9️⃣ RTD module';
     const hasRtdModule = prebidObject.installedModules.includes('rtdModule') || false;
     const _hasRtd = typeof ADAGIO !== 'undefined' ? ADAGIO.hasRtd : false;
 
@@ -293,7 +296,7 @@ function checkRealTimeDataModule() {
 }
 
 function checkAdagioRealTimeDataProviderModule() {
-    const sectionTitle = 'Adagio RTD provider';
+    const sectionTitle = '9️⃣ Adagio RTD provider';
     const hasAdagioRtdProvider = prebidObject.installedModules.includes('adagioRtdProvider') || false;
     const _hasRtd = typeof ADAGIO !== 'undefined' ? ADAGIO.hasRtd : false;
 
@@ -302,13 +305,13 @@ function checkAdagioRealTimeDataProviderModule() {
 }
 
 export async function checkRealTimeDataConfig(orgSitePairs) {
-    const sectionTitle = 'RealTimeData config';
+    const sectionTitle = '9️⃣ RTD parameters';
 
     // Ensure that the rtd module exists in the wrapper configuration
     const adgRealTimeDataConfig = prebidObject.getConfig('realTimeData')?.dataProviders.find((p) => p.name === 'adagio') || null;
 
     if (!adgRealTimeDataConfig) {
-        appendCheckerRow(chkr_badges.ko, sectionTitle, `Adagio is not configured in <code>${prebidWrapper[0]}.getConfig('realTimeData')</code>.`);
+        appendCheckerRow(chkr_badges.ko, sectionTitle, `Adagio is not configured in <code>${prebidWrapper[0]}.getConfig('realTimeData')</code>`);
         return;
     }
 
@@ -317,7 +320,7 @@ export async function checkRealTimeDataConfig(orgSitePairs) {
 
     // If orgId or site is missing, throw a ko status
     if (!paramsOrgId || !paramsSite) {
-        appendCheckerRow(chkr_badges.ko, sectionTitle, `Missing parameter(s) in RTD config: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>.`);
+        appendCheckerRow(chkr_badges.ko, sectionTitle, `Missing parameter(s) in RTD config: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`);
         return;
     }
 
@@ -326,18 +329,18 @@ export async function checkRealTimeDataConfig(orgSitePairs) {
 
     // If no orgSitePairs detected, but paramsOrgId and paramsSite are defined, we can consider it as OK
     if (!apiRecordsItems.size) {
-        appendCheckerRow(chkr_badges.ok, sectionTitle, `RTD params doesn't match with manager inventory: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>.`);
+        appendCheckerRow(chkr_badges.ok, sectionTitle, `RTD params doesn't match with manager inventory: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`);
         return;
     }
 
     // Check if the orgId and site from RTD config matches at least one of the orgSitePairs detected in bidrequests
     if (orgSitePairs.length && !orgSitePairs.some((p) => p.organizationId === paramsOrgId && p.site === paramsSite)) {
-        appendCheckerRow(chkr_badges.check, sectionTitle, `RTD params are not matching with bids params: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>.`);
+        appendCheckerRow(chkr_badges.check, sectionTitle, `RTD params are not matching with bids params: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`);
         return;
     }
 
     // All tests passed, mark as OK
-    appendCheckerRow(chkr_badges.ok, sectionTitle, `RTD config is valid: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>.`);
+    appendCheckerRow(chkr_badges.ok, sectionTitle, `RTD config is valid: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`);
 }
 
 export function checkDeviceAccess() {
@@ -346,10 +349,10 @@ export function checkDeviceAccess() {
     const rawDeviceAccess = prebidObject.getConfig('deviceAccess');
     const deviceAccess = rawDeviceAccess === true ? true : rawDeviceAccess === false ? false : undefined;
 
-    if (deviceAccess === true) appendCheckerRow(chkr_badges.ok, chkr_titles.deviceaccess, `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>.`);
+    if (deviceAccess === true) appendCheckerRow(chkr_badges.ok, chkr_titles.deviceaccess, `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`);
     else if (deviceAccess === false || deviceAccess === undefined)
-        appendCheckerRow(chkr_badges.ko, chkr_titles.deviceaccess, `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>.`);
-    else appendCheckerRow(chkr_badges.ko, chkr_titles.deviceaccess, `Contact SE - <code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>.`);
+        appendCheckerRow(chkr_badges.ko, chkr_titles.deviceaccess, `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`);
+    else appendCheckerRow(chkr_badges.ko, chkr_titles.deviceaccess, `Contact SE - <code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`);
 }
 
 export function checkAdagioUserSync() {
@@ -374,10 +377,10 @@ export function checkAdagioUserSync() {
             prebidUserSyncAll.filter === 'include';
 
         // Display the appropriate checker row based on the configuration validity
-        if (validIframeConfig) appendCheckerRow(chkr_badges.ok, chkr_titles.usersync, `<code>${JSON.stringify(prebidUserSyncIframe)}</code>.`);
-        else if (validAllConfig) appendCheckerRow(chkr_badges.ok, chkr_titles.usersync, `<code>${JSON.stringify(prebidUserSyncAll)}</code>.`);
+        if (validIframeConfig) appendCheckerRow(chkr_badges.ok, chkr_titles.usersync, `<code>${JSON.stringify(prebidUserSyncIframe)}</code>`);
+        else if (validAllConfig) appendCheckerRow(chkr_badges.ok, chkr_titles.usersync, `<code>${JSON.stringify(prebidUserSyncAll)}</code>`);
     } else {
-        appendCheckerRow(chkr_badges.ko, chkr_titles.usersync, `Usersync won't work for Adagio: <code>${JSON.stringify(prebidUserSync)}</code>.`);
+        appendCheckerRow(chkr_badges.ko, chkr_titles.usersync, `Usersync won't work for Adagio: <code>${JSON.stringify(prebidUserSync)}</code>`);
     }
 }
 
@@ -398,16 +401,16 @@ export function checkAdagioLocalStorage() {
 
     // Check the local storage configuration
     if (isStorageAllowed(localStorageStandard))
-        appendCheckerRow(chkr_badges.ok, chkr_titles.localstorage, `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorageStandard)}</code>.`);
+        appendCheckerRow(chkr_badges.ok, chkr_titles.localstorage, `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorageStandard)}</code>`);
     else if (isStorageAllowed(localStorageAdagio))
-        appendCheckerRow(chkr_badges.ok, chkr_titles.localstorage, `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorageAdagio)}</code>.`);
-    else appendCheckerRow(chkr_badges.ko, chkr_titles.localstorage, `Localstorage won't work for Adagio: <code>${JSON.stringify(localStorage)}</code>.`);
+        appendCheckerRow(chkr_badges.ok, chkr_titles.localstorage, `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorageAdagio)}</code>`);
+    else appendCheckerRow(chkr_badges.ko, chkr_titles.localstorage, `Localstorage won't work for Adagio: <code>${JSON.stringify(localStorage)}</code>`);
 }
 
 export function checkAdagioAnalyticsModule() {
     // The wrapper object never references information related to the analytics, we can only rely on the ADAGIO object information
     if (ADAGIO === undefined) {
-        appendCheckerRow(chkr_badges.ko, chkr_titles.analytics, `<code>window.ADAGIO</code>: <code>${ADAGIO}</code>.`);
+        appendCheckerRow(chkr_badges.ko, chkr_titles.analytics, `<code>window.ADAGIO</code>: <code>${ADAGIO}</code>`);
         return;
     }
 
@@ -417,9 +420,9 @@ export function checkAdagioAnalyticsModule() {
     let hasPrebidNineVersion = prebidVersionDetected > 9;
     let hasEnabledAnalytics = ADAGIO.versions?.adagioAnalyticsAdapter;
 
-    if (!hasEligibleVersion) appendCheckerRow(chkr_badges.info, chkr_titles.analytics, `<code>${prebidWrapper[0]}.version</code>: <code>${prebidVersionDetected}</code>.`);
-    else if (!hasEnabledAnalytics) appendCheckerRow(chkr_badges.info, chkr_titles.analytics, `<code>ADAGIO.versions.adagioAnalyticsAdapter</code>: <code>${hasEnabledAnalytics}</code>.`);
-    else if (!hasPrebidNineVersion) appendCheckerRow(chkr_badges.ok, chkr_titles.analytics, `Prebid version: <code>${prebidVersionDetected}</code> / Analytics: <code>${hasEnabledAnalytics}</code>.`);
+    if (!hasEligibleVersion) appendCheckerRow(chkr_badges.info, chkr_titles.analytics, `<code>${prebidWrapper[0]}.version</code>: <code>${prebidVersionDetected}</code>`);
+    else if (!hasEnabledAnalytics) appendCheckerRow(chkr_badges.info, chkr_titles.analytics, `<code>ADAGIO.versions.adagioAnalyticsAdapter</code>: <code>${hasEnabledAnalytics}</code>`);
+    else if (!hasPrebidNineVersion) appendCheckerRow(chkr_badges.ok, chkr_titles.analytics, `Prebid version: <code>${prebidVersionDetected}</code> / Analytics: <code>${hasEnabledAnalytics}</code>`);
     else {
         // Try to retrieve the 'options' from the analytics wrapper configuration
         let paramOrganizationId = ADAGIO?.options?.organizationId;
@@ -427,9 +430,9 @@ export function checkAdagioAnalyticsModule() {
 
         // Options are necessary for Adagio to get the analytics even if the Adagio bidder adapter is not loaded
         if (!paramOrganizationId || !paramSitename) {
-            appendCheckerRow(chkr_badges.check, chkr_titles.analytics, `Missing parameters: <code>${prebidWrapper[0]}.enableAnalytics.options</code> should contain <code>organizationId</code> and <code>site</code>.`);
+            appendCheckerRow(chkr_badges.check, chkr_titles.analytics, `Missing parameters: <code>${prebidWrapper[0]}.enableAnalytics.options</code> should contain <code>organizationId</code> and <code>site</code>`);
         } else {
-            appendCheckerRow(chkr_badges.ok, chkr_titles.analytics, `Options: <code>${ADAGIO?.options}</code>.`);
+            appendCheckerRow(chkr_badges.ok, chkr_titles.analytics, `Options: <code>${ADAGIO?.options}</code>`);
         }
     }
 }
@@ -437,16 +440,16 @@ export function checkAdagioAnalyticsModule() {
 export function checkUserIds() {
     // Check if Get User IDs function is enabled
     if (typeof prebidObject.getUserIdsAsEids !== 'function') {
-        appendCheckerRow(chkr_badges.info, chkr_titles.userids, `<code>${prebidWrapper[0]}.getUserIdsAsEids()</code> is not a function.`);
+        appendCheckerRow(chkr_badges.info, chkr_titles.userids, `<code>${prebidWrapper[0]}.getUserIdsAsEids()</code>: <code>undefined</code>`);
         return;
     }
 
     // Count the total installed user IDs
     const userIds = prebidObject.getUserIdsAsEids();
     const totalInstalledUserIds = userIds.length;
-    const presentUserIds = userIds.filter((userId) => userId.uids.length > 0);
+    const presentUserIds = userIds.filter((userId) => userId.uids.length);
 
-    if (presentUserIds.length > 0) {
+    if (presentUserIds.length) {
         // Count the present user IDs
         const presentUserIdsCount = presentUserIds.length;
 
@@ -458,7 +461,7 @@ export function checkUserIds() {
 
         // Display the information
         appendCheckerRow(
-            chkr_badges.ok,
+            chkr_badges.info,
             chkr_titles.userids,
             `
                 • Installed / present: <code>${totalInstalledUserIds}/${presentUserIdsCount} (${percentagePresent.toFixed(2)}%)</code><br>
@@ -471,7 +474,7 @@ export function checkUserIds() {
     }
 }
 
-export function checkDuplicatedAdUnitCode(prebidEvents) {
+export function checkAdCallsDuplication(prebidEvents) {
     // An adrequest with the same adUnitCode present multiple times with the same mediatype is considered as duplication
     const duplicates = [];
 
@@ -480,7 +483,6 @@ export function checkDuplicatedAdUnitCode(prebidEvents) {
     const prebidAdagioBidRequested = prebidBidRequested.filter((e) => e.bidderCode?.toLowerCase()?.includes('adagio')) || [];
 
     prebidAdagioBidRequested.forEach((bidRequested) => {
-        console.log('bidRequested', bidRequested);
         // Object to count occurrences of each adUnitCode + mediatype
         const seen = {};
         bidRequested.bids.forEach((bid) => {
@@ -516,9 +518,9 @@ export function checkCurrencyModule() {
     // Currency module allow to bid regardless of the adServer currency. It's mandatory when the adServer currency isn't USD
     const prebidCurrency = prebidObject.getConfig('currency');
     if (prebidCurrency !== undefined) {
-        appendCheckerRow(chkr_badges.ok, chkr_titles.currency, `<code>${JSON.stringify(prebidCurrency)}</code>.`);
+        appendCheckerRow(chkr_badges.info, chkr_titles.currency, `<code>${JSON.stringify(prebidCurrency)}</code>`);
     } else {
-        appendCheckerRow(chkr_badges.check, chkr_titles.currency, `<code>${prebidWrapper[0]}.getConfig('currency')</code>: <code>${prebidCurrency}</code>.`);
+        appendCheckerRow(chkr_badges.info, chkr_titles.currency, `<code>${prebidWrapper[0]}.getConfig('currency')</code>: <code>${prebidCurrency}</code>`);
     }
 }
 
@@ -526,9 +528,9 @@ export function checkFloorPriceModule() {
     // Floor price module allow to share the lower price acceptable for an adUnit with the bidders
     const prebidFloorPrice = prebidObject.getConfig('floors');
     if (prebidFloorPrice !== undefined) {
-        appendCheckerRow(chkr_badges.info, chkr_titles.floors, `<code>${JSON.stringify(prebidFloorPrice)}</code>.`);
+        appendCheckerRow(chkr_badges.info, chkr_titles.floors, `<code>${JSON.stringify(prebidFloorPrice)}</code>`);
     } else {
-        appendCheckerRow(chkr_badges.info, chkr_titles.floors, `<code>${prebidWrapper[0]}.getConfig('floors')</code>: <code>${prebidFloorPrice}</code>.`);
+        appendCheckerRow(chkr_badges.info, chkr_titles.floors, `<code>${prebidWrapper[0]}.getConfig('floors')</code>: <code>${prebidFloorPrice}</code>`);
     }
 }
 
@@ -541,14 +543,14 @@ export function checkDsaTransparency() {
         let datatopub = prebidOrtb2?.regs?.ext?.dsa?.datatopub;
         let transparency = prebidOrtb2?.regs?.ext?.dsa?.transparency;
 
-        if (dsa === undefined) appendCheckerRow(chkr_badges.info, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>.`);
+        if (dsa === undefined) appendCheckerRow(chkr_badges.info, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
         else {
             if (dsarequired === undefined || pubrender === undefined || datatopub === undefined || transparency === undefined)
-                appendCheckerRow(chkr_badges.ko, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>.`);
-            else appendCheckerRow(chkr_badges.ok, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>.`);
+                appendCheckerRow(chkr_badges.ko, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
+            else appendCheckerRow(chkr_badges.ok, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
         }
     } else {
-        appendCheckerRow(chkr_badges.info, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>.`);
+        appendCheckerRow(chkr_badges.info, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`);
     }
 }
 

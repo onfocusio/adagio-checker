@@ -287,7 +287,8 @@ export function appendCheckerRow(status, name, details) {
 	const newRow = overlayFrameDoc.createElement('tr');
 	// Create the cells
 	const statusCell = overlayFrameDoc.createElement('td');
-	const nameCell = overlayFrameDoc.createElement('td');
+    const nameCell = overlayFrameDoc.createElement('td');
+    nameCell.style.whiteSpace = 'nowrap'; // prevent wrapping
 	const detailsCell = overlayFrameDoc.createElement('td');
 	// Fill the cells
 	statusCell.innerHTML = status;
@@ -310,7 +311,7 @@ export function appendHomeContainer(htmlContent) {
 export function appendAdUnitsRow(prebidBidders, prebidBidRequested, prebidAdagioBidRequested, apiRecordsItems) {
 	// check if Adagio is detected and get bidder name
 	let adagioId = '';
-	if (prebidAdagioBidRequested.length > 0) adagioId = prebidAdagioBidRequested[0].bidder;
+	if (prebidAdagioBidRequested.length) adagioId = prebidAdagioBidRequested[0].bidder;
 
 	// build id name
 	const tabName = chkr_tabs.adunits.toLowerCase().replace(' ', '-');
@@ -784,7 +785,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
 						if (JSON.stringify(ss) === JSON.stringify(mbs)) commonArrays.push(ss);
 					});
 				});
-				if (commonArrays.length > 0) paramsCheckingArray.push([chkr_badges.ok, `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(commonArrays)}</code>`, ``]);
+				if (commonArrays.length) paramsCheckingArray.push([chkr_badges.ok, `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(commonArrays)}</code>`, ``]);
 				else paramsCheckingArray.push([chkr_badges.ko, `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`, `No supported size detected.`]);
 			} else paramsCheckingArray.push([chkr_badges.ko, `<code>mediaTypes.banner.sizes</code>: <code>${JSON.stringify(mediatypeBannerSizes)}</code>`, `No parameter detected.`]);
 		}
@@ -950,7 +951,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
 					}
 					if (adagioMissing) {
 						paramsCheckingArray.push([chkr_badges.ko, `<code>ortb2.user.ext.consent</code>`, `Missing consent for: ${missingBidders.join(', ')}`]);
-					} else if (missingBidders.length > 0) {
+					} else if (missingBidders.length) {
 						paramsCheckingArray.push([chkr_badges.check, `<code>ortb2.user.ext.consent</code>`, `Missing consent for: ${missingBidders.join(', ')}`]);
 					} else {
 						paramsCheckingArray.push([chkr_badges.ok, `<code>ortb2.user.ext.consent</code>: <code>${ortbConsent.substring(0, 20)}...</code>`, `All Adagio partners present`]);
@@ -967,7 +968,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
 				paramsCheckingArray.push([chkr_badges.ok, `<code>ortb2Imp.instl</code>: <code>${ortb2ImpInterstitial}</code>`, '']);
 			}
 		} else if (deepOrtb2ImpInterstitial !== null) {
-			paramsCheckingArray.push([prebidVersionDetected < 9.39 ? chkr_badges.info : chkr_badges.info, `<code>${deepOrtb2ImpInterstitial.path}</code>: <code>${deepOrtb2ImpInterstitial.value}</code>`, 'Misplaced, should be in <code>ortb2Imp.instl</code>.']);
+			paramsCheckingArray.push([prebidVersionDetected < 9.39 ? chkr_badges.info : chkr_badges.info, `<code>${deepOrtb2ImpInterstitial.path}</code>: <code>${deepOrtb2ImpInterstitial.value}</code>`, 'Misplaced, should be in <code>ortb2Imp.instl']);
 		} else {
 			paramsCheckingArray.push([prebidVersionDetected < 9.39 ? chkr_badges.info : chkr_badges.info, `<code>ortb2Imp.instl</code>: <code>undefined</code>`, 'No interstitial parameter detected.']);
 		}
