@@ -1,0 +1,29 @@
+# Source files (we only want to publish the built dist files)
+src/
+webpack.config.js
+
+# Development dependencies
+node_modules/
+
+# IDE and OS files
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Git files
+.git/
+.gitignore
+
+# Documentation that's not needed in the package
+*.md
+!README.md
+
+# Development scripts
+.eslintrc*
+.prettierrc*
+
+# Test files
+test/
+tests/
+*.test.js
+*.spec.js

@@ -2,12 +2,31 @@
   "name": "adagio-checker",
   "version": "1.0.0",
   "description": "A bookmarklet project for Adagio Checker",
-  "main": "src/main.js",
+  "main": "dist/script.js",
+  "files": [
+    "dist/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/onfocusio/adagio-checker.git"
+  },
+  "homepage": "https://github.com/onfocusio/adagio-checker#readme",
+  "bugs": {
+    "url": "https://github.com/onfocusio/adagio-checker/issues"
+  },
+  "keywords": [
+    "adagio",
+    "bookmarklet",
+    "prebid",
+    "advertising",
+    "debugging"
+  ],
   "scripts": {
     "build": "webpack --mode production",
-    "dev": "webpack --mode development"
+    "dev": "webpack --mode development",
+    "prepublishOnly": "npm run build"
   },
-  "author": "",
+  "author": "onfocusio",
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.22.9",

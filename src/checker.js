@@ -206,17 +206,13 @@ export function checkAdagioBidderAdapterModule() {
 export function displayAdagioJs() {
     let message = '';
     // If ADAGIO.versions.adagiojs is defined, Adagio.js is loaded
-    if (ADAGIO !== undefined && ADAGIO.versions && ADAGIO.versions.adagiojs) {
-        let adagioJsVersion = ADAGIO.versions.adagiojs;
-        message = `Adagio.js: 🟢 <code>v${adagioJsVersion}</code>`;
-    }
+    if (ADAGIO !== undefined && ADAGIO.versions && ADAGIO.versions.adagiojs) message = `Adagio.js: 🟢 <code>v${ADAGIO.versions.adagiojs}</code>`;
     else if (prebidVersionDetected >= 9) message = `Adagio.js: 🔴 <code>Not loaded - Ensure RTD is setup.</code>`;
     else message = `Adagio.js: 🔴 <code>Not loaded - Ensure localstorage is enabled.</code>`;
     appendHomeContainer(message);
 }
 
 export function displayWrapperIntegrity() {
-    // Gets wrapper name integrity
     if (ADAGIO !== undefined && ADAGIO.pbjsAdUnits) {
         // Get the Prebid.js adUnits as collected by the adapter
         const pbjsAdUnits = ADAGIO.pbjsAdUnits;
