@@ -331,6 +331,9 @@ export function appendAdUnitsRow(prebidBidders, prebidBidRequested, prebidAdagio
 	// Will hold the computed status for each adunit
 	const computedAdunitsStatus = [];
 
+	// Will hold the list of processed adunit codes to avoid duplicates
+	const processedAdUnitCodes = [];
+
 	// Fill the table section
 	prebidBidRequested.forEach((bid) => {
 		// Gather the initial info: code, type, bidder
@@ -349,7 +352,12 @@ export function appendAdUnitsRow(prebidBidders, prebidBidRequested, prebidAdagio
 		const status = bidderAdagioDetected ? computeAdUnitStatus(extractedStatus) : chkr_badges.na;
 
 		// Store the computed status for the adunit
-		if (bidderAdagioDetected) computedAdunitsStatus.push(status);
+		if (bidderAdagioDetected) {
+			if (!processedAdUnitCodes.includes(adUnitCode)) {
+				computedAdunitsStatus.push(status);
+				processedAdUnitCodes.push(adUnitCode);
+			}
+		}
 
 		// Create the row
 		const newRow = overlayFrameDoc.createElement('tr');
