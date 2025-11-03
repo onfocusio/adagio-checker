@@ -11,7 +11,7 @@ export async function fetchApiInventoryRecords(bidReqOrgSitePairs) {
         // Catch all the organizationId records from the Adagio API to manage subdomains cases
         for (const { organizationId, site } of bidReqOrgSitePairs) {
             // Build the query string
-            const hostname = window.location.hostname;
+            const hostname = window.location.hostname.replace(/^www\./i, '');
             const queryString = `filter=publisher_id||$eq||${encodeURIComponent(organizationId)}&search=${encodeURIComponent(hostname)}`;
 
             // Run the Adagio API call
