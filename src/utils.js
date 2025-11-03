@@ -12,9 +12,7 @@ export async function fetchPublishersFromOrgIds(orgIds) {
 	let adagioSellersJsonUrl = 'https://adagio.io/sellers.json';
 	let adagioSellersJson = null;
 
-    // Build the result string (set the default value)
-	let strBuilder = `Organization: No org. detected... Try to refresh the checker or the page.`;
-
+	// If not Adagio traffic, skip the fetch
 	if (orgIds.length) {
 		// Fetch the adagio sellers.json
 		try {
@@ -33,15 +31,15 @@ export async function fetchPublishersFromOrgIds(orgIds) {
 			}
 
             // Build the final string
-            strBuilder = `${orgHtmlList.length > 1 ? 'Organizations' : 'Organization'}: ${orgHtmlList.join(', ')}`;
+            let strBuilder = `${orgHtmlList.length > 1 ? 'Organizations' : 'Organization'}: ${orgHtmlList.join(', ')}`;
+
+			// Append the result to the home container div
+			appendHomeContainer(strBuilder);
 		} catch (error) {
 			// Handle JSON failure here
 			adagioSellersJson = null;
 		}
 	}
-
-	// Append the result to the home container div
-	appendHomeContainer(strBuilder);
 }
 
 export async function fetchCurrentLocationData() {

@@ -302,7 +302,7 @@ export function appendCheckerRow(status, name, details) {
 }
 
 export function appendHomeContainer(htmlContent) {
-	// Fill the container
+	// Fill the home info container
 	const tabName = chkr_tabs.checker.toLowerCase().replace(' ', '-');
 	const alertTextDiv = overlayFrameDoc.getElementById(`${tabName}-alert`);
 	alertTextDiv.innerHTML += `<small>• ${htmlContent}</small><br>`;
@@ -326,7 +326,7 @@ export function appendAdUnitsRow(prebidBidders, prebidBidRequested, prebidAdagio
 
     // Display adunits detected
     const codesHtml = prebidAdUnitsCodes.map(code => `<small> <code>${code}</code>;</small>`).join(' ');
-    alertTextDiv.innerHTML += `<small>Adunit(s):</small>${codesHtml ? ' ' + codesHtml : '<small><kbd>0</kbd></small>'}<br>`;
+    alertTextDiv.innerHTML += `<small>Adunit(s):</small> ${codesHtml ? ' ' + codesHtml : '<small><code>0</code></small>'}<br>`;
 
 	// Will hold the computed status for each adunit
 	const computedAdunitsStatus = [];
