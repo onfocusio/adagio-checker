@@ -29,7 +29,7 @@ export async function buildApp() {
 export function createOverlay() {
 	// create a new iframe element
 	overlayFrame = window.document.createElement('iframe');
-	overlayFrame.classList.add('adagio-overlay');
+	overlayFrame.id = 'adagio-overlay-frame';
 	overlayFrame.style.position = 'fixed';
 	overlayFrame.style.top = '10px';
 	overlayFrame.style.left = '10px';
