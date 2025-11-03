@@ -91,7 +91,7 @@ export function setPrebidWrapper() {
     });
 
     // Check ADAGIO versions for hidden wrappers, using addWrappers for consistency
-    if (ADAGIO !== undefined && ADAGIO?.versions !== undefined) {
+    if (typeof ADAGIO !== 'undefined' && ADAGIO?.versions !== undefined) {
         addWrappers(
             window,
             Object.keys(ADAGIO.versions).filter((item) => item !== 'adagiojs')
@@ -196,7 +196,7 @@ export function checkAdagioBidderAdapterModule() {
     let message = `Adagio bidder adapter module is not installed.`;
 
     // If window.ADAGIO is defined, the Adagio bidder adapter module is installed
-    if (ADAGIO !== undefined) {
+    if (typeof ADAGIO !== 'undefined') {
         badge = chkr_badges.ok;
         message = `Adagio bidder adapter detected.`;
     }
@@ -206,14 +206,14 @@ export function checkAdagioBidderAdapterModule() {
 export function displayAdagioJs() {
     let message = '';
     // If ADAGIO.versions.adagiojs is defined, Adagio.js is loaded
-    if (ADAGIO !== undefined && ADAGIO.versions && ADAGIO.versions.adagiojs) message = `Adagio.js: 🟢 <code>v${ADAGIO.versions.adagiojs}</code>`;
+    if (typeof ADAGIO !== 'undefined' && ADAGIO.versions && ADAGIO.versions.adagiojs) message = `Adagio.js: 🟢 <code>v${ADAGIO.versions.adagiojs}</code>`;
     else if (prebidVersionDetected >= 9) message = `Adagio.js: 🔴 <code>Not loaded - Ensure RTD is setup.</code>`;
     else message = `Adagio.js: 🔴 <code>Not loaded - Ensure localstorage is enabled.</code>`;
     appendHomeContainer(message);
 }
 
 export function displayWrapperIntegrity() {
-    if (ADAGIO !== undefined && ADAGIO.pbjsAdUnits) {
+    if (typeof ADAGIO !== 'undefined' && ADAGIO.pbjsAdUnits) {
         // Get the Prebid.js adUnits as collected by the adapter
         const pbjsAdUnits = ADAGIO.pbjsAdUnits;
         // Define and set wrapper integrity log
@@ -405,7 +405,7 @@ export function checkAdagioLocalStorage() {
 
 export function checkAdagioAnalyticsModule() {
     // The wrapper object never references information related to the analytics, we can only rely on the ADAGIO object information
-    if (ADAGIO === undefined) {
+    if (typeof ADAGIO === 'undefined') {
         appendCheckerRow(chkr_badges.ko, chkr_titles.analytics, `<code>window.ADAGIO</code>: <code>${ADAGIO}</code>`);
         return;
     }
