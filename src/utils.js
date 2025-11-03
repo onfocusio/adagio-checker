@@ -9,16 +9,12 @@ export let detectedCountryCodeIso3; // Detected country code (alpha-3)
 
 export async function fetchPublishersFromOrgIds(orgIds) {
 	// Fetch the Adagio seller.json to ensure that the orgId refers to an existing organization
-	let adagioSellersJsonUrl = 'https://adagio.io/sellers.json';
-	let adagioSellersJson = null;
-
-	// If not Adagio traffic, skip the fetch
 	if (orgIds.length) {
 		// Fetch the adagio sellers.json
 		try {
 			// Fetch the adagio sellers.json
-			const response = await fetch(adagioSellersJsonUrl);
-			adagioSellersJson = await response.json();
+			const response = await fetch('https://adagio.io/sellers.json');
+			let adagioSellersJson = await response.json();
 
 			// Build the organization list
 			const orgHtmlList = [];
@@ -30,14 +26,11 @@ export async function fetchPublishersFromOrgIds(orgIds) {
 				orgHtmlList.push(`<code>${org.name} (${org.seller_id}) - ${org.seller_type}</code>`);
 			}
 
-            // Build the final string
-            let strBuilder = `${orgHtmlList.length > 1 ? 'Organizations' : 'Organization'}: ${orgHtmlList.join(', ')}`;
-
 			// Append the result to the home container div
-			appendHomeContainer(strBuilder);
+            appendHomeContainer(`${orgHtmlList.length > 1 ? 'Organizations' : 'Organization'}: ${orgHtmlList.join(', ')}`);
 		} catch (error) {
 			// Handle JSON failure here
-			adagioSellersJson = null;
+			console.error('Error fetching Adagio sellers.json:', error);
 		}
 	}
 }
