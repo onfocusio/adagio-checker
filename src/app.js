@@ -474,6 +474,11 @@ function buildWrappersDropdownSelector() {
 	// Get the number of wrappers detected
 	const nbWrappers = prebidWrappers.length;
 
+	// If not wrappers detected, skip building the selector
+	if (!nbWrappers) {
+		return '<span></span>';
+	}
+
 	// Container
 	const li = overlayFrameDoc.createElement('li');
 	li.style.position = 'relative';
@@ -498,9 +503,6 @@ function buildWrappersDropdownSelector() {
 	select.style.fontSize = '0.85em';
 	select.style.minWidth = '10rem';
 	select.style.cursor = 'pointer';
-
-	// Disabled if not active or no wrappers
-	if (!isactive || nbWrappers === 0) select.disabled = true;
 
 	// Default placeholder option
 	const placeholder = overlayFrameDoc.createElement('option');

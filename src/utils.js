@@ -27,7 +27,8 @@ export async function fetchPublishersFromOrgIds(orgIds) {
 			}
 
 			// Append the result to the home container div
-            appendHomeContainer(`${orgHtmlList.length > 1 ? 'Organizations' : 'Organization'}: ${orgHtmlList.join(', ')}`);
+            let strBuilder = `${orgHtmlList.length > 1 ? 'Organizations' : 'Organization'}: ${orgHtmlList.join(', ')}`;
+            appendHomeContainer(strBuilder);
 		} catch (error) {
 			// Handle JSON failure here
 			console.error('Error fetching Adagio sellers.json:', error);
