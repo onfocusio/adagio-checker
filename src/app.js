@@ -14,9 +14,9 @@ let isDragged = false;                   // Is the iframe being dragged
  ************************************************************************************************************************************************************************************************************************************/
 
 export async function buildApp() {
-	// Build the interface
+	// Build the check app overlay
 	createOverlay();
-	buildOverlayHtml();
+	buildInterface();
 	createCheckerDiv();
 	createAdUnitsDiv();
 	makeIframeDraggable();
@@ -48,7 +48,7 @@ export function createOverlay() {
 	overlayFrameDoc = overlayFrame.contentDocument || overlayFrame.contentWindow.document;
 }
 
-export function buildOverlayHtml() {
+export function buildInterface() {
 	// append pico style
 	const picoStyle = overlayFrameDoc.createElement('link');
 	picoStyle.setAttribute('rel', 'stylesheet');
@@ -62,7 +62,7 @@ export function buildOverlayHtml() {
 	const ul = overlayFrameDoc.createElement('ul');
 	ul.appendChild(buildTabButton(chkr_tabs.checker, chkr_svg.checker, true));
 	ul.appendChild(buildTabButton(chkr_tabs.adunits, chkr_svg.adunits, false));
-	ul.appendChild(buildPrebidButton('Prebid versions detected', chkr_svg.prebid, true));
+	ul.appendChild(buildWrappersDropdownSelector());
 	ul.appendChild(buildDebuggingButton('Enable debbug mode and reload page', chkr_svg.debbuging, true));
 	ul.appendChild(buildRefreshButton('Refresh', chkr_svg.refresh, true));
 
@@ -89,6 +89,7 @@ export function createCheckerDiv() {
 	const headings = overlayFrameDoc.createElement('div');
 	headings.classList.add('headings');
 
+	// create and append h2 and h3
 	const h2 = overlayFrameDoc.createElement('h2');
 	h2.textContent = 'Integration checker';
 	const h3 = overlayFrameDoc.createElement('h3');
@@ -469,114 +470,74 @@ function buildTabButton(name, svg, isactive) {
 	return li;
 }
 
-function buildApiButton(name, svg, isactive) {
+function buildWrappersDropdownSelector() {
+	// Get the number of wrappers detected
+	const nbWrappers = prebidWrappers.length;
+
+	// Container
 	const li = overlayFrameDoc.createElement('li');
-	const button = overlayFrameDoc.createElement('button');
-	button.setAttribute('id', 'apiButton');
-	button.setAttribute('title', name);
-	if (!isactive) button.disabled = true;
-	button.innerHTML = svg;
-	button.classList.add('outline');
-	button.style.borderColor = 'transparent';
-	button.style.padding = '0.3em';
-	li.appendChild(button);
-	return li;
-}
+	li.style.position = 'relative';
 
-function buildPrebidButton(name, svg, isactive) {
-	// Get the number of wrapper detected
-	let nbWrappers = prebidWrappers.length;
-
-	// As website can use different wrapper for Prebid, this button allows to switch between them
-	const li = overlayFrameDoc.createElement('li');
-	const button = overlayFrameDoc.createElement('button');
-	button.setAttribute('title', name);
-	// Disabled button if no wrapper detected
-	if (!isactive || nbWrappers === 0) button.disabled = true;
-	button.innerHTML = svg;
-	button.classList.add('outline');
-	button.style.borderColor = 'transparent';
-	button.style.position = 'relative';
-	button.style.display = 'inline-block';
-	button.style.padding = '0.3em';
-
-	// If more than one wrapper, display a badge with the number of wrappers detected
+	// Badge (shows number of wrappers when >1)
 	const badge = overlayFrameDoc.createElement('span');
 	badge.style.position = 'absolute';
-	badge.style.top = '-10px';
-	badge.style.right = '-10px';
+	badge.style.top = '3px';
+	badge.style.right = '-3px';
 	badge.style.padding = '0.5em 0.9em';
 	badge.style.borderRadius = '50%';
 	badge.style.fontSize = '0.6em';
 	badge.style.background = chkr_colors.red_bkg;
 	badge.style.color = chkr_colors.red_txt;
 	badge.innerHTML = nbWrappers;
-	// Shows number if more than 1
 	if (nbWrappers < 2) badge.style.display = 'none';
 
-	// On click, a modal appears to select the wrapper and work on the according Prebid object
-	const dialog = overlayFrameDoc.createElement('dialog');
-	dialog.setAttribute('open', false);
-	const article = overlayFrameDoc.createElement('article');
-	const header = overlayFrameDoc.createElement('header');
-	const closeLink = overlayFrameDoc.createElement('a');
-	closeLink.setAttribute('aria-label', 'Close');
-	closeLink.classList.add('close');
-	header.innerHTML = 'Prebid wrappers detected';
-	const paragraph = overlayFrameDoc.createElement('p');
+	// Select dropdown
+	const select = overlayFrameDoc.createElement('select');
+	select.style.paddingTop = '0.3em';
+	select.style.paddingBottom = '0.3em';
+	select.style.fontSize = '0.85em';
+	select.style.minWidth = '10rem';
+	select.style.cursor = 'pointer';
 
-	// Add eventlistner to show and hide the modal
-	closeLink.addEventListener('click', () => {
-		dialog.setAttribute('open', false);
-	});
-	button.addEventListener('click', () => {
-		dialog.setAttribute('open', true);
-	});
+	// Disabled if not active or no wrappers
+	if (!isactive || nbWrappers === 0) select.disabled = true;
 
-	// Append elements
-	li.appendChild(button);
-	button.appendChild(badge);
-	overlayFrameDoc.body.appendChild(dialog);
-	dialog.appendChild(article);
-	article.appendChild(header);
-	header.appendChild(closeLink);
-	article.appendChild(paragraph);
+	// Default placeholder option
+	const placeholder = overlayFrameDoc.createElement('option');
+	placeholder.value = '';
+	placeholder.disabled = true;
+	placeholder.selected = true;
+	placeholder.textContent = 'Select a wrapper';
+	select.appendChild(placeholder);
 
-	// Fill the modal with the list Prebid wrappers detected
+	// Fill options with detected wrappers
 	for (let i = 0; i < nbWrappers; i++) {
-		// Create the radio button for the current wrapper item
 		const _prebidWrapper = prebidWrappers[i];
-		const _prebidWrapperName = _prebidWrapper[0];
-		const _prebidWrapperWindow = _prebidWrapper[1];
-		const _prebidObject = _prebidWrapper[1][_prebidWrapper[0]];
+		const _name = _prebidWrapper[0];
+		const _win = _prebidWrapper[1];
+		const _obj = _win[_name];
+		const opt = overlayFrameDoc.createElement('option');
+		opt.value = String(i);
+		opt.textContent = `${_name} (v${getPrebidVersion(_obj)})`;
 
-		const wrapperItem = overlayFrameDoc.createElement('div');
-		const itemInput = overlayFrameDoc.createElement('input');
-		itemInput.setAttribute('type', 'radio');
-		itemInput.setAttribute('value', i);
-		itemInput.setAttribute('name', 'radio-group'); // added the 'name' attribute
-		// itemInput.setAttribute('id', `${item.replace(' ', '-')}-wrapper`)
-		const itemLabel = overlayFrameDoc.createElement('label');
-		itemLabel.setAttribute('for', i);
-		itemLabel.innerHTML =  `${_prebidWrapperName} (v${getPrebidVersion(_prebidObject)})`;
-		// if (prebidWrappers[i][1] !== window) itemLabel.innerHTML += ' (iframe)';
-
-		// If current wrapper is the used one at the moment, check the radio
-		if (prebidWrapper[0] === _prebidWrapperName && Object.is(prebidWrapper[1], _prebidWrapperWindow)) {
-			itemInput.checked = true;
+		// Mark current wrapper as selected
+		if (prebidWrapper[0] === _name && Object.is(prebidWrapper[1], _win)) {
+			opt.selected = true;
+			placeholder.selected = false;
 		}
 
-		itemInput.addEventListener('click', function () {
-			if (itemInput.checked) {
-                switchToSelectedPrebidWrapper([itemInput.value]);
-			}
-		});
-
-		// Append the wrapper item
-		paragraph.appendChild(wrapperItem);
-		wrapperItem.appendChild(itemInput);
-		wrapperItem.appendChild(itemLabel);
+		select.appendChild(opt);
 	}
+
+	// On change, switch to the selected wrapper
+	select.addEventListener('change', function () {
+		if (this.value !== '') {
+			switchToSelectedPrebidWrapper([this.value]);
+		}
+	});
+
+	li.appendChild(badge);
+	li.appendChild(select);
 
 	return li;
 }

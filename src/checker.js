@@ -25,7 +25,6 @@ export async function runChecks() {
     const apiRecordsItems = await fetchApiInventoryRecords(orgSitePairs); // TODO: Improve by adding 'search' in params and passing the domain name rather than site name to eventually catch sitename
 
     // Fill in the home container
-    displayPrebidWrapper();
     displayWrapperIntegrity();
     await fetchPublishersFromOrgIds(uniqueOrgIds);
     displayAdServer(); // -- TODO: Adserver detection is not reliable enough yet (cannot target by wrapper)
@@ -169,25 +168,12 @@ export function getOrgIdsAndSiteNames(prebidAdagioBidRequested) {
         }
     }
 
-    // If RTD config detected, add the organizationId / siteName to the list
-    /* const adagioRtdConfigOrgId = prebidObject.getConfig('realTimeData')?.dataProviders.find((provider) => provider.name === 'adagio')?.params?.organizationId || null;
-    const adagioRtdConfigSiteName = prebidObject.getConfig('realTimeData')?.dataProviders.find((provider) => provider.name === 'adagio')?.params?.site || null;
-    if (adagioRtdConfigOrgId && adagioRtdConfigSiteName) {
-        const key = `${adagioRtdConfigOrgId}::${adagioRtdConfigSiteName}`;
-        if (!pairs.has(key)) pairs.set(key, { organizationId: String(adagioRtdConfigOrgId), site: String(adagioRtdConfigSiteName) });
-    } */
-
     // Build the results arrays
     const orgSitePairs = Array.from(pairs.values()); // Pairs of {organizationId, site} detected
     const uniqueOrgIds = [...new Set(orgSitePairs.map((p) => p.organizationId))]; // List of unique organizationIds
     const uniqueSiteNames = [...new Set(orgSitePairs.map((p) => p.site))]; // List of unique site names
 
     return { orgSitePairs: orgSitePairs, uniqueOrgIds: uniqueOrgIds, uniqueSiteNames: uniqueSiteNames };
-}
-
-export function displayPrebidWrapper() {
-    const message = `Prebid.js wrapper: <code>${prebidWrapper[0]} (${prebidObject.version})</code>`;
-    appendHomeContainer(message);
 }
 
 export function checkAdagioBidderAdapterModule() {
