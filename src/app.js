@@ -573,26 +573,32 @@ function buildRefreshButton(name, svg, isactive) {
 }
 
 function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
+
+	// Some client misconfigure the Adagio params { organizationId, site, ... }, and instead use an array [{ organizationId, site, ... }]
+	const adagioParams = Array.isArray(bid?.params) ? bid?.params[0] : bid?.params;
+	const ortb2ImpParams = bid?.ortb2Imp;
+	const ortb2Params = bid?.ortb2;
+
 	// Check the adagio bidder params (orgId and site in params)
-	let paramOrganizationId = bid?.params?.organizationId;
+	let paramOrganizationId = adagioParams?.organizationId;
 	if (paramOrganizationId !== undefined) paramOrganizationId = paramOrganizationId.toString();
-	let paramSite = bid?.params?.site;
+	const paramSite = adagioParams?.site;
 
 	// Since Prebid 9, placement and divId should be in ortb2Imp
-	let paramPlacement = bid?.params?.placement;
-	let paramAdUnitElementId = bid?.params?.adUnitElementId;
-	let ortb2ImpPlacement = bid?.ortb2Imp?.ext?.data?.placement;
-	let ortb2ImpDivId = bid?.ortb2Imp?.ext?.data?.divId;
+	const paramPlacement = adagioParams?.placement;
+	const paramAdUnitElementId = adagioParams?.adUnitElementId;
+	const ortb2ImpPlacement = ortb2ImpParams?.ext?.data?.placement;
+	const ortb2ImpDivId = ortb2ImpParams?.ext?.data?.divId;
 
 	// Check if there's a regs.ext.gdpr param (= 1) and a user.ext.consent param (consent string)
-	let ortbGdpr = bid?.ortb2?.regs?.ext?.gdpr;
-	let ortbConsent = bid?.ortb2?.user?.ext?.consent;
+	const ortbGdpr = ortb2Params?.regs?.ext?.gdpr;
+	const ortbConsent = ortb2Params?.user?.ext?.consent;
 
 	// Since Prebid 9.39, Adagio supports interstitial and rewarded
-	let ortb2ImpInterstitial = bid?.ortb2Imp?.instl;
-	let ortb2ImpRewarded = bid?.ortb2Imp?.rwdd;
-	let deepOrtb2ImpInterstitial = findParam(bid, 'instl') || null;
-	let deepOrtb2ImpRewarded = findParam(bid, 'rwdd') || null;
+	const ortb2ImpInterstitial = ortb2ImpParams?.instl;
+	const ortb2ImpRewarded = ortb2ImpParams?.rwdd;
+	const deepOrtb2ImpInterstitial = findParam(bid, 'instl') || null;
+	const deepOrtb2ImpRewarded = findParam(bid, 'rwdd') || null;
 
 	// Check the organizationId
 	if (paramOrganizationId === undefined) paramsCheckingArray.push([chkr_badges.ko, `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`, `Parameter not detected.`]);
@@ -952,9 +958,9 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
 				paramsCheckingArray.push([chkr_badges.ok, `<code>ortb2Imp.rwdd</code>: <code>${ortb2ImpRewarded}</code>`, '']);
 			}
 		} else if (deepOrtb2ImpRewarded !== null) {
-			paramsCheckingArray.push([prebidVersionDetected < 9.39 ? chkr_badges.info : chkr_badges.check, `<code>${deepOrtb2ImpRewarded.path}</code>: <code>${deepOrtb2ImpRewarded.value}</code>`, 'Misplaced, should be in <code>ortb2Imp.rwdd</code>']);
+			paramsCheckingArray.push([prebidVersionDetected < 9.39 ? chkr_badges.info : chkr_badges.info, `<code>${deepOrtb2ImpRewarded.path}</code>: <code>${deepOrtb2ImpRewarded.value}</code>`, 'Misplaced, should be in <code>ortb2Imp.rwdd</code>']);
 		} else {
-			paramsCheckingArray.push([prebidVersionDetected < 9.39 ? chkr_badges.info : chkr_badges.check, `<code>ortb2Imp.rwdd</code>: <code>undefined</code>`, 'No rewarded parameter detected.']);
+			paramsCheckingArray.push([prebidVersionDetected < 9.39 ? chkr_badges.info : chkr_badges.info, `<code>ortb2Imp.rwdd</code>: <code>undefined</code>`, 'No rewarded parameter detected.']);
 		}
 
 		if (mediatypeNative !== undefined) {

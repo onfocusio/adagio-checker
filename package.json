@@ -8,7 +8,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/onfocusio/adagio-checker.git"
+    "url": "git+https://github.com/onfocusio/adagio-checker.git"
   },
   "homepage": "https://github.com/onfocusio/adagio-checker#readme",
   "bugs": {
