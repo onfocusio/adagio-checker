@@ -662,58 +662,32 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
 	let placementSetup = '';
 	let placementRes = '';
 	let placementDetails = '';
-	// Placement (2/3): First checks if a value is detected
-	if (prebidVersionDetected >= 10) {
-		if (paramPlacement !== undefined) {
-			placementStatus = chkr_badges.ok;
-			placementSetup = 'params.placement';
-			placementRes = paramPlacement;
-			placementDetails = '';
-		} else if (ortb2ImpPlacement !== undefined) {
-			placementStatus = chkr_badges.info;
-			placementSetup = 'ortb2Imp.ext.data.placement';
-			placementRes = ortb2ImpPlacement;
-			placementDetails = 'Fallback: placement detected in ortb2Imp, but should be in params.placement for Prebid 10+.';
-		} else {
-			placementStatus = chkr_badges.ko;
-			placementSetup = 'params.placement';
-			placementRes = undefined;
-			placementDetails = '';
-		}
-	} else if (prebidVersionDetected >= 9) {
-		if (ortb2ImpPlacement !== undefined) {
-			placementStatus = chkr_badges.ok;
-			placementSetup = 'ortb2Imp.ext.data.placement';
-			placementRes = ortb2ImpPlacement;
-			placementDetails = '';
-		} else if (paramPlacement !== undefined) {
-			placementStatus = chkr_badges.info;
-			placementSetup = 'params.placement';
-			placementRes = paramPlacement;
-			placementDetails = 'Fallback: placement detected in params, but should be in ortb2Imp.ext.data.placement for Prebid 9.x.';
-		} else {
-			placementStatus = chkr_badges.ko;
-			placementSetup = 'ortb2Imp.ext.data.placement';
-			placementRes = undefined;
-			placementDetails = '';
-		}
+	// Placement (2/3): First checks if a value is detected - preference for params.placement
+	if (paramPlacement !== undefined) {
+		placementStatus = chkr_badges.ok;
+		placementSetup = 'params.placement';
+		placementRes = paramPlacement;
+		placementDetails = '';
+	} else if (ortb2ImpPlacement !== undefined && prebidVersionDetected >= 9) {
+		placementStatus = chkr_badges.info;
+		placementSetup = 'ortb2Imp.ext.data.placement';
+		placementRes = ortb2ImpPlacement;
+		placementDetails = 'Recommendation: Setup placement in <code>bids.params.placement</code> instead.</code>.';
+	} else if (ortb2ImpPlacement !== undefined && prebidVersionDetected < 9) {
+		placementStatus = chkr_badges.ko;
+		placementSetup = 'ortb2Imp.ext.data.placement';
+		placementRes = ortb2ImpPlacement;
+		placementDetails = '<code>ortb2Imp</code> is not supported before Prebid 9. Recommendation: Setup placement in <code>bids.params.placement</code>.';
 	} else {
-		if (paramPlacement !== undefined) {
-			placementStatus = chkr_badges.ok;
-			placementSetup = 'params.placement';
-			placementRes = paramPlacement;
-			placementDetails = '';
-		} else {
-			placementStatus = chkr_badges.ko;
-			placementSetup = 'params.placement';
-			placementRes = undefined;
-			placementDetails = '';
-		}
+		placementStatus = chkr_badges.ko;
+		placementSetup = 'params.placement';
+		placementRes = undefined;
+		placementDetails = 'Not found: Setup <code>bids.params.placement</code>.';
 	}
 	// Placement (3/3): Then ensure the value is correct
-	if (placementRes === undefined) paramsCheckingArray.push([placementStatus, `<code>${placementSetup}</code>: <code>${placementRes}</code>`, `Not defined in the adUnit configuration.`]);
+	if (placementStatus === chkr_badges.ko) paramsCheckingArray.push([placementStatus, `<code>${placementSetup}</code>: <code>${placementRes}</code>`, placementDetails]);
 	else if (placementRes.trim() !== placementRes) paramsCheckingArray.push([chkr_badges.check, `<code>${placementSetup}</code>: <code>${placementRes}</code>`, `Space character detected.`]);
-	else if (/mobile/i.test(placementRes) || /desktop/i.test(placementRes) || /tablet/i.test(placementRes)) paramsCheckingArray.push([chkr_badges.check, `<code>${placementSetup}</code>: <code>${placementRes}</code>`, `Should not include reference to an environment`]);
+	else if (/mobile/i.test(placementRes) || /desktop/i.test(placementRes) || /tablet/i.test(placementRes)) paramsCheckingArray.push([chkr_badges.check, `<code>${placementSetup}</code>: <code>${placementRes}</code>`, `Recommendation: Do not not include reference to an environment or size.`]);
 	else paramsCheckingArray.push([placementStatus, `<code>${placementSetup}</code>: <code>${placementRes}</code>`, placementDetails]);
 
 	// Check the mediatypes parameters

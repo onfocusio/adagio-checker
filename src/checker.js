@@ -284,7 +284,7 @@ function checkAdagioRealTimeDataProviderModule() {
 }
 
 export async function checkRealTimeDataConfig(orgSitePairs) {
-	const sectionTitle = '9️⃣ RTD parameters';
+	const sectionTitle = '9️⃣ Adagio RTD params';
 
 	// Ensure that the rtd module exists in the wrapper configuration
 	const adgRealTimeDataConfig = prebidObject.getConfig('realTimeData')?.dataProviders.find((p) => p.name === 'adagio') || null;
@@ -314,7 +314,7 @@ export async function checkRealTimeDataConfig(orgSitePairs) {
 
 	// Check if the orgId and site from RTD config matches at least one of the orgSitePairs detected in bidrequests
 	if (orgSitePairs.length && !orgSitePairs.some((p) => p.organizationId === paramsOrgId && p.site === paramsSite)) {
-		appendCheckerRow(chkr_badges.check, sectionTitle, `RTD params are not matching with bids params: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`);
+		appendCheckerRow(chkr_badges.check, sectionTitle, `RTD params are not matching with bids.params: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`);
 		return;
 	}
 
