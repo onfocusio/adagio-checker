@@ -15,16 +15,16 @@ import { appendCheckerRow } from '../app.js';
  * @returns {void}
  */
 export function checkAdagioBidderAdapterModule() {
-    let badge = chkr_badges.ko;
-    const title = 'Adagio adapter';
-    let message = `Adagio bidder adapter module is not installed.`;
+  let badge = chkr_badges.ko;
+  const title = 'Adagio adapter';
+  let message = 'Adagio bidder adapter module is not installed.';
 
-    // If window.ADAGIO is defined, the Adagio bidder adapter module is installed
-    if (typeof ADAGIO !== 'undefined') {
-        badge = chkr_badges.ok;
-        message = `Adagio bidder adapter detected.`;
-    }
-    appendCheckerRow(badge, title, message);
+  // If window.ADAGIO is defined, the Adagio bidder adapter module is installed
+  if (typeof ADAGIO !== 'undefined') {
+    badge = chkr_badges.ok;
+    message = 'Adagio bidder adapter detected.';
+  }
+  appendCheckerRow(badge, title, message);
 }
 
 export default checkAdagioBidderAdapterModule;

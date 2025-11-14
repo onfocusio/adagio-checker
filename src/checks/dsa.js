@@ -19,20 +19,44 @@ import { prebidObject, prebidWrapper } from '../prebid/wrapper.js';
  * @returns {void}
  */
 export function checkDsaTransparency() {
-    const prebidOrtb2 = prebidObject.getConfig('ortb2');
-    if (prebidOrtb2 !== undefined) {
-        let dsa = prebidOrtb2?.regs?.ext?.dsa;
-        let dsarequired = prebidOrtb2?.regs?.ext?.dsa?.dsarequired;
-        let pubrender = prebidOrtb2?.regs?.ext?.dsa?.pubrender;
-        let datatopub = prebidOrtb2?.regs?.ext?.dsa?.datatopub;
-        let transparency = prebidOrtb2?.regs?.ext?.dsa?.transparency;
+  const prebidOrtb2 = prebidObject.getConfig('ortb2');
+  if (prebidOrtb2 !== undefined) {
+    const dsa = prebidOrtb2?.regs?.ext?.dsa;
+    const dsarequired = prebidOrtb2?.regs?.ext?.dsa?.dsarequired;
+    const pubrender = prebidOrtb2?.regs?.ext?.dsa?.pubrender;
+    const datatopub = prebidOrtb2?.regs?.ext?.dsa?.datatopub;
+    const transparency = prebidOrtb2?.regs?.ext?.dsa?.transparency;
 
-        if (dsa === undefined) appendCheckerRow(chkr_badges.info, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
-        else {
-            if (dsarequired === undefined || pubrender === undefined || datatopub === undefined || transparency === undefined) appendCheckerRow(chkr_badges.ko, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
-            else appendCheckerRow(chkr_badges.ok, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
-        }
-    } else {
-        appendCheckerRow(chkr_badges.info, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`);
+    if (dsa === undefined)
+      appendCheckerRow(
+        chkr_badges.info,
+        chkr_titles.dsa,
+        `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`
+      );
+    else {
+      if (
+        dsarequired === undefined ||
+        pubrender === undefined ||
+        datatopub === undefined ||
+        transparency === undefined
+      )
+        appendCheckerRow(
+          chkr_badges.ko,
+          chkr_titles.dsa,
+          `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`
+        );
+      else
+        appendCheckerRow(
+          chkr_badges.ok,
+          chkr_titles.dsa,
+          `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`
+        );
     }
+  } else {
+    appendCheckerRow(
+      chkr_badges.info,
+      chkr_titles.dsa,
+      `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`
+    );
+  }
 }

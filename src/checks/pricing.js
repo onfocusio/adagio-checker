@@ -18,13 +18,21 @@ import { prebidObject, prebidWrapper } from '../prebid/wrapper.js';
  * @returns {void}
  */
 export function checkCurrencyModule() {
-    // Currency module allow to bid regardless of the adServer currency. It's mandatory when the adServer currency isn't USD
-    const prebidCurrency = prebidObject.getConfig('currency');
-    if (prebidCurrency !== undefined) {
-        appendCheckerRow(chkr_badges.info, chkr_titles.currency, `<code>${JSON.stringify(prebidCurrency)}</code>`);
-    } else {
-        appendCheckerRow(chkr_badges.info, chkr_titles.currency, `<code>${prebidWrapper[0]}.getConfig('currency')</code>: <code>${prebidCurrency}</code>`);
-    }
+  // Currency module allow to bid regardless of the adServer currency. It's mandatory when the adServer currency isn't USD
+  const prebidCurrency = prebidObject.getConfig('currency');
+  if (prebidCurrency !== undefined) {
+    appendCheckerRow(
+      chkr_badges.info,
+      chkr_titles.currency,
+      `<code>${JSON.stringify(prebidCurrency)}</code>`
+    );
+  } else {
+    appendCheckerRow(
+      chkr_badges.info,
+      chkr_titles.currency,
+      `<code>${prebidWrapper[0]}.getConfig('currency')</code>: <code>${prebidCurrency}</code>`
+    );
+  }
 }
 
 /**
@@ -33,11 +41,19 @@ export function checkCurrencyModule() {
  * @returns {void}
  */
 export function checkFloorPriceModule() {
-    // Floor price module allow to share the lower price acceptable for an adUnit with the bidders
-    const prebidFloorPrice = prebidObject.getConfig('floors');
-    if (prebidFloorPrice !== undefined) {
-        appendCheckerRow(chkr_badges.info, chkr_titles.floors, `<code>${JSON.stringify(prebidFloorPrice)}</code>`);
-    } else {
-        appendCheckerRow(chkr_badges.info, chkr_titles.floors, `<code>${prebidWrapper[0]}.getConfig('floors')</code>: <code>${prebidFloorPrice}</code>`);
-    }
+  // Floor price module allow to share the lower price acceptable for an adUnit with the bidders
+  const prebidFloorPrice = prebidObject.getConfig('floors');
+  if (prebidFloorPrice !== undefined) {
+    appendCheckerRow(
+      chkr_badges.info,
+      chkr_titles.floors,
+      `<code>${JSON.stringify(prebidFloorPrice)}</code>`
+    );
+  } else {
+    appendCheckerRow(
+      chkr_badges.info,
+      chkr_titles.floors,
+      `<code>${prebidWrapper[0]}.getConfig('floors')</code>: <code>${prebidFloorPrice}</code>`
+    );
+  }
 }

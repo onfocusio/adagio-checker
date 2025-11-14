@@ -17,22 +17,37 @@ import { prebidObject, prebidWrapper } from '../prebid/wrapper.js';
  * @returns {void}
  */
 export function checkAdagioLocalStorage() {
-    // Is local storage enabled?
-    const localStorage = prebidObject.bidderSettings;
+  // Is local storage enabled?
+  const localStorage = prebidObject.bidderSettings;
 
-    // Internal function to check if storageAllowed is correctly configured
-    function isStorageAllowed(value) {
-        if (typeof value === 'boolean') return value === true;
-        if (Array.isArray(value)) return value.includes('html5');
-        return false;
-    }
+  // Internal function to check if storageAllowed is correctly configured
+  function isStorageAllowed(value) {
+    if (typeof value === 'boolean') return value === true;
+    if (Array.isArray(value)) return value.includes('html5');
+    return false;
+  }
 
-    // Localstorage can be configured either in 'standard' or 'adagio' bidderSettings
-    const localStorageStandard = localStorage.standard?.storageAllowed;
-    const localStorageAdagio = localStorage.adagio?.storageAllowed;
+  // Localstorage can be configured either in 'standard' or 'adagio' bidderSettings
+  const localStorageStandard = localStorage.standard?.storageAllowed;
+  const localStorageAdagio = localStorage.adagio?.storageAllowed;
 
-    // Check the local storage configuration
-    if (isStorageAllowed(localStorageStandard)) appendCheckerRow(chkr_badges.ok, chkr_titles.localstorage, `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorageStandard)}</code>`);
-    else if (isStorageAllowed(localStorageAdagio)) appendCheckerRow(chkr_badges.ok, chkr_titles.localstorage, `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorageAdagio)}</code>`);
-    else appendCheckerRow(chkr_badges.ko, chkr_titles.localstorage, `Localstorage won't work for Adagio: <code>${JSON.stringify(localStorage)}</code>`);
+  // Check the local storage configuration
+  if (isStorageAllowed(localStorageStandard))
+    appendCheckerRow(
+      chkr_badges.ok,
+      chkr_titles.localstorage,
+      `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorageStandard)}</code>`
+    );
+  else if (isStorageAllowed(localStorageAdagio))
+    appendCheckerRow(
+      chkr_badges.ok,
+      chkr_titles.localstorage,
+      `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorageAdagio)}</code>`
+    );
+  else
+    appendCheckerRow(
+      chkr_badges.ko,
+      chkr_titles.localstorage,
+      `Localstorage won't work for Adagio: <code>${JSON.stringify(localStorage)}</code>`
+    );
 }

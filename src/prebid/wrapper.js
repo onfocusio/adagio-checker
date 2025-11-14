@@ -17,7 +17,7 @@ import { refreshChecker } from '../app.js';
  * Detected Prebid wrappers available in the page. Each item is `[wrapperName, windowObj]`.
  * @type {Array<[string, Window]>}
  */
-export let prebidWrappers = []; // Arrays of [wrapper, window] : window[wrapper]
+export const prebidWrappers = []; // Arrays of [wrapper, window] : window[wrapper]
 
 /**
  * Currently selected Prebid wrapper tuple `[name, window]`.
@@ -54,70 +54,81 @@ export let prebidVersionDetected = undefined; // Prebid.js version detected for 
  * @returns {void}
  */
 export function setPrebidWrapper() {
-    // Helper function to check and push valid wrappers, ensuring no duplicates
-    const addWrappers = (windowObj, wrapperList) => {
-        wrapperList.forEach((wrapper) => {
-            const instance = windowObj[wrapper];
-            // Only add the wrapper if it's valid and not already in prebidWrappers
-            if (instance?.version && typeof instance.getEvents === 'function' && !prebidWrappers.some(([existingWrapper, existingWindow]) => existingWrapper === wrapper && existingWindow === windowObj)) {
-                prebidWrappers.push([wrapper, windowObj]);
-            }
-        });
-    };
+  // Helper function to check and push valid wrappers, ensuring no duplicates
+  const addWrappers = (windowObj, wrapperList) => {
+    wrapperList.forEach((wrapper) => {
+      const instance = windowObj[wrapper];
+      // Only add the wrapper if it's valid and not already in prebidWrappers
+      if (
+        instance?.version &&
+        typeof instance.getEvents === 'function' &&
+        !prebidWrappers.some(
+          ([existingWrapper, existingWindow]) =>
+            existingWrapper === wrapper && existingWindow === windowObj
+        )
+      ) {
+        prebidWrappers.push([wrapper, windowObj]);
+      }
+    });
+  };
 
-    // Check top window for Prebid wrappers
-    if (window._pbjsGlobals) addWrappers(window, window._pbjsGlobals);
+  // Check top window for Prebid wrappers
+  if (window._pbjsGlobals) addWrappers(window, window._pbjsGlobals);
 
-    // Check iframes for Prebid wrappers
-    Array.from(window.document.getElementsByTagName(`iframe`)).forEach((iframe) => {
-        try {
-            const iframeDoc = iframe.contentWindow;
-            if (iframeDoc._pbjsGlobals) addWrappers(iframeDoc, iframeDoc._pbjsGlobals);
-        } catch (e) {
-            // Ignore iframe access errors (cross-origin or others)
+  // Check iframes for Prebid wrappers
+  Array.from(window.document.getElementsByTagName('iframe')).forEach((iframe) => {
+    try {
+      const iframeDoc = iframe.contentWindow;
+      if (iframeDoc._pbjsGlobals) addWrappers(iframeDoc, iframeDoc._pbjsGlobals);
+    } catch (e) {
+      // Ignore iframe access errors (cross-origin or others)
+    }
+  });
+
+  // Check ADAGIO versions for hidden wrappers, using addWrappers for consistency
+  if (typeof ADAGIO !== 'undefined' && ADAGIO?.versions !== undefined) {
+    addWrappers(
+      window,
+      Object.keys(ADAGIO.versions).filter((item) => item !== 'adagiojs')
+    );
+  }
+
+  // Pre-select the wrapper based on adagio bidrequests, or name 'pbjs'
+  if (prebidWrappers.length !== 0) {
+    let maxAdagioBids,
+      maxBids = 0;
+    let maxAdagioBidsWrapper,
+      maxBidsWrapper = null; // prebidWrappers[0];
+
+    prebidWrappers.forEach(([wrapper, win]) => {
+      const instance = win[wrapper];
+      if (instance?.getEvents) {
+        const bids =
+          instance.getEvents()?.filter((event) => event.eventType === 'bidRequested') || [];
+        const bidsCount = bids.length;
+        const adagioBidsCount = bids.filter((bid) =>
+          bid.bidder?.toLowerCase().includes('adagio')
+        ).length;
+
+        if (bidsCount >= maxBids) {
+          maxBids = bidsCount;
+          maxBidsWrapper = [wrapper, win];
         }
+        if (adagioBidsCount >= maxAdagioBids) {
+          maxAdagioBids = adagioBidsCount;
+          maxAdagioBidsWrapper = [wrapper, win];
+        }
+      }
     });
 
-    // Check ADAGIO versions for hidden wrappers, using addWrappers for consistency
-    if (typeof ADAGIO !== 'undefined' && ADAGIO?.versions !== undefined) {
-        addWrappers(
-            window,
-            Object.keys(ADAGIO.versions).filter((item) => item !== 'adagiojs')
-        );
+    // Select the wrapper based on priority: most Adagio bids > most bids > first wrapper
+    if (prebidWrapper === undefined && prebidObject === undefined) {
+      prebidWrapper =
+        maxAdagioBids > 0 ? maxAdagioBidsWrapper : maxBids > 0 ? maxBidsWrapper : prebidWrappers[0];
+      prebidObject = prebidWrapper[1][prebidWrapper[0]];
+      prebidVersionDetected = getPrebidVersion(prebidObject);
     }
-
-    // Pre-select the wrapper based on adagio bidrequests, or name 'pbjs'
-    if (prebidWrappers.length !== 0) {
-        let maxAdagioBids,
-            maxBids = 0;
-        let maxAdagioBidsWrapper,
-            maxBidsWrapper = null; // prebidWrappers[0];
-
-        prebidWrappers.forEach(([wrapper, win]) => {
-            const instance = win[wrapper];
-            if (instance?.getEvents) {
-                const bids = instance.getEvents()?.filter((event) => event.eventType === 'bidRequested') || [];
-                const bidsCount = bids.length;
-                const adagioBidsCount = bids.filter((bid) => bid.bidder?.toLowerCase().includes('adagio')).length;
-
-                if (bidsCount >= maxBids) {
-                    maxBids = bidsCount;
-                    maxBidsWrapper = [wrapper, win];
-                }
-                if (adagioBidsCount >= maxAdagioBids) {
-                    maxAdagioBids = adagioBidsCount;
-                    maxAdagioBidsWrapper = [wrapper, win];
-                }
-            }
-        });
-
-        // Select the wrapper based on priority: most Adagio bids > most bids > first wrapper
-        if (prebidWrapper === undefined && prebidObject === undefined) {
-            prebidWrapper = maxAdagioBids > 0 ? maxAdagioBidsWrapper : maxBids > 0 ? maxBidsWrapper : prebidWrappers[0];
-            prebidObject = prebidWrapper[1][prebidWrapper[0]];
-            prebidVersionDetected = getPrebidVersion(prebidObject);
-        }
-    }
+  }
 }
 
 /**
@@ -132,10 +143,10 @@ export function setPrebidWrapper() {
  * @returns {void}
  */
 export function switchToSelectedPrebidWrapper(value) {
-    prebidWrapper = prebidWrappers[value];
-    prebidObject = prebidWrapper[1][prebidWrapper[0]];
-    prebidVersionDetected = getPrebidVersion(prebidObject);
-    refreshChecker();
+  prebidWrapper = prebidWrappers[value];
+  prebidObject = prebidWrapper[1][prebidWrapper[0]];
+  prebidVersionDetected = getPrebidVersion(prebidObject);
+  refreshChecker();
 }
 
 // Helper functions to extract Prebid events and requests
@@ -146,7 +157,7 @@ export function switchToSelectedPrebidWrapper(value) {
  * @returns {Array<Object>} Array of Prebid event objects.
  */
 export function getPrebidEvents(_prebidObject) {
-    return _prebidObject.getEvents();
+  return _prebidObject.getEvents();
 }
 
 /**
@@ -156,11 +167,11 @@ export function getPrebidEvents(_prebidObject) {
  * @returns {Array<Object>} Flattened array of bid objects from bidRequested events.
  */
 export function getBidRequested(prebidEvents) {
-    return prebidEvents
-        .filter((e) => e.eventType === 'bidRequested')
-        .map((e) => e.args)
-        .map((e) => e.bids)
-        .flat();
+  return prebidEvents
+    .filter((e) => e.eventType === 'bidRequested')
+    .map((e) => e.args)
+    .map((e) => e.bids)
+    .flat();
 }
 
 /**
@@ -170,5 +181,5 @@ export function getBidRequested(prebidEvents) {
  * @returns {Array<Object>} Filtered array where `bidder` contains 'adagio'.
  */
 export function getAdagioBidRequested(bidRequested) {
-    return bidRequested.filter((e) => e.bidder?.toLowerCase()?.includes('adagio')) || [];
+  return bidRequested.filter((e) => e.bidder?.toLowerCase()?.includes('adagio')) || [];
 }
