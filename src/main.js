@@ -1,7 +1,26 @@
 import { buildApp, appendHomeContainer } from './app.js';
-import { setPrebidWrapper, prebidObject, runChecks } from './checker.js';
-import { runAdagioApiQuery } from './api.js';
+import { setPrebidWrapper, prebidObject } from './prebid/wrapper.js';
+import { runChecks } from './checker.js';
+import { runAdagioApiQuery } from './api/index.js';
 
+/**
+ * Module: main
+ *
+ * Application entrypoint that initializes the UI and Prebid wrapper and
+ * orchestrates execution of the checks. Intended to run only in a browser
+ * environment.
+ *
+ * @module main
+ */
+
+/**
+ * Main entrypoint for the Adagio Checker app. Initializes the Prebid wrapper,
+ * builds the overlay UI, verifies API connectivity and runs the checks.
+ *
+ * This function is intended to run in a browser environment.
+ *
+ * @returns {Promise<void>} Resolves when checks have completed or when an early-exit condition is met.
+ */
 export async function main() {
     // Get the Prebid wrappers
     setPrebidWrapper();
@@ -26,5 +45,7 @@ export async function main() {
     await runChecks();
 }
 
-// Run the app
-main();
+// Run the app (only when running in a browser environment)
+if (typeof window !== 'undefined' && typeof window.document !== 'undefined') {
+    main();
+}
