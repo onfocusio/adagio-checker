@@ -8,78 +8,100 @@ export let detectedCountryCodeIso3; // Detected country code (alpha-3)
  ************************************************************************************************************************************************************************************************************************************/
 
 export async function fetchPublishersFromOrgIds(orgIds) {
-	// Fetch the Adagio seller.json to ensure that the orgId refers to an existing organization
-	if (orgIds.length) {
-		// Fetch the adagio sellers.json
-		try {
-			// Fetch the adagio sellers.json
-			const response = await fetch('https://adagio.io/sellers.json');
-			let adagioSellersJson = await response.json();
+    // Fetch the Adagio seller.json to ensure that the orgId refers to an existing organization
+    if (orgIds.length) {
+        // Fetch the adagio sellers.json
+        try {
+            // Fetch the adagio sellers.json
+            const response = await fetch('https://adagio.io/sellers.json');
+            let adagioSellersJson = await response.json();
 
-			// Build the organization list
-			const orgHtmlList = [];
+            // Build the organization list
+            const orgHtmlList = [];
 
-			// Loop through the organizationIds to build the HTML list
-			for (const orgId of orgIds) {
-				const matched = adagioSellersJson?.sellers.filter((e) => e.seller_id === orgId);
-				const org = matched && matched[0] ? matched[0] : { name: orgId, seller_id: orgId, seller_type: 'unknown' };
-				orgHtmlList.push(`<code>${org.name} (${org.seller_id}) - ${org.seller_type}</code>`);
-			}
+            // Loop through the organizationIds to build the HTML list
+            for (const orgId of orgIds) {
+                const matched = adagioSellersJson?.sellers.filter(
+                    (e) => e.seller_id === orgId,
+                );
+                const org =
+                    matched && matched[0]
+                        ? matched[0]
+                        : {
+                            name: orgId,
+                            seller_id: orgId,
+                            seller_type: 'unknown',
+                        };
+                orgHtmlList.push(
+                    `<code>${org.name} (${org.seller_id}) - ${org.seller_type}</code>`,
+                );
+            }
 
-			// Append the result to the home container div
+            // Append the result to the home container div
             let strBuilder = `${orgHtmlList.length > 1 ? 'Organizations' : 'Organization'}: ${orgHtmlList.join(', ')}`;
             appendHomeContainer(strBuilder);
-		} catch (error) {
-			// Handle JSON failure here
-			console.error('Error fetching Adagio sellers.json:', error);
-		}
-	}
+        } catch (error) {
+            // Handle JSON failure here
+            console.error('Error fetching Adagio sellers.json:', error);
+        }
+    }
 }
 
 export async function fetchCurrentLocationData() {
     // Reset the detected country code
     detectedCountryCodeIso3 = null;
 
-	// Fetch the country code using ipapi.co
-	await fetch('https://ipapi.co/json/')
-		.then((response) => response.json())
-		.then((data) => {
-			const countryCode = data.country_code;
-			const countryName = data.country_name;
-			detectedCountryCodeIso3 = data.country_code_iso3;
-			// Convert country code to emoji using a function
-			const countryEmoji = getFlagEmoji(countryCode);
-			if (countryName !== 'France') {
-				appendHomeContainer(`Current location detected: <code>${countryName}</code> (${countryEmoji})`);
-			}
-		})
-		.catch((error) => console.error('Error fetching country data:', error));
+    // Fetch the country code using ipapi.co
+    await fetch('https://ipapi.co/json/')
+        .then((response) => response.json())
+        .then((data) => {
+            const countryCode = data.country_code;
+            const countryName = data.country_name;
+            detectedCountryCodeIso3 = data.country_code_iso3;
+            // Convert country code to emoji using a function
+            const countryEmoji = getFlagEmoji(countryCode);
+            if (countryName !== 'France') {
+                appendHomeContainer(
+                    `Current location detected: <code>${countryName}</code> (${countryEmoji})`,
+                );
+            }
+        })
+        .catch((error) => console.error('Error fetching country data:', error));
 
-	// Function to convert country code to emoji (unchanged)
-	function getFlagEmoji(countryCode) {
-		const codePoints = countryCode
-			.toUpperCase()
-			.split('')
-			.map((char) => 127397 + char.charCodeAt());
-		return String.fromCodePoint(...codePoints);
-	}
+    // Function to convert country code to emoji (unchanged)
+    function getFlagEmoji(countryCode) {
+        const codePoints = countryCode
+            .toUpperCase()
+            .split('')
+            .map((char) => 127397 + char.charCodeAt());
+        return String.fromCodePoint(...codePoints);
+    }
 }
 
 export function computeAdUnitStatus(paramsCheckingArray) {
-	// The array contains X item with the following structure: [string, string, string] (html code)
-	if (paramsCheckingArray.includes(chkr_badges.ko)) return chkr_badges.ko;
-	else if (paramsCheckingArray.includes(chkr_badges.check)) return chkr_badges.check;
-	else if (paramsCheckingArray.includes(chkr_badges.update)) return chkr_badges.update;
-	// else if (paramsCheckingArray.includes(chkr_badges.info)) return chkr_badges.info;
-	else return chkr_badges.ok;
+    // The array contains X item with the following structure: [string, string, string] (html code)
+    if (paramsCheckingArray.includes(chkr_badges.ko)) return chkr_badges.ko;
+    else if (paramsCheckingArray.includes(chkr_badges.check))
+        return chkr_badges.check;
+    else if (paramsCheckingArray.includes(chkr_badges.update))
+        return chkr_badges.update;
+    // else if (paramsCheckingArray.includes(chkr_badges.info)) return chkr_badges.info;
+    else return chkr_badges.ok;
 }
 
 export function loadDebuggingMode() {
-	window.localStorage.setItem('ADAGIO_DEV_DEBUG', true);
-	const url = window.location.href.indexOf('?pbjs_debug=true') ? window.location.href + '?pbjs_debug=true' : window.location.href;
-	window.location.href = url;
+    window.localStorage.setItem('ADAGIO_DEV_DEBUG', true);
+    const url = window.location.href.indexOf('?pbjs_debug=true')
+        ? window.location.href + '?pbjs_debug=true'
+        : window.location.href;
+    window.location.href = url;
 }
 
 export function getPrebidVersion(prebidObject) {
-	return prebidObject.version.replace('v', '').split('-')[0].split('.').slice(0, 2).join('.');
+    return prebidObject.version
+        .replace('v', '')
+        .split('-')[0]
+        .split('.')
+        .slice(0, 2)
+        .join('.');
 }

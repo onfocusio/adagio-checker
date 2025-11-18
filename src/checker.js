@@ -1,7 +1,17 @@
 import { chkr_titles, chkr_badges } from './enums.js';
-import { appendHomeContainer, appendCheckerRow, appendAdUnitsRow, refreshChecker } from './app.js';
+import {
+    appendHomeContainer,
+    appendCheckerRow,
+    appendAdUnitsRow,
+    refreshChecker,
+} from './app.js';
 import { fetchApiInventoryRecords } from './api.js';
-import { fetchPublishersFromOrgIds, fetchCurrentLocationData as displayCurrentLocation, getPrebidVersion, computeAdUnitStatus } from './utils.js';
+import {
+    fetchPublishersFromOrgIds,
+    fetchCurrentLocationData as displayCurrentLocation,
+    getPrebidVersion,
+    computeAdUnitStatus,
+} from './utils.js';
 
 export let prebidWrappers = []; // Arrays of [wrapper, window] : window[wrapper]
 export let prebidWrapper = undefined; // Current Prebid.js wrapper selected
@@ -13,48 +23,54 @@ export let prebidVersionDetected = undefined; // Prebid.js version detected for 
  ************************************************************************************************************************************************************************************************************************************/
 
 export async function runChecks() {
-	// Get Prebid.js events, bidrequested and Adagio bids
-	const prebidEvents = getPrebidEvents(prebidObject);
-	const prebidBidRequested = getBidRequested(prebidEvents);
-	const prebidAdagioBidRequested = getAdagioBidRequested(prebidBidRequested);
+    // Get Prebid.js events, bidrequested and Adagio bids
+    const prebidEvents = getPrebidEvents(prebidObject);
+    const prebidBidRequested = getBidRequested(prebidEvents);
+    const prebidAdagioBidRequested = getAdagioBidRequested(prebidBidRequested);
 
-	// Get organizationIds and siteNames from Adagio bids
-	const { orgSitePairs, uniqueOrgIds, uniqueSiteNames } = getOrgIdsAndSiteNames(prebidAdagioBidRequested);
+    // Get organizationIds and siteNames from Adagio bids
+    const { orgSitePairs, uniqueOrgIds } = getOrgIdsAndSiteNames(
+        prebidAdagioBidRequested,
+    );
 
-	// Fetch API data based on organizationId and siteName pairs
-	const apiRecordsItems = await fetchApiInventoryRecords(orgSitePairs); // TODO: Improve by adding 'search' in params and passing the domain name rather than site name to eventually catch sitename
+    // Fetch API data based on organizationId and siteName pairs
+    const apiRecordsItems = await fetchApiInventoryRecords(orgSitePairs); // TODO: Improve by adding 'search' in params and passing the domain name rather than site name to eventually catch sitename
 
-	// Fill in the home container
-	displayWrapperIntegrity();
-	await fetchPublishersFromOrgIds(uniqueOrgIds);
-	displayAdServer(); // -- TODO: Adserver detection is not reliable enough yet (cannot target by wrapper)
-	displayAdagioJs();
-	await displayCurrentLocation();
+    // Fill in the home container
+    displayWrapperIntegrity();
+    await fetchPublishersFromOrgIds(uniqueOrgIds);
+    displayAdServer(); // -- TODO: Adserver detection is not reliable enough yet (cannot target by wrapper)
+    displayAdagioJs();
+    await displayCurrentLocation();
 
-	// Run all checks
-	checkAdagioBidderAdapterModule();
-	checkAdagioAdUnitParams(prebidBidRequested, prebidAdagioBidRequested, apiRecordsItems);
+    // Run all checks
+    checkAdagioBidderAdapterModule();
+    checkAdagioAdUnitParams(
+        prebidBidRequested,
+        prebidAdagioBidRequested,
+        apiRecordsItems,
+    );
 
-	if (prebidVersionDetected >= 9) {
-		// Since Prebid 9 the adagio.js loading is done via RTD
-		checkRealTimeDataModule();
-		checkAdagioRealTimeDataProviderModule();
-		await checkRealTimeDataConfig(orgSitePairs);
-	} else {
-		checkAdagioLocalStorage();
-	}
+    if (prebidVersionDetected >= 9) {
+        // Since Prebid 9 the adagio.js loading is done via RTD
+        checkRealTimeDataModule();
+        checkAdagioRealTimeDataProviderModule();
+        await checkRealTimeDataConfig(orgSitePairs);
+    } else {
+        checkAdagioLocalStorage();
+    }
 
-	checkDeviceAccess();
-	checkAdagioUserSync();
-	checkAdCallsDuplication(prebidEvents);
+    checkDeviceAccess();
+    checkAdagioUserSync();
+    checkAdCallsDuplication(prebidEvents);
 
-	checkUserIds();
-	checkCurrencyModule();
-	checkFloorPriceModule();
+    checkUserIds();
+    checkCurrencyModule();
+    checkFloorPriceModule();
 
-	// TODO: Add other checks later
-	// checkAdagioAnalyticsModule(); -- TODO: Needs deeper investigation to provide meaningful information
-	// checkDsaTransparency(); -- TODO: Do the check at the adunit level
+    // TODO: Add other checks later
+    // checkAdagioAnalyticsModule(); -- TODO: Needs deeper investigation to provide meaningful information
+    // checkDsaTransparency(); -- TODO: Do the check at the adunit level
 }
 
 /*************************************************************************************************************************************************************************************************************************************
@@ -62,511 +78,792 @@ export async function runChecks() {
  ************************************************************************************************************************************************************************************************************************************/
 
 export function setPrebidWrapper() {
-	// Helper function to check and push valid wrappers, ensuring no duplicates
-	const addWrappers = (windowObj, wrapperList) => {
-		wrapperList.forEach((wrapper) => {
-			const instance = windowObj[wrapper];
-			// Only add the wrapper if it's valid and not already in prebidWrappers
-			if (instance?.version && typeof instance.getEvents === 'function' && !prebidWrappers.some(([existingWrapper, existingWindow]) => existingWrapper === wrapper && existingWindow === windowObj)) {
-				prebidWrappers.push([wrapper, windowObj]);
-			}
-		});
-	};
+    // Helper function to check and push valid wrappers, ensuring no duplicates
+    const addWrappers = (windowObj, wrapperList) => {
+        wrapperList.forEach((wrapper) => {
+            const instance = windowObj[wrapper];
+            // Only add the wrapper if it's valid and not already in prebidWrappers
+            if (
+                instance?.version &&
+                typeof instance.getEvents === 'function' &&
+                !prebidWrappers.some(
+                    ([existingWrapper, existingWindow]) =>
+                        existingWrapper === wrapper &&
+                        existingWindow === windowObj,
+                )
+            ) {
+                prebidWrappers.push([wrapper, windowObj]);
+            }
+        });
+    };
 
-	// Check top window for Prebid wrappers
-	if (window._pbjsGlobals) addWrappers(window, window._pbjsGlobals);
+    // Check top window for Prebid wrappers
+    if (window._pbjsGlobals) addWrappers(window, window._pbjsGlobals);
 
-	// Check iframes for Prebid wrappers
-	Array.from(window.document.getElementsByTagName(`iframe`)).forEach((iframe) => {
-		try {
-			const iframeDoc = iframe.contentWindow;
-			if (iframeDoc._pbjsGlobals) addWrappers(iframeDoc, iframeDoc._pbjsGlobals);
-		} catch (e) {
-			// Ignore iframe access errors (cross-origin or others)
-		}
-	});
+    // Check iframes for Prebid wrappers
+    Array.from(window.document.getElementsByTagName('iframe')).forEach(
+        (iframe) => {
+            try {
+                const iframeDoc = iframe.contentWindow;
+                if (iframeDoc._pbjsGlobals)
+                    addWrappers(iframeDoc, iframeDoc._pbjsGlobals);
+            } catch (e) {
+                // Ignore iframe access errors (cross-origin or others)
+                console.warn('Cannot access iframe content:', e);
+            }
+        },
+    );
 
-	// Check ADAGIO versions for hidden wrappers, using addWrappers for consistency
-	if (typeof ADAGIO !== 'undefined' && ADAGIO?.versions !== undefined) {
-		addWrappers(
-			window,
-			Object.keys(ADAGIO.versions).filter((item) => item !== 'adagiojs')
-		);
-	}
+    // Check ADAGIO versions for hidden wrappers, using addWrappers for consistency
+    if (typeof ADAGIO !== 'undefined' && ADAGIO?.versions !== undefined) {
+        addWrappers(
+            window,
+            Object.keys(ADAGIO.versions).filter((item) => item !== 'adagiojs'),
+        );
+    }
 
-	// Pre-select the wrapper based on adagio bidrequests, or name 'pbjs'
-	if (prebidWrappers.length !== 0) {
-		let maxAdagioBids,
-			maxBids = 0;
-		let maxAdagioBidsWrapper,
-			maxBidsWrapper = null; // prebidWrappers[0];
+    // Pre-select the wrapper based on adagio bidrequests, or name 'pbjs'
+    if (prebidWrappers.length !== 0) {
+        let maxAdagioBids,
+            maxBids = 0;
+        let maxAdagioBidsWrapper,
+            maxBidsWrapper = null; // prebidWrappers[0];
 
-		prebidWrappers.forEach(([wrapper, win]) => {
-			const instance = win[wrapper];
-			if (instance?.getEvents) {
-				const bids = instance.getEvents()?.filter((event) => event.eventType === 'bidRequested') || [];
-				const bidsCount = bids.length;
-				const adagioBidsCount = bids.filter((bid) => bid.bidder?.toLowerCase().includes('adagio')).length;
+        prebidWrappers.forEach(([wrapper, win]) => {
+            const instance = win[wrapper];
+            if (instance?.getEvents) {
+                const bids =
+                    instance
+                        .getEvents()
+                        ?.filter(
+                            (event) => event.eventType === 'bidRequested',
+                        ) || [];
+                const bidsCount = bids.length;
+                const adagioBidsCount = bids.filter((bid) =>
+                    bid.bidder?.toLowerCase().includes('adagio'),
+                ).length;
 
-				if (bidsCount >= maxBids) {
-					maxBids = bidsCount;
-					maxBidsWrapper = [wrapper, win];
-				}
-				if (adagioBidsCount >= maxAdagioBids) {
-					maxAdagioBids = adagioBidsCount;
-					maxAdagioBidsWrapper = [wrapper, win];
-				}
-			}
-		});
+                if (bidsCount >= maxBids) {
+                    maxBids = bidsCount;
+                    maxBidsWrapper = [wrapper, win];
+                }
+                if (adagioBidsCount >= maxAdagioBids) {
+                    maxAdagioBids = adagioBidsCount;
+                    maxAdagioBidsWrapper = [wrapper, win];
+                }
+            }
+        });
 
-		// Select the wrapper based on priority: most Adagio bids > most bids > first wrapper
-		if (prebidWrapper === undefined && prebidObject === undefined) {
-			prebidWrapper = maxAdagioBids > 0 ? maxAdagioBidsWrapper : maxBids > 0 ? maxBidsWrapper : prebidWrappers[0];
-			prebidObject = prebidWrapper[1][prebidWrapper[0]];
-			prebidVersionDetected = getPrebidVersion(prebidObject);
-		}
-	}
+        // Select the wrapper based on priority: most Adagio bids > most bids > first wrapper
+        if (prebidWrapper === undefined && prebidObject === undefined) {
+            prebidWrapper =
+                maxAdagioBids > 0
+                    ? maxAdagioBidsWrapper
+                    : maxBids > 0
+                        ? maxBidsWrapper
+                        : prebidWrappers[0];
+            prebidObject = prebidWrapper[1][prebidWrapper[0]];
+            prebidVersionDetected = getPrebidVersion(prebidObject);
+        }
+    }
 }
 
 function displayAdServer() {
-	// Rely on ADAGIO.windows if available
-	if (typeof ADAGIO !== 'undefined') {
-		const adagioWindows = ADAGIO.windows;
-		if (adagioWindows) {
-			const entries = Array.isArray(adagioWindows) ? adagioWindows : Object.values(adagioWindows);
-			const unique = new Set();
-			entries.forEach((winItem) => {
-				const srv = winItem?.adserver;
-				if (srv) unique.add(String(srv).toLowerCase());
-			});
-			if (unique.size) {
-				let stringAdServer = Array.from(unique)
-					.map((s) => `<code>${s}</code>`)
-					.join(', ');
-				appendHomeContainer(`Adserver: ${stringAdServer}`);
-			}
-		}
-	}
+    // Rely on ADAGIO.windows if available
+    if (typeof ADAGIO !== 'undefined') {
+        const adagioWindows = ADAGIO.windows;
+        if (adagioWindows) {
+            const entries = Array.isArray(adagioWindows)
+                ? adagioWindows
+                : Object.values(adagioWindows);
+            const unique = new Set();
+            entries.forEach((winItem) => {
+                const srv = winItem?.adserver;
+                if (srv) unique.add(String(srv).toLowerCase());
+            });
+            if (unique.size) {
+                let stringAdServer = Array.from(unique)
+                    .map((s) => `<code>${s}</code>`)
+                    .join(', ');
+                appendHomeContainer(`Adserver: ${stringAdServer}`);
+            }
+        }
+    }
 }
 
 export function getOrgIdsAndSiteNames(prebidAdagioBidRequested) {
-	// Build unique couples of organizationId + site
-	const pairs = new Map();
+    // Build unique couples of organizationId + site
+    const pairs = new Map();
 
-	// Loop through Adagio bids to extract organizationId and site
-	for (const bid of prebidAdagioBidRequested) {
-		const params = bid.params || {};
-        const org = params?.organizationId ? String(params.organizationId) : null;
+    // Loop through Adagio bids to extract organizationId and site
+    for (const bid of prebidAdagioBidRequested) {
+        const params = bid.params || {};
+        const org = params?.organizationId
+            ? String(params.organizationId)
+            : null;
         const site = params?.site ? String(params.site) : null;
 
-		if (org && site) {
-			const key = `${org}::${site}`;
-			if (!pairs.has(key)) pairs.set(key, { organizationId: org, site });
-		}
-	}
+        if (org && site) {
+            const key = `${org}::${site}`;
+            if (!pairs.has(key)) pairs.set(key, { organizationId: org, site });
+        }
+    }
 
-	// Build the results arrays
-	const orgSitePairs = Array.from(pairs.values()); // Pairs of {organizationId, site} detected
-	const uniqueOrgIds = [...new Set(orgSitePairs.map((p) => p.organizationId))]; // List of unique organizationIds
-	const uniqueSiteNames = [...new Set(orgSitePairs.map((p) => p.site))]; // List of unique site names
+    // Build the results arrays
+    const orgSitePairs = Array.from(pairs.values()); // Pairs of {organizationId, site} detected
+    const uniqueOrgIds = [
+        ...new Set(orgSitePairs.map((p) => p.organizationId)),
+    ]; // List of unique organizationIds
+    // const uniqueSiteNames = [...new Set(orgSitePairs.map((p) => p.site))]; // List of unique site names
 
-	return { orgSitePairs: orgSitePairs, uniqueOrgIds: uniqueOrgIds, uniqueSiteNames: uniqueSiteNames };
+    return {
+        orgSitePairs: orgSitePairs,
+        uniqueOrgIds: uniqueOrgIds,
+        // uniqueSiteNames: uniqueSiteNames,
+    };
 }
 
 export function checkAdagioBidderAdapterModule() {
-	let badge = chkr_badges.ko;
-	const title = 'Adagio adapter';
-	let message = `Adagio bidder adapter module is not installed.`;
+    let badge = chkr_badges.ko;
+    const title = 'Adagio adapter';
+    let message = 'Adagio bidder adapter module is not installed.';
 
-	// If window.ADAGIO is defined, the Adagio bidder adapter module is installed
-	if (typeof ADAGIO !== 'undefined') {
-		badge = chkr_badges.ok;
-		message = `Adagio bidder adapter detected.`;
-	}
-	appendCheckerRow(badge, title, message);
+    // If window.ADAGIO is defined, the Adagio bidder adapter module is installed
+    if (typeof ADAGIO !== 'undefined') {
+        badge = chkr_badges.ok;
+        message = 'Adagio bidder adapter detected.';
+    }
+    appendCheckerRow(badge, title, message);
 }
 
 export function displayAdagioJs() {
-	let message = '';
-	// If ADAGIO.versions.adagiojs is defined, Adagio.js is loaded
-	if (typeof ADAGIO !== 'undefined' && ADAGIO.versions && ADAGIO.versions.adagiojs) message = `Adagio.js: 🟢 <code>v${ADAGIO.versions.adagiojs}</code>`;
-	else if (prebidVersionDetected >= 9) message = `Adagio.js: 🔴 <code>Not loaded - Ensure RTD is setup.</code>`;
-	else message = `Adagio.js: 🔴 <code>Not loaded - Ensure localstorage is enabled.</code>`;
-	appendHomeContainer(message);
+    let message = '';
+    // If ADAGIO.versions.adagiojs is defined, Adagio.js is loaded
+    if (
+        typeof ADAGIO !== 'undefined' &&
+        ADAGIO.versions &&
+        ADAGIO.versions.adagiojs
+    )
+        message = `Adagio.js: 🟢 <code>v${ADAGIO.versions.adagiojs}</code>`;
+    else if (prebidVersionDetected >= 9)
+        message =
+            'Adagio.js: 🔴 <code>Not loaded - Ensure RTD is setup.</code>';
+    else
+        message =
+            'Adagio.js: 🔴 <code>Not loaded - Ensure localstorage is enabled.</code>';
+    appendHomeContainer(message);
 }
 
 export function displayWrapperIntegrity() {
-	if (typeof ADAGIO !== 'undefined' && ADAGIO.pbjsAdUnits) {
-		// Get the Prebid.js adUnits as collected by the adapter
-		const pbjsAdUnits = ADAGIO.pbjsAdUnits;
-		// Define and set wrapper integrity log
-		let brokenWrapperStringName = `${prebidWrapper[0]}AdUnits`;
+    if (typeof ADAGIO !== 'undefined' && ADAGIO.pbjsAdUnits) {
+        // Get the Prebid.js adUnits as collected by the adapter
+        const pbjsAdUnits = ADAGIO.pbjsAdUnits;
+        // Define and set wrapper integrity log
+        let brokenWrapperStringName = `${prebidWrapper[0]}AdUnits`;
 
-		// Some user misconfigure their wrapper but manually renaming the pbjs variable in the code
-		// instead of using the 'globalVarName' from the package.json configuration.
-		// https://github.com/prebid/Prebid.js/blob/426ddcc027d74b54382df72162f297276994eabc/package.json#L48C4-L48C17
-		if (pbjsAdUnits === undefined || !Array.isArray(pbjsAdUnits) || (pbjsAdUnits.length === 0 && ADAGIO[brokenWrapperStringName] !== undefined && prebidWrapper[0] !== 'pbjs')) {
-			appendHomeContainer(`Wrapper integrity: 🔴 Adagio won't work as expected - Contact SE for more info.`);
-		} else if (ADAGIO[brokenWrapperStringName] !== undefined && prebidWrapper[0] !== 'pbjs') {
-			appendHomeContainer(`Wrapper integrity: 🟠 Repaired - Contact SE for more info.`);
-		}
-	}
+        // Some user misconfigure their wrapper but manually renaming the pbjs variable in the code
+        // instead of using the 'globalVarName' from the package.json configuration.
+        // https://github.com/prebid/Prebid.js/blob/426ddcc027d74b54382df72162f297276994eabc/package.json#L48C4-L48C17
+        if (
+            pbjsAdUnits === undefined ||
+            !Array.isArray(pbjsAdUnits) ||
+            (pbjsAdUnits.length === 0 &&
+                ADAGIO[brokenWrapperStringName] !== undefined &&
+                prebidWrapper[0] !== 'pbjs')
+        ) {
+            appendHomeContainer(
+                'Wrapper integrity: 🔴 Adagio won\'t work as expected - Contact SE for more info.',
+            );
+        } else if (
+            ADAGIO[brokenWrapperStringName] !== undefined &&
+            prebidWrapper[0] !== 'pbjs'
+        ) {
+            appendHomeContainer(
+                'Wrapper integrity: 🟠 Repaired - Contact SE for more info.',
+            );
+        }
+    }
 }
 
-export function checkAdagioAdUnitParams(prebidBidRequested, prebidAdagioBidRequested, apiRecordsItems) {
-	// Gets list of unique bidders out of Prebid bidrequests events
-	const prebidBidders = [...new Set(prebidBidRequested.map((e) => e.bidder))].sort();
+export function checkAdagioAdUnitParams(
+    prebidBidRequested,
+    prebidAdagioBidRequested,
+    apiRecordsItems,
+) {
+    // Gets list of unique bidders out of Prebid bidrequests events
+    const prebidBidders = [
+        ...new Set(prebidBidRequested.map((e) => e.bidder)),
+    ].sort();
 
-	// Get the list of unique adUnitCodes from Prebid bidRequested events
-	const prebidAdUnitsCodes = [...new Set(prebidBidRequested.map((e) => e.adUnitCode))];
+    // Get the list of unique adUnitCodes from Prebid bidRequested events
+    const prebidAdUnitsCodes = [
+        ...new Set(prebidBidRequested.map((e) => e.adUnitCode)),
+    ];
 
-	// Get the list of unique adUnitCodes from Adagio bids
-	const prebidAdagioAdUnitsCodes = [...new Set(prebidAdagioBidRequested.map((e) => e.adUnitCode))];
+    // Get the list of unique adUnitCodes from Adagio bids
+    const prebidAdagioAdUnitsCodes = [
+        ...new Set(prebidAdagioBidRequested.map((e) => e.adUnitCode)),
+    ];
 
-	// Count total adUnits codes from Prebid and Adagio bids
-	const totalPrebidAdUnitsCodes = prebidAdUnitsCodes.length;
-	const totalPrebidAdagioAdUnitsCode = prebidAdagioAdUnitsCodes.length;
+    // Count total adUnits codes from Prebid and Adagio bids
+    const totalPrebidAdUnitsCodes = prebidAdUnitsCodes.length;
+    const totalPrebidAdagioAdUnitsCode = prebidAdagioAdUnitsCodes.length;
 
-	// Fill the Adunits table with all the requested bids
-	const computedAdunitsStatus = appendAdUnitsRow(prebidBidders, prebidBidRequested, prebidAdagioBidRequested, apiRecordsItems);
+    // Fill the Adunits table with all the requested bids
+    const computedAdunitsStatus = appendAdUnitsRow(
+        prebidBidders,
+        prebidBidRequested,
+        prebidAdagioBidRequested,
+        apiRecordsItems,
+    );
 
-	// Compute the final adunits status (KO, CHECK, OK)
-	const finalComputedAdunitsStatus = computeAdUnitStatus(computedAdunitsStatus);
+    // Compute the final adunits status (KO, CHECK, OK)
+    const finalComputedAdunitsStatus = computeAdUnitStatus(
+        computedAdunitsStatus,
+    );
 
-	// Compute the adunits counting status (KO, CHECK, OK)
-	let adagioAdunitsStatus = chkr_badges.ok;
-	if (totalPrebidAdUnitsCodes === 0) adagioAdunitsStatus = chkr_badges.ko;
-	else if (totalPrebidAdagioAdUnitsCode === 0) adagioAdunitsStatus = chkr_badges.ko;
-	else if (totalPrebidAdUnitsCodes > totalPrebidAdagioAdUnitsCode) adagioAdunitsStatus = chkr_badges.check;
+    // Compute the adunits counting status (KO, CHECK, OK)
+    let adagioAdunitsStatus = chkr_badges.ok;
+    if (totalPrebidAdUnitsCodes === 0) adagioAdunitsStatus = chkr_badges.ko;
+    else if (totalPrebidAdagioAdUnitsCode === 0)
+        adagioAdunitsStatus = chkr_badges.ko;
+    else if (totalPrebidAdUnitsCodes > totalPrebidAdagioAdUnitsCode)
+        adagioAdunitsStatus = chkr_badges.check;
 
-	// Count occurrences of each unique status in computedAdunitsStatus
-	const statusCounts = computedAdunitsStatus.reduce((acc, status) => {
-		acc[status] = (acc[status] || 0) + 1;
-		return acc;
-	}, {});
+    // Compute viewability counts for Adagio adUnits
+    let totalMeasuredAdagioAdUnits = 0;
+    if (ADAGIO.ckrViewability) {
+        prebidAdagioAdUnitsCodes.forEach((code) => {
+            const adUnitIsMeasured =
+                ADAGIO.ckrViewability[code]?.isMeasured || false;
+            if (adUnitIsMeasured) totalMeasuredAdagioAdUnits++;
+        });
+    }
 
-	// Build a summary string for status counts
-	const statusSummary = Object.entries(statusCounts)
-		.map(([status, count]) => `${status} (${count})`)
-		.join(', ');
+    // Count occurrences of each unique status in computedAdunitsStatus
+    const statusCounts = computedAdunitsStatus.reduce((acc, status) => {
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+    }, {});
 
-	// Compile the status and display the infos.
-	const resultStatus = computeAdUnitStatus([finalComputedAdunitsStatus, adagioAdunitsStatus]);
-	if (totalPrebidAdUnitsCodes === 0) {
-		appendCheckerRow(chkr_badges.ko, chkr_titles.adunits, `<code>${totalPrebidAdUnitsCodes}</code> adUnits(s) detected.`);
-	} else {
-		let details = `
-                • Adagio called for <code>${totalPrebidAdagioAdUnitsCode}</code> adUnit(s) out of <code>${totalPrebidAdUnitsCodes}</code> adUnits(s) detected.<br>
-            `;
-		if (totalPrebidAdagioAdUnitsCode > 0) {
-			details += `• Params status: ${statusSummary}<br>`;
-		}
-		appendCheckerRow(resultStatus, chkr_titles.adunits, details);
-	}
+    // Build a summary string for status counts
+    const statusSummary = Object.entries(statusCounts)
+        .map(([status, count]) => `${status} (${count})`)
+        .join(', ');
+
+    // Compile the status and display the infos.
+    const resultStatus = computeAdUnitStatus([
+        finalComputedAdunitsStatus,
+        adagioAdunitsStatus,
+    ]);
+    if (totalPrebidAdUnitsCodes === 0) {
+        appendCheckerRow(
+            chkr_badges.ko,
+            chkr_titles.adunits,
+            `<code>${totalPrebidAdUnitsCodes}</code> adUnits(s) detected.`,
+        );
+    } else {
+        let details = `• Adagio called for <code>${totalPrebidAdagioAdUnitsCode}/${totalPrebidAdUnitsCodes}</code> adUnits(s) detected.<br>`;
+        if (ADAGIO.ckrViewability)
+            details += `• Viewability measured for <code>${totalMeasuredAdagioAdUnits}/${totalPrebidAdagioAdUnitsCode}</code> Adagio adUnit(s).<br>`;
+        if (totalPrebidAdagioAdUnitsCode > 0)
+            details += `• Params status: ${statusSummary}<br>`;
+        appendCheckerRow(resultStatus, chkr_titles.adunits, details);
+    }
 }
 
 function checkRealTimeDataModule() {
-	const sectionTitle = '9️⃣ RTD module';
-	const hasRtdModule = prebidObject.installedModules.includes('rtdModule') || false;
-	const _hasRtd = typeof ADAGIO !== 'undefined' ? ADAGIO.hasRtd : false;
+    const sectionTitle = '9️⃣ RTD module';
+    const hasRtdModule =
+        prebidObject.installedModules.includes('rtdModule') || false;
+    const _hasRtd = typeof ADAGIO !== 'undefined' ? ADAGIO.hasRtd : false;
 
-	if (!hasRtdModule && !_hasRtd) appendCheckerRow(chkr_badges.ko, sectionTitle, 'RTD module is not installed.');
-	else appendCheckerRow(chkr_badges.ok, sectionTitle, 'RTD module is installed.');
+    if (!hasRtdModule && !_hasRtd)
+        appendCheckerRow(
+            chkr_badges.ko,
+            sectionTitle,
+            'RTD module is not installed.',
+        );
+    else
+        appendCheckerRow(
+            chkr_badges.ok,
+            sectionTitle,
+            'RTD module is installed.',
+        );
 }
 
 function checkAdagioRealTimeDataProviderModule() {
-	const sectionTitle = '9️⃣ Adagio RTD provider';
-	const hasAdagioRtdProvider = prebidObject.installedModules.includes('adagioRtdProvider') || false;
-	const _hasRtd = typeof ADAGIO !== 'undefined' ? ADAGIO.hasRtd : false;
+    const sectionTitle = '9️⃣ Adagio RTD provider';
+    const hasAdagioRtdProvider =
+        prebidObject.installedModules.includes('adagioRtdProvider') || false;
+    const _hasRtd = typeof ADAGIO !== 'undefined' ? ADAGIO.hasRtd : false;
 
-	if (!hasAdagioRtdProvider && !_hasRtd) appendCheckerRow(chkr_badges.ko, sectionTitle, 'Adagio RTD provider is not installed.');
-	else appendCheckerRow(chkr_badges.ok, sectionTitle, 'Adagio RTD provider module is installed.');
+    if (!hasAdagioRtdProvider && !_hasRtd)
+        appendCheckerRow(
+            chkr_badges.ko,
+            sectionTitle,
+            'Adagio RTD provider is not installed.',
+        );
+    else
+        appendCheckerRow(
+            chkr_badges.ok,
+            sectionTitle,
+            'Adagio RTD provider module is installed.',
+        );
 }
 
 export async function checkRealTimeDataConfig(orgSitePairs) {
-	const sectionTitle = '9️⃣ Adagio RTD params';
+    const sectionTitle = '9️⃣ Adagio RTD params';
 
-	// Ensure that the rtd module exists in the wrapper configuration
-	const adgRealTimeDataConfig = prebidObject.getConfig('realTimeData')?.dataProviders.find((p) => p.name === 'adagio') || null;
+    // Ensure that the rtd module exists in the wrapper configuration
+    const adgRealTimeDataConfig =
+        prebidObject
+            .getConfig('realTimeData')
+            ?.dataProviders.find((p) => p.name === 'adagio') || null;
 
-	if (!adgRealTimeDataConfig) {
-		appendCheckerRow(chkr_badges.ko, sectionTitle, `Adagio is not configured in <code>${prebidWrapper[0]}.getConfig('realTimeData')</code>`);
-		return;
-	}
+    if (!adgRealTimeDataConfig) {
+        appendCheckerRow(
+            chkr_badges.ko,
+            sectionTitle,
+            `Adagio is not configured in <code>${prebidWrapper[0]}.getConfig('realTimeData')</code>`,
+        );
+        return;
+    }
 
-	let paramsOrgId = adgRealTimeDataConfig?.params?.organizationId?.toString();
-	let paramsSite = adgRealTimeDataConfig?.params?.site?.toString();
+    let paramsOrgId = adgRealTimeDataConfig?.params?.organizationId?.toString();
+    let paramsSite = adgRealTimeDataConfig?.params?.site?.toString();
 
-	// If orgId or site is missing, throw a ko status
-	if (!paramsOrgId || !paramsSite) {
-		appendCheckerRow(chkr_badges.ko, sectionTitle, `Missing parameter(s) in RTD config: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`);
-		return;
-	}
+    // If orgId or site is missing, throw a ko status
+    if (!paramsOrgId || !paramsSite) {
+        appendCheckerRow(
+            chkr_badges.ko,
+            sectionTitle,
+            `Missing parameter(s) in RTD config: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`,
+        );
+        return;
+    }
 
-	// Make a dedicated API call to check if the organizationId / siteName pair exists
-	const apiRecordsItems = await fetchApiInventoryRecords([{ organizationId: paramsOrgId, site: paramsSite }]);
+    // Make a dedicated API call to check if the organizationId / siteName pair exists
+    const apiRecordsItems = await fetchApiInventoryRecords([
+        { organizationId: paramsOrgId, site: paramsSite },
+    ]);
 
-	// If no orgSitePairs detected, but paramsOrgId and paramsSite are defined, we can consider it as OK
-	if (!apiRecordsItems.size) {
-		appendCheckerRow(chkr_badges.ok, sectionTitle, `RTD params doesn't match with manager inventory: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`);
-		return;
-	}
+    // If no orgSitePairs detected, but paramsOrgId and paramsSite are defined, we can consider it as OK
+    if (!apiRecordsItems.size) {
+        appendCheckerRow(
+            chkr_badges.ok,
+            sectionTitle,
+            `RTD params doesn't match with manager inventory: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`,
+        );
+        return;
+    }
 
-	// Check if the orgId and site from RTD config matches at least one of the orgSitePairs detected in bidrequests
-	if (orgSitePairs.length && !orgSitePairs.some((p) => p.organizationId === paramsOrgId && p.site === paramsSite)) {
-		appendCheckerRow(chkr_badges.check, sectionTitle, `RTD params are not matching with bids.params: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`);
-		return;
-	}
+    // Check if the orgId and site from RTD config matches at least one of the orgSitePairs detected in bidrequests
+    if (
+        orgSitePairs.length &&
+        !orgSitePairs.some(
+            (p) => p.organizationId === paramsOrgId && p.site === paramsSite,
+        )
+    ) {
+        appendCheckerRow(
+            chkr_badges.check,
+            sectionTitle,
+            `RTD params are not matching with bids.params: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`,
+        );
+        return;
+    }
 
-	// All tests passed, mark as OK
-	appendCheckerRow(chkr_badges.ok, sectionTitle, `RTD config is valid: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`);
+    // All tests passed, mark as OK
+    appendCheckerRow(
+        chkr_badges.ok,
+        sectionTitle,
+        `RTD config is valid: <code>${JSON.stringify(adgRealTimeDataConfig)}</code>`,
+    );
 }
 
 export function checkDeviceAccess() {
-	// Localstorage is required since Prebid 9 for adagio.js to work properly.
-	// deviceAccess can be true, false or undefined — evaluate using strict equality
-	const rawDeviceAccess = prebidObject.getConfig('deviceAccess');
-	const deviceAccess = rawDeviceAccess === true ? true : rawDeviceAccess === false ? false : undefined;
+    // Localstorage is required since Prebid 9 for adagio.js to work properly.
+    // deviceAccess can be true, false or undefined — evaluate using strict equality
+    const rawDeviceAccess = prebidObject.getConfig('deviceAccess');
+    const deviceAccess =
+        rawDeviceAccess === true
+            ? true
+            : rawDeviceAccess === false
+                ? false
+                : undefined;
 
-	if (deviceAccess === true) appendCheckerRow(chkr_badges.ok, chkr_titles.deviceaccess, `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`);
-	else if (deviceAccess === false || deviceAccess === undefined) appendCheckerRow(chkr_badges.ko, chkr_titles.deviceaccess, `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`);
-	else appendCheckerRow(chkr_badges.ko, chkr_titles.deviceaccess, `Contact SE - <code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`);
+    if (deviceAccess === true)
+        appendCheckerRow(
+            chkr_badges.ok,
+            chkr_titles.deviceaccess,
+            `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`,
+        );
+    else if (deviceAccess === false || deviceAccess === undefined)
+        appendCheckerRow(
+            chkr_badges.ko,
+            chkr_titles.deviceaccess,
+            `<code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`,
+        );
+    else
+        appendCheckerRow(
+            chkr_badges.ko,
+            chkr_titles.deviceaccess,
+            `Contact SE - <code>${prebidWrapper[0]}.getConfig('deviceAccess')</code>: <code>${deviceAccess}</code>`,
+        );
 }
 
 export function checkAdagioUserSync() {
-	// Adagio strongly recommends enabling user syncing through iFrames.
-	// This functionality improves DSP user match rates and increases the bid rate and bid price.
-	const prebidUserSync = prebidObject.getConfig('userSync');
+    // Adagio strongly recommends enabling user syncing through iFrames.
+    // This functionality improves DSP user match rates and increases the bid rate and bid price.
+    const prebidUserSync = prebidObject.getConfig('userSync');
 
-	// Check if userSync config is defined
-	if (prebidUserSync) {
-		// Sync can be done via iframe or all
-		const prebidUserSyncIframe = prebidUserSync?.filterSettings?.iframe;
-		const prebidUserSyncAll = prebidUserSync?.filterSettings?.all;
+    // Check if userSync config is defined
+    if (prebidUserSync) {
+        // Sync can be done via iframe or all
+        const prebidUserSyncIframe = prebidUserSync?.filterSettings?.iframe;
+        const prebidUserSyncAll = prebidUserSync?.filterSettings?.all;
 
-		// Check for the two possible valid configurations
-		const validIframeConfig = prebidUserSyncIframe && (prebidUserSyncIframe?.bidders?.includes('*') || (Array.isArray(prebidUserSyncIframe?.bidders) && prebidUserSyncIframe?.bidders.some((item) => item?.toLowerCase()?.includes('adagio')))) && prebidUserSyncIframe.filter === 'include';
-		const validAllConfig = prebidUserSyncAll && (prebidUserSyncAll?.bidders?.includes('*') || (Array.isArray(prebidUserSyncAll?.bidders) && prebidUserSyncAll?.bidders.some((item) => item?.toLowerCase()?.includes('adagio')))) && prebidUserSyncAll.filter === 'include';
+        // Check for the two possible valid configurations
+        const validIframeConfig =
+            prebidUserSyncIframe &&
+            (prebidUserSyncIframe?.bidders?.includes('*') ||
+                (Array.isArray(prebidUserSyncIframe?.bidders) &&
+                    prebidUserSyncIframe?.bidders.some((item) =>
+                        item?.toLowerCase()?.includes('adagio'),
+                    ))) &&
+            prebidUserSyncIframe.filter === 'include';
+        const validAllConfig =
+            prebidUserSyncAll &&
+            (prebidUserSyncAll?.bidders?.includes('*') ||
+                (Array.isArray(prebidUserSyncAll?.bidders) &&
+                    prebidUserSyncAll?.bidders.some((item) =>
+                        item?.toLowerCase()?.includes('adagio'),
+                    ))) &&
+            prebidUserSyncAll.filter === 'include';
 
-		// Display the appropriate checker row based on the configuration validity
-		if (validIframeConfig) appendCheckerRow(chkr_badges.ok, chkr_titles.usersync, `<code>${JSON.stringify(prebidUserSyncIframe)}</code>`);
-		else if (validAllConfig) appendCheckerRow(chkr_badges.ok, chkr_titles.usersync, `<code>${JSON.stringify(prebidUserSyncAll)}</code>`);
-	} else {
-		appendCheckerRow(chkr_badges.ko, chkr_titles.usersync, `Usersync won't work for Adagio: <code>${JSON.stringify(prebidUserSync)}</code>`);
-	}
+        // Display the appropriate checker row based on the configuration validity
+        if (validIframeConfig)
+            appendCheckerRow(
+                chkr_badges.ok,
+                chkr_titles.usersync,
+                `<code>${JSON.stringify(prebidUserSyncIframe)}</code>`,
+            );
+        else if (validAllConfig)
+            appendCheckerRow(
+                chkr_badges.ok,
+                chkr_titles.usersync,
+                `<code>${JSON.stringify(prebidUserSyncAll)}</code>`,
+            );
+    } else {
+        appendCheckerRow(
+            chkr_badges.ko,
+            chkr_titles.usersync,
+            `Usersync won't work for Adagio: <code>${JSON.stringify(prebidUserSync)}</code>`,
+        );
+    }
 }
 
 export function checkAdagioLocalStorage() {
-	// Is local storage enabled?
-	const localStorage = prebidObject.bidderSettings;
+    // Is local storage enabled?
+    const localStorage = prebidObject.bidderSettings;
 
-	// Internal function to check if storageAllowed is correctly configured
-	function isStorageAllowed(value) {
-		if (typeof value === 'boolean') return value === true;
-		if (Array.isArray(value)) return value.includes('html5');
-		return false;
-	}
+    // Internal function to check if storageAllowed is correctly configured
+    function isStorageAllowed(value) {
+        if (typeof value === 'boolean') return value === true;
+        if (Array.isArray(value)) return value.includes('html5');
+        return false;
+    }
 
-	// Localstorage can be configured either in 'standard' or 'adagio' bidderSettings
-	const localStorageStandard = localStorage.standard?.storageAllowed;
-	const localStorageAdagio = localStorage.adagio?.storageAllowed;
+    // Localstorage can be configured either in 'standard' or 'adagio' bidderSettings
+    const localStorageStandard = localStorage.standard?.storageAllowed;
+    const localStorageAdagio = localStorage.adagio?.storageAllowed;
 
-	// Check the local storage configuration
-	if (isStorageAllowed(localStorageStandard)) appendCheckerRow(chkr_badges.ok, chkr_titles.localstorage, `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorageStandard)}</code>`);
-	else if (isStorageAllowed(localStorageAdagio)) appendCheckerRow(chkr_badges.ok, chkr_titles.localstorage, `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorageAdagio)}</code>`);
-	else appendCheckerRow(chkr_badges.ko, chkr_titles.localstorage, `Localstorage won't work for Adagio: <code>${JSON.stringify(localStorage)}</code>`);
+    // Check the local storage configuration
+    if (isStorageAllowed(localStorageStandard))
+        appendCheckerRow(
+            chkr_badges.ok,
+            chkr_titles.localstorage,
+            `<code>${prebidWrapper[0]}.bidderSettings.standard.storageAllowed</code>: <code>${JSON.stringify(localStorageStandard)}</code>`,
+        );
+    else if (isStorageAllowed(localStorageAdagio))
+        appendCheckerRow(
+            chkr_badges.ok,
+            chkr_titles.localstorage,
+            `<code>${prebidWrapper[0]}.bidderSettings.adagio.storageAllowed</code>: <code>${JSON.stringify(localStorageAdagio)}</code>`,
+        );
+    else
+        appendCheckerRow(
+            chkr_badges.ko,
+            chkr_titles.localstorage,
+            `Localstorage won't work for Adagio: <code>${JSON.stringify(localStorage)}</code>`,
+        );
 }
 
 export function checkAdagioAnalyticsModule() {
-	// The wrapper object never references information related to the analytics, we can only rely on the ADAGIO object information
-	if (typeof ADAGIO === 'undefined') {
-		appendCheckerRow(chkr_badges.ko, chkr_titles.analytics, `<code>window.ADAGIO</code>: <code>${ADAGIO}</code>`);
-		return;
-	}
+    // The wrapper object never references information related to the analytics, we can only rely on the ADAGIO object information
+    if (typeof ADAGIO === 'undefined') {
+        appendCheckerRow(
+            chkr_badges.ko,
+            chkr_titles.analytics,
+            `<code>window.ADAGIO</code>: <code>${ADAGIO}</code>`,
+        );
+        return;
+    }
 
-	// Prebid Analytics is ready to use since Prebid 8.14
-	// And additional 'options' parameters are required since Prebid 9
-	let hasEligibleVersion = prebidVersionDetected > 8.14;
-	let hasPrebidNineVersion = prebidVersionDetected > 9;
-	let hasEnabledAnalytics = ADAGIO.versions?.adagioAnalyticsAdapter;
+    // Prebid Analytics is ready to use since Prebid 8.14
+    // And additional 'options' parameters are required since Prebid 9
+    let hasEligibleVersion = prebidVersionDetected > 8.14;
+    let hasPrebidNineVersion = prebidVersionDetected > 9;
+    let hasEnabledAnalytics = ADAGIO.versions?.adagioAnalyticsAdapter;
 
-	if (!hasEligibleVersion) appendCheckerRow(chkr_badges.info, chkr_titles.analytics, `<code>${prebidWrapper[0]}.version</code>: <code>${prebidVersionDetected}</code>`);
-	else if (!hasEnabledAnalytics) appendCheckerRow(chkr_badges.info, chkr_titles.analytics, `<code>ADAGIO.versions.adagioAnalyticsAdapter</code>: <code>${hasEnabledAnalytics}</code>`);
-	else if (!hasPrebidNineVersion) appendCheckerRow(chkr_badges.ok, chkr_titles.analytics, `Prebid version: <code>${prebidVersionDetected}</code> / Analytics: <code>${hasEnabledAnalytics}</code>`);
-	else {
-		// Try to retrieve the 'options' from the analytics wrapper configuration
-		let paramOrganizationId = ADAGIO?.options?.organizationId;
-		let paramSitename = ADAGIO?.options?.site;
+    if (!hasEligibleVersion)
+        appendCheckerRow(
+            chkr_badges.info,
+            chkr_titles.analytics,
+            `<code>${prebidWrapper[0]}.version</code>: <code>${prebidVersionDetected}</code>`,
+        );
+    else if (!hasEnabledAnalytics)
+        appendCheckerRow(
+            chkr_badges.info,
+            chkr_titles.analytics,
+            `<code>ADAGIO.versions.adagioAnalyticsAdapter</code>: <code>${hasEnabledAnalytics}</code>`,
+        );
+    else if (!hasPrebidNineVersion)
+        appendCheckerRow(
+            chkr_badges.ok,
+            chkr_titles.analytics,
+            `Prebid version: <code>${prebidVersionDetected}</code> / Analytics: <code>${hasEnabledAnalytics}</code>`,
+        );
+    else {
+        // Try to retrieve the 'options' from the analytics wrapper configuration
+        let paramOrganizationId = ADAGIO?.options?.organizationId;
+        let paramSitename = ADAGIO?.options?.site;
 
-		// Options are necessary for Adagio to get the analytics even if the Adagio bidder adapter is not loaded
-		if (!paramOrganizationId || !paramSitename) {
-			appendCheckerRow(chkr_badges.check, chkr_titles.analytics, `Missing parameters: <code>${prebidWrapper[0]}.enableAnalytics.options</code> should contain <code>organizationId</code> and <code>site</code>`);
-		} else {
-			appendCheckerRow(chkr_badges.ok, chkr_titles.analytics, `Options: <code>${ADAGIO?.options}</code>`);
-		}
-	}
+        // Options are necessary for Adagio to get the analytics even if the Adagio bidder adapter is not loaded
+        if (!paramOrganizationId || !paramSitename) {
+            appendCheckerRow(
+                chkr_badges.check,
+                chkr_titles.analytics,
+                `Missing parameters: <code>${prebidWrapper[0]}.enableAnalytics.options</code> should contain <code>organizationId</code> and <code>site</code>`,
+            );
+        } else {
+            appendCheckerRow(
+                chkr_badges.ok,
+                chkr_titles.analytics,
+                `Options: <code>${ADAGIO?.options}</code>`,
+            );
+        }
+    }
 }
 
 export function checkUserIds() {
-	// Check if Get User IDs function is enabled
-	if (typeof prebidObject.getUserIdsAsEids !== 'function') {
-		appendCheckerRow(chkr_badges.info, chkr_titles.userids, `<code>${prebidWrapper[0]}.getUserIdsAsEids()</code>: <code>undefined</code>`);
-		return;
-	}
+    // Check if Get User IDs function is enabled
+    if (typeof prebidObject.getUserIdsAsEids !== 'function') {
+        appendCheckerRow(
+            chkr_badges.info,
+            chkr_titles.userids,
+            `<code>${prebidWrapper[0]}.getUserIdsAsEids()</code>: <code>undefined</code>`,
+        );
+        return;
+    }
 
-	// Count the total installed user IDs
-	const userIds = prebidObject.getUserIdsAsEids();
-	const totalInstalledUserIds = userIds.length;
-	const presentUserIds = userIds.filter((userId) => userId.uids.length);
+    // Count the total installed user IDs
+    const userIds = prebidObject.getUserIdsAsEids();
+    const totalInstalledUserIds = userIds.length;
+    const presentUserIds = userIds.filter((userId) => userId.uids.length);
 
-	if (presentUserIds.length) {
-		// Count the present user IDs
-		const presentUserIdsCount = presentUserIds.length;
+    if (presentUserIds.length) {
+        // Count the present user IDs
+        const presentUserIdsCount = presentUserIds.length;
 
-		// Get the names of present user IDs
-		const presentUserIdsNames = presentUserIds.map((userId) => userId.source);
+        // Get the names of present user IDs
+        const presentUserIdsNames = presentUserIds.map(
+            (userId) => userId.source,
+        );
 
-		// Calculate the percentage of present user IDs
-		const percentagePresent = (presentUserIdsCount / totalInstalledUserIds) * 100;
+        // Calculate the percentage of present user IDs
+        const percentagePresent =
+            (presentUserIdsCount / totalInstalledUserIds) * 100;
 
-		// Display the information
-		appendCheckerRow(
-			chkr_badges.info,
-			chkr_titles.userids,
-			`
+        // Display the information
+        appendCheckerRow(
+            chkr_badges.info,
+            chkr_titles.userids,
+            `
                 • Installed / present: <code>${totalInstalledUserIds}/${presentUserIdsCount} (${percentagePresent.toFixed(2)}%)</code><br>
                 • Uids: <code>${presentUserIdsNames.join(', ')}</code>
-            `
-		);
-	} else {
-		// Indicate that no user IDs are present
-		appendCheckerRow(chkr_badges.info, chkr_titles.userids, 'No User IDs present.');
-	}
+            `,
+        );
+    } else {
+        // Indicate that no user IDs are present
+        appendCheckerRow(
+            chkr_badges.info,
+            chkr_titles.userids,
+            'No User IDs present.',
+        );
+    }
 }
 
 export function checkAdCallsDuplication(prebidEvents) {
-	// An adrequest with the same adUnitCode present multiple times with the same mediatype is considered as duplication
-	const duplicates = [];
+    // An adrequest with the same adUnitCode present multiple times with the same mediatype is considered as duplication
+    const duplicates = [];
 
-	// Filter at the bidRequested level (not inside bid.bids as the goal is to find duplication inside bid level)
-	const prebidBidRequested = prebidEvents.filter((e) => e.eventType === 'bidRequested').map((e) => e.args) || [];
-	const prebidAdagioBidRequested = prebidBidRequested.filter((e) => e.bidderCode?.toLowerCase()?.includes('adagio')) || [];
+    // Filter at the bidRequested level (not inside bid.bids as the goal is to find duplication inside bid level)
+    const prebidBidRequested =
+        prebidEvents
+            .filter((e) => e.eventType === 'bidRequested')
+            .map((e) => e.args) || [];
+    const prebidAdagioBidRequested =
+        prebidBidRequested.filter((e) =>
+            e.bidderCode?.toLowerCase()?.includes('adagio'),
+        ) || [];
 
-	prebidAdagioBidRequested.forEach((bidRequested) => {
-		// Object to count occurrences of each adUnitCode + mediatype
-		const seen = {};
-		bidRequested.bids.forEach((bid) => {
-			const code = bid.adUnitCode;
-			// Get all mediatypes for this bid (e.g. banner, video, native)
-			const types = Object.keys(bid.mediaTypes || {});
-			types.forEach((type) => {
-				const key = `${code}::${type}`;
-				seen[key] = (seen[key] || 0) + 1;
-			});
-		});
-		// Add to duplicates if the same code+mediatype appears more than once
-		Object.entries(seen).forEach(([key, count]) => {
-			if (count > 1) duplicates.push(key);
-		});
-	});
+    prebidAdagioBidRequested.forEach((bidRequested) => {
+        // Object to count occurrences of each adUnitCode + mediatype
+        const seen = {};
+        bidRequested.bids.forEach((bid) => {
+            const code = bid.adUnitCode;
+            // Get all mediatypes for this bid (e.g. banner, video, native)
+            const types = Object.keys(bid.mediaTypes || {});
+            types.forEach((type) => {
+                const key = `${code}::${type}`;
+                seen[key] = (seen[key] || 0) + 1;
+            });
+        });
+        // Add to duplicates if the same code+mediatype appears more than once
+        Object.entries(seen).forEach(([key, count]) => {
+            if (count > 1) duplicates.push(key);
+        });
+    });
 
-	if (duplicates.length) {
-		// Format output: code (mediatype)
-		const formatted = duplicates
-			.map((str) => {
-				const [code, type] = str.split('::');
-				return `<code>${code}</code> (<code>${type}</code>)`;
-			})
-			.join(', ');
-		appendCheckerRow(chkr_badges.ko, chkr_titles.duplicated, `Duplication detected: ${formatted}.`);
-	} else {
-		appendCheckerRow(chkr_badges.ok, chkr_titles.duplicated, `No duplication detected.`);
-	}
+    if (duplicates.length) {
+        // Format output: code (mediatype)
+        const formatted = duplicates
+            .map((str) => {
+                const [code, type] = str.split('::');
+                return `<code>${code}</code> (<code>${type}</code>)`;
+            })
+            .join(', ');
+        appendCheckerRow(
+            chkr_badges.ko,
+            chkr_titles.duplicated,
+            `Duplication detected: ${formatted}.`,
+        );
+    } else {
+        appendCheckerRow(
+            chkr_badges.ok,
+            chkr_titles.duplicated,
+            'No duplication detected.',
+        );
+    }
 }
 
 export function checkCurrencyModule() {
-	// Currency module allow to bid regardless of the adServer currency. It's mandatory when the adServer currency isn't USD
-	const prebidCurrency = prebidObject.getConfig('currency');
-	if (prebidCurrency !== undefined) {
-		appendCheckerRow(chkr_badges.info, chkr_titles.currency, `<code>${JSON.stringify(prebidCurrency)}</code>`);
-	} else {
-		appendCheckerRow(chkr_badges.info, chkr_titles.currency, `<code>${prebidWrapper[0]}.getConfig('currency')</code>: <code>${prebidCurrency}</code>`);
-	}
+    // Currency module allow to bid regardless of the adServer currency. It's mandatory when the adServer currency isn't USD
+    const prebidCurrency = prebidObject.getConfig('currency');
+    if (prebidCurrency !== undefined) {
+        appendCheckerRow(
+            chkr_badges.info,
+            chkr_titles.currency,
+            `<code>${JSON.stringify(prebidCurrency)}</code>`,
+        );
+    } else {
+        appendCheckerRow(
+            chkr_badges.info,
+            chkr_titles.currency,
+            `<code>${prebidWrapper[0]}.getConfig('currency')</code>: <code>${prebidCurrency}</code>`,
+        );
+    }
 }
 
 export function checkFloorPriceModule() {
-	// Floor price module allow to share the lower price acceptable for an adUnit with the bidders
-	const prebidFloorPrice = prebidObject.getConfig('floors');
-	if (prebidFloorPrice !== undefined) {
-		appendCheckerRow(chkr_badges.info, chkr_titles.floors, `<code>${JSON.stringify(prebidFloorPrice)}</code>`);
-	} else {
-		appendCheckerRow(chkr_badges.info, chkr_titles.floors, `<code>${prebidWrapper[0]}.getConfig('floors')</code>: <code>${prebidFloorPrice}</code>`);
-	}
+    // Floor price module allow to share the lower price acceptable for an adUnit with the bidders
+    const prebidFloorPrice = prebidObject.getConfig('floors');
+    if (prebidFloorPrice !== undefined) {
+        appendCheckerRow(
+            chkr_badges.info,
+            chkr_titles.floors,
+            `<code>${JSON.stringify(prebidFloorPrice)}</code>`,
+        );
+    } else {
+        appendCheckerRow(
+            chkr_badges.info,
+            chkr_titles.floors,
+            `<code>${prebidWrapper[0]}.getConfig('floors')</code>: <code>${prebidFloorPrice}</code>`,
+        );
+    }
 }
 
 export function checkDsaTransparency() {
-	const prebidOrtb2 = prebidObject.getConfig('ortb2');
-	if (prebidOrtb2 !== undefined) {
-		let dsa = prebidOrtb2?.regs?.ext?.dsa;
-		let dsarequired = prebidOrtb2?.regs?.ext?.dsa?.dsarequired;
-		let pubrender = prebidOrtb2?.regs?.ext?.dsa?.pubrender;
-		let datatopub = prebidOrtb2?.regs?.ext?.dsa?.datatopub;
-		let transparency = prebidOrtb2?.regs?.ext?.dsa?.transparency;
+    const prebidOrtb2 = prebidObject.getConfig('ortb2');
+    if (prebidOrtb2 !== undefined) {
+        let dsa = prebidOrtb2?.regs?.ext?.dsa;
+        let dsarequired = prebidOrtb2?.regs?.ext?.dsa?.dsarequired;
+        let pubrender = prebidOrtb2?.regs?.ext?.dsa?.pubrender;
+        let datatopub = prebidOrtb2?.regs?.ext?.dsa?.datatopub;
+        let transparency = prebidOrtb2?.regs?.ext?.dsa?.transparency;
 
-		if (dsa === undefined) appendCheckerRow(chkr_badges.info, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
-		else {
-			if (dsarequired === undefined || pubrender === undefined || datatopub === undefined || transparency === undefined) appendCheckerRow(chkr_badges.ko, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
-			else appendCheckerRow(chkr_badges.ok, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`);
-		}
-	} else {
-		appendCheckerRow(chkr_badges.info, chkr_titles.dsa, `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`);
-	}
+        if (dsa === undefined)
+            appendCheckerRow(
+                chkr_badges.info,
+                chkr_titles.dsa,
+                `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`,
+            );
+        else {
+            if (
+                dsarequired === undefined ||
+                pubrender === undefined ||
+                datatopub === undefined ||
+                transparency === undefined
+            )
+                appendCheckerRow(
+                    chkr_badges.ko,
+                    chkr_titles.dsa,
+                    `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`,
+                );
+            else
+                appendCheckerRow(
+                    chkr_badges.ok,
+                    chkr_titles.dsa,
+                    `<code>${prebidWrapper[0]}.getConfig('ortb2').regs.ext.dsa</code>: <code>${JSON.stringify(dsa)}</code>`,
+                );
+        }
+    } else {
+        appendCheckerRow(
+            chkr_badges.info,
+            chkr_titles.dsa,
+            `<code>${prebidWrapper[0]}.getConfig('ortb2')</code>: <code>${JSON.stringify(prebidOrtb2)}</code>`,
+        );
+    }
 }
 
 /*************************************************************************************************************************************************************************************************************************************
  * Helper functions
  ************************************************************************************************************************************************************************************************************************************/
 
-// Depending on the Prebid version, a misconfiguration is or is not an issue
-function computeBadgeToDisplay(isError, minVersion, maxVersion) {
-	// Handle 'null' values for minVersion and maxVersion
-	const min = minVersion === null ? -Infinity : minVersion;
-	const max = maxVersion === null ? Infinity : maxVersion;
-
-	if (isError === 'warn') {
-		if (prebidVersionDetected >= min && prebidVersionDetected <= max) {
-			return chkr_badges.check;
-		}
-		return chkr_badges.info;
-	} else if (isError) {
-		if (prebidVersionDetected >= min && prebidVersionDetected <= max) {
-			return chkr_badges.ko;
-		}
-		return chkr_badges.info;
-	} else {
-		return chkr_badges.ok;
-	}
-}
-
 export function switchToSelectedPrebidWrapper(value) {
-	prebidWrapper = prebidWrappers[value];
-	prebidObject = prebidWrapper[1][prebidWrapper[0]];
-	prebidVersionDetected = getPrebidVersion(prebidObject);
-	refreshChecker();
+    prebidWrapper = prebidWrappers[value];
+    prebidObject = prebidWrapper[1][prebidWrapper[0]];
+    prebidVersionDetected = getPrebidVersion(prebidObject);
+    refreshChecker();
 }
 
 function getPrebidEvents(_prebidObject) {
-	return _prebidObject.getEvents();
+    return _prebidObject.getEvents();
 }
 
 function getBidRequested(prebidEvents) {
-	return prebidEvents
-		.filter((e) => e.eventType === 'bidRequested')
-		.map((e) => e.args)
-		.map((e) => e.bids)
-		.flat();
+    return prebidEvents
+        .filter((e) => e.eventType === 'bidRequested')
+        .map((e) => e.args)
+        .map((e) => e.bids)
+        .flat();
 }
 
 function getAdagioBidRequested(bidRequested) {
-	return bidRequested.filter((e) => e.bidder?.toLowerCase()?.includes('adagio')) || [];
+    return (
+        bidRequested.filter((e) =>
+            e.bidder?.toLowerCase()?.includes('adagio'),
+        ) || []
+    );
 }
