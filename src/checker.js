@@ -11,6 +11,7 @@ import {
     fetchCurrentLocationData as displayCurrentLocation,
     getPrebidVersion,
     computeAdUnitStatus,
+    getParamsFromBidRequestedEvent,
 } from './utils.js';
 
 export let prebidWrappers = []; // Arrays of [wrapper, window] : window[wrapper]
@@ -105,11 +106,11 @@ export function setPrebidWrapper() {
         (iframe) => {
             try {
                 const iframeDoc = iframe.contentWindow;
-                if (iframeDoc._pbjsGlobals)
+                if (iframeDoc && iframeDoc._pbjsGlobals) {
                     addWrappers(iframeDoc, iframeDoc._pbjsGlobals);
-            } catch (e) {
+                }
+            } catch {
                 // Ignore iframe access errors (cross-origin or others)
-                console.warn('Cannot access iframe content:', e);
             }
         },
     );
@@ -197,7 +198,7 @@ export function getOrgIdsAndSiteNames(prebidAdagioBidRequested) {
 
     // Loop through Adagio bids to extract organizationId and site
     for (const bid of prebidAdagioBidRequested) {
-        const params = bid.params || {};
+        const params = getParamsFromBidRequestedEvent(bid);
         const org = params?.organizationId
             ? String(params.organizationId)
             : null;

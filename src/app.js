@@ -11,6 +11,7 @@ import {
     computeAdUnitStatus,
     detectedCountryCodeIso3,
     getPrebidVersion,
+    getParamsFromBidRequestedEvent,
 } from './utils.js';
 import { TCString } from '@iabtcf/core';
 
@@ -441,9 +442,9 @@ export function appendAdUnitsRow(
     // Fill the table section
     prebidBidRequested.forEach((bid) => {
         // Gather the initial info: code, type, bidder
-        const adUnitCode = bid.adUnitCode;
-        const mediaTypes = bid.mediaTypes;
-        const bidderId = bid.bidder;
+        const adUnitCode = bid.adUnitCode || null;
+        const mediaTypes = bid.mediaTypes || {};
+        const bidderId = bid.bidder || '_null';
 
         // Checks if the concerned bidder is Adagio
         const bidderAdagioDetected = bidderId.toLowerCase().includes('adagio');
@@ -700,25 +701,25 @@ function buildRefreshButton(name, svg, isactive) {
 }
 
 function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
+    const params = getParamsFromBidRequestedEvent(bid);
+
     // Check the adagio bidder params (orgId and site in params)
-    let paramOrganizationId = bid?.params?.organizationId;
-    if (paramOrganizationId !== undefined)
-        paramOrganizationId = paramOrganizationId.toString();
-    let paramSite = bid?.params?.site;
+    let paramOrganizationId = params.organizationId != null ? String(params.organizationId) : null;
+    let paramSite = params.site != null ? String(params.site) : null;
 
     // Since Prebid 9, placement and divId should be in ortb2Imp
-    let paramPlacement = bid?.params?.placement;
-    let paramAdUnitElementId = bid?.params?.adUnitElementId;
-    let ortb2ImpPlacement = bid?.ortb2Imp?.ext?.data?.placement;
-    let ortb2ImpDivId = bid?.ortb2Imp?.ext?.data?.divId;
+    let paramPlacement = params.placement || null;
+    let paramAdUnitElementId = params.adUnitElementId || null;
+    let ortb2ImpPlacement = bid.ortb2Imp.ext.data.placement || null;
+    let ortb2ImpDivId = bid.ortb2Imp.ext.data.divId || null;
 
     // Check if there's a regs.ext.gdpr param (= 1) and a user.ext.consent param (consent string)
-    let ortbGdpr = bid?.ortb2?.regs?.ext?.gdpr;
-    let ortbConsent = bid?.ortb2?.user?.ext?.consent;
+    let ortbGdpr = bid.ortb2.regs.ext.gdpr || null;
+    let ortbConsent = bid.ortb2.user.ext.consent || null;
 
     // Since Prebid 9.39, Adagio supports interstitial and rewarded
-    let ortb2ImpInterstitial = bid?.ortb2Imp?.instl;
-    let ortb2ImpRewarded = bid?.ortb2Imp?.rwdd;
+    let ortb2ImpInterstitial = bid.ortb2Imp.instl || null;
+    let ortb2ImpRewarded = bid.ortb2Imp.rwdd || null;
     let deepOrtb2ImpInterstitial = findParam(bid, 'instl') || null;
     let deepOrtb2ImpRewarded = findParam(bid, 'rwdd') || null;
 
@@ -1483,10 +1484,14 @@ function createBidderParamsModal(
     const dialog = overlayFrameDoc.createElement('dialog');
     dialog.setAttribute('open', true);
 
+    const bidder = bid.bidder || '_null';
+    const adUnitCode = bid.adUnitCode || '_null';
+    const mediaTypes = bid.mediaTypes || {};
+
     const article = overlayFrameDoc.createElement('article');
     article.style.maxWidth = '100%';
     const header = overlayFrameDoc.createElement('header');
-    header.innerHTML = `<code>${bid.bidder}</code>: <code>${bid.adUnitCode} (${Object.keys(bid.mediaTypes)})</code>`;
+    header.innerHTML = `<code>${bidder}</code>: <code>${adUnitCode} (${Object.keys(mediaTypes)})</code>`;
     header.style.marginBottom = '0px';
     const closeLink = overlayFrameDoc.createElement('a');
     closeLink.setAttribute('aria-label', 'Close');
