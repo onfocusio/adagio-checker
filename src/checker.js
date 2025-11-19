@@ -199,12 +199,12 @@ export function getOrgIdsAndSiteNames(prebidAdagioBidRequested) {
     // Loop through Adagio bids to extract organizationId and site
     for (const bid of prebidAdagioBidRequested) {
         const params = getParamsFromBidRequestedEvent(bid);
-        const org = params?.organizationId
-            ? String(params.organizationId)
-            : null;
-        const site = params?.site ? String(params.site) : null;
+        let org = params.organizationId;
+        let site = params.site;
 
         if (org && site) {
+            org = String(org);
+            site = String(site);
             const key = `${org}::${site}`;
             if (!pairs.has(key)) pairs.set(key, { organizationId: org, site });
         }

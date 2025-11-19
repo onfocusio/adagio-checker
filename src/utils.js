@@ -108,12 +108,11 @@ export function getPrebidVersion(prebidObject) {
 
 export function getParamsFromBidRequestedEvent(bid) {
     // Extract params from bid object in bidRequested prebid event
-    if (bid && bid.params) {
-        return bid.params;
-    } else if (bid && Array.isArray(bid.params)) {
+    if (bid && bid.params && Array.isArray(bid.params)) {
         return bid.params[0];
+    } else if (bid && bid.params) {
+        return bid.params;
     } else {
-        console.error('Issue on extract params from bidRequested event:', bid);
         return {};
     }
 }

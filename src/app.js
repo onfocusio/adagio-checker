@@ -442,7 +442,7 @@ export function appendAdUnitsRow(
     // Fill the table section
     prebidBidRequested.forEach((bid) => {
         // Gather the initial info: code, type, bidder
-        const adUnitCode = bid.adUnitCode || null;
+        const adUnitCode = bid.adUnitCode || '_null';
         const mediaTypes = bid.mediaTypes || {};
         const bidderId = bid.bidder || '_null';
 
@@ -702,35 +702,38 @@ function buildRefreshButton(name, svg, isactive) {
 
 function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
     const params = getParamsFromBidRequestedEvent(bid);
+    const ortb2 = bid.ortb2 || {};
+    const ortb2Imp = bid.ortb2Imp || {};
 
     // Check the adagio bidder params (orgId and site in params)
-    let paramOrganizationId = params.organizationId != null ? String(params.organizationId) : null;
-    let paramSite = params.site != null ? String(params.site) : null;
+    let paramOrganizationId = params.organizationId;
+    let paramSite = params.site;
 
     // Since Prebid 9, placement and divId should be in ortb2Imp
-    let paramPlacement = params.placement || null;
-    let paramAdUnitElementId = params.adUnitElementId || null;
-    let ortb2ImpPlacement = bid.ortb2Imp.ext.data.placement || null;
-    let ortb2ImpDivId = bid.ortb2Imp.ext.data.divId || null;
+    const paramPlacement = params.placement;
+    const paramAdUnitElementId = params.adUnitElementId;
+    const ortb2ImpPlacement = ortb2Imp?.ext?.data?.placement;
+    const ortb2ImpDivId = ortb2Imp?.ext?.data?.divId;
 
     // Check if there's a regs.ext.gdpr param (= 1) and a user.ext.consent param (consent string)
-    let ortbGdpr = bid.ortb2.regs.ext.gdpr || null;
-    let ortbConsent = bid.ortb2.user.ext.consent || null;
+    const ortbGdpr = ortb2?.regs?.ext?.gdpr;
+    const ortbConsent = ortb2?.user?.ext?.consent;
 
     // Since Prebid 9.39, Adagio supports interstitial and rewarded
-    let ortb2ImpInterstitial = bid.ortb2Imp.instl || null;
-    let ortb2ImpRewarded = bid.ortb2Imp.rwdd || null;
-    let deepOrtb2ImpInterstitial = findParam(bid, 'instl') || null;
-    let deepOrtb2ImpRewarded = findParam(bid, 'rwdd') || null;
+    const ortb2ImpInterstitial = ortb2Imp.instl;
+    const ortb2ImpRewarded = ortb2Imp.rwdd;
+    const deepOrtb2ImpInterstitial = findParam(bid, 'instl');
+    const deepOrtb2ImpRewarded = findParam(bid, 'rwdd');
 
     // Check the organizationId
-    if (paramOrganizationId === undefined)
+    if (!paramOrganizationId)
         paramsCheckingArray.push([
             chkr_badges.ko,
             `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
             'Parameter not detected.',
         ]);
     else {
+        paramOrganizationId = String(paramOrganizationId);
         if (
             typeof paramOrganizationId === 'string' &&
             !/^\d{4}$/.test(paramOrganizationId)
@@ -750,13 +753,14 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
     }
 
     // Check the site name
-    if (paramSite === undefined)
+    if (!paramSite)
         paramsCheckingArray.push([
             chkr_badges.ko,
             `<code>params.site</code>: <code>${paramSite}</code>`,
             'Parameter not detected.',
         ]);
     else {
+        paramSite = String(paramSite);
         if (paramSite.trim() !== paramSite)
             paramsCheckingArray.push([
                 chkr_badges.ko,
@@ -780,16 +784,16 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
     // AdUnitElementId (1/3): Depending on the Prebid version, we don't expect the same param
     let divIdStatus = '';
     let divIdSetup = '';
-    let divIdRes = '';
+    let divIdRes = null;
     let divIdDetails = '';
     // AdUnitElementId (2/3): First checks if a value is detected
     if (prebidVersionDetected >= 9) {
-        if (ortb2ImpDivId !== undefined) {
+        if (ortb2ImpDivId) {
             divIdStatus = chkr_badges.ok;
             divIdSetup = 'ortb2Imp.ext.data.divId';
             divIdRes = ortb2ImpDivId;
             divIdDetails = '';
-        } else if (paramAdUnitElementId !== undefined) {
+        } else if (paramAdUnitElementId) {
             divIdStatus = chkr_badges.info; // STATUSBADGES.UPDATE;
             divIdSetup = 'params.adUnitElementId';
             divIdRes = paramAdUnitElementId;
@@ -798,11 +802,10 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
         } else {
             divIdStatus = chkr_badges.check;
             divIdSetup = 'ortb2Imp.ext.data.divId';
-            divIdRes = undefined;
             divIdDetails = '';
         }
     } else {
-        if (paramAdUnitElementId !== undefined) {
+        if (paramAdUnitElementId) {
             divIdStatus = chkr_badges.ok;
             divIdSetup = 'params.adUnitElementId';
             divIdRes = paramAdUnitElementId;
@@ -810,12 +813,11 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
         } else {
             divIdStatus = chkr_badges.check;
             divIdSetup = 'params.adUnitElementId';
-            divIdRes = undefined;
             divIdDetails = '';
         }
     }
     // AdUnitElementId (3/3): Then ensure the value is correct
-    if (divIdRes === undefined)
+    if (divIdRes === null)
         paramsCheckingArray.push([
             divIdStatus,
             `<code>${divIdSetup}</code>: <code>${divIdRes}</code>`,
@@ -904,9 +906,10 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
         ]);
 
     // Check the mediatypes parameters
-    let mediatypeBanner = bid.mediaTypes?.banner;
-    let mediatypeVideo = bid.mediaTypes?.video;
-    let mediatypeNative = bid.mediaTypes?.native;
+    const mediatype = bid.mediaTypes || {};
+    const mediatypeBanner = mediatype.banner;
+    const mediatypeVideo = mediatype.video;
+    const mediatypeNative = mediatype.native;
 
     if (
         mediatypeBanner === undefined &&
@@ -919,7 +922,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
             'No mediatype detected.',
         ]);
     else {
-        if (mediatypeBanner !== undefined) {
+        if (mediatypeBanner) {
             let mediatypeBannerSizes = mediatypeBanner?.sizes;
 
             // Check the banner sizes
@@ -973,7 +976,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
                 ]);
         }
 
-        if (mediatypeVideo !== undefined) {
+        if (mediatypeVideo) {
             // Required for both instream and outstream
             let mediatypeVideoContext = mediatypeVideo?.context;
             let mediatypeVideoApi = mediatypeVideo?.api;
