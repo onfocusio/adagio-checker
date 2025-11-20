@@ -111,6 +111,7 @@ export function setPrebidWrapper() {
                 }
             } catch {
                 // Ignore iframe access errors (cross-origin or others)
+                console.warn('Adagio Checker - Error on iframe content reading to catch _pbjsGlobals: ', iframe);
             }
         },
     );
