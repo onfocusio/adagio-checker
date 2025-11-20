@@ -1,5 +1,6 @@
 import { buildApp, appendHomeContainer } from './app.js';
-import { setPrebidWrapper, prebidObject, runChecks } from './checker.js';
+import { setPrebidWrapper, prebidObject } from './states.js';
+import { runChecks } from './checker.js';
 import { runAdagioApiQuery } from './api.js';
 
 export async function main() {
@@ -10,7 +11,6 @@ export async function main() {
     buildApp();
 
     // Try to reach the Adagio API
-    if (typeof ADAGIO_KEY === 'undefined') window.ADAGIO_KEY = '';
     const apiReadyCall = await runAdagioApiQuery(
         'https://api.adagio.io/api/v1/profile',
     );

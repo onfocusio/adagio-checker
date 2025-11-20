@@ -4,7 +4,7 @@ const babelParser = require("@babel/eslint-parser");
 
 module.exports = [
   {
-    ignores: ["eslint.config.js"],
+    ignores: ["eslint.config.js", "dist/**", "node_modules/**"],
   },
   {
     files: ["src/**/*.js"],
@@ -14,7 +14,6 @@ module.exports = [
         "functions": false,
         "classes": true
       }],
-      "indent": ["error", 4],
       "quotes": ["error", "single"],
       "semi": ["error", "always"],
       "no-trailing-spaces": "error",

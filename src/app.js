@@ -1,10 +1,11 @@
-import { chkr_svg, chkr_tabs, chkr_colors, chkr_badges } from './enums.js';
+import { chkr_svg, chkr_tabs, chkr_colors, chkr_badges } from './ui.js';
 import {
+    _ADAGIO,
     prebidWrappers,
     prebidWrapper,
     prebidVersionDetected,
     switchToSelectedPrebidWrapper,
-} from './checker.js';
+} from './states.js';
 import { main } from './main.js';
 import {
     loadDebuggingMode,
@@ -292,13 +293,10 @@ export function createMeasurersDiv() {
     const alertTextDiv = overlayFrameDoc.createElement('div');
     alertTextDiv.setAttribute('id', `${tabName}-alert`);
 
-    // Displays the ADAGIO.ckrViewability entries with issues
-    if (ADAGIO.ckrViewability) {
-        // Display the bidrequest json from pbjs.getEvents()
-        const paragraph = overlayFrameDoc.createElement('p');
-        paragraph.innerHTML = `<pre><code class="language-json">${JSON.stringify(ADAGIO.ckrViewability, null, 2)}</code></pre>`;
-        alertTextDiv.appendChild(paragraph);
-    }
+    // Display the bidrequest json from pbjs.getEvents()
+    const paragraph = overlayFrameDoc.createElement('p');
+    paragraph.innerHTML = `<pre><code class="language-json">${JSON.stringify(_ADAGIO.ckrViewability, null, 2)}</code></pre>`;
+    alertTextDiv.appendChild(paragraph);
 
     // append text to container
     alertContainer.appendChild(alertTextDiv);
@@ -421,10 +419,10 @@ export function appendAdUnitsRow(
     // Get unique adUnit codes (filter out falsy values)
     const prebidAdUnitsCodes = Array.isArray(prebidBidRequested)
         ? [
-            ...new Set(
-                prebidBidRequested.map((b) => b?.adUnitCode).filter(Boolean),
-            ),
-        ]
+              ...new Set(
+                  prebidBidRequested.map((b) => b?.adUnitCode).filter(Boolean),
+              ),
+          ]
         : [];
 
     // Display adunits detected
@@ -493,11 +491,11 @@ export function appendAdUnitsRow(
 
         // Compute viewability cell value
         let viewabilityIcon = '❓';
-        if (ADAGIO.ckrViewability) {
-            const entry = ADAGIO.ckrViewability[adUnitCode] || null;
-            if (entry && entry.isMeasured) {
-                viewabilityIcon = '👁️';
-            } else viewabilityIcon = '❌';
+        const entry = _ADAGIO.ckrViewability[adUnitCode] || null;
+        if (entry && entry.isMeasured) {
+            viewabilityIcon = '👁️';
+        } else {
+            viewabilityIcon = '❌';
         }
 
         statusCell.innerHTML = status;
@@ -663,6 +661,7 @@ function buildWrappersDropdownSelector() {
     select.addEventListener('change', function () {
         if (this.value !== '') {
             switchToSelectedPrebidWrapper([this.value]);
+            refreshChecker();
         }
     });
 
@@ -741,7 +740,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
             paramsCheckingArray.push([
                 chkr_badges.check,
                 `<code>params.organizationId</code>: <code>${paramOrganizationId}</code>`,
-                'Should be a 4-digit integer or string (e.g., 1000 or \'1000\').',
+                'Should be a 4-digit integer or string (e.g., 1000 or "1000").',
             ]);
         } else {
             paramsCheckingArray.push([
@@ -1027,7 +1026,7 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
                     paramsCheckingArray.push([
                         chkr_badges.ko,
                         `<code>mediaTypes.video.api</code>: <code>${JSON.stringify(mediatypeVideoApi)}</code>`,
-                        'Must support api <code>2</code>\'',
+                        'Must support api <code>2</code>',
                     ]);
                 else if (
                     !videoApiSupported.some((i) =>
@@ -1144,8 +1143,8 @@ function buildParamsCheckingArray(bid, paramsCheckingArray, apiRecordsItems) {
                 const expectedMethod = hasInstreamContext
                     ? 2
                     : hasOutstreamContext
-                        ? 6
-                        : null;
+                      ? 6
+                      : null;
 
                 if (
                     expectedMethod &&

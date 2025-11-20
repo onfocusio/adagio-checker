@@ -1,3 +1,5 @@
+import { _ADAGIO_KEY } from './states.js';
+
 /*************************************************************************************************************************************************************************************************************************************
  * Exported function
  ************************************************************************************************************************************************************************************************************************************/
@@ -56,7 +58,7 @@ export async function runAdagioApiQuery(url) {
         const response = await fetch(url, {
             method: 'GET', // HTTP method
             headers: {
-                Authorization: `Bearer ${ADAGIO_KEY}`, // Adding the Bearer token in the header
+                Authorization: `Bearer ${_ADAGIO_KEY}`, // Adding the Bearer token in the header
             },
         });
         if (!response.ok) throw new Error(response.status);

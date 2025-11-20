@@ -1,4 +1,4 @@
-import { chkr_badges } from './enums.js';
+import { chkr_badges } from './ui.js';
 import { appendHomeContainer } from './app.js';
 
 export let detectedCountryCodeIso3; // Detected country code (alpha-3)
@@ -28,10 +28,10 @@ export async function fetchPublishersFromOrgIds(orgIds) {
                     matched && matched[0]
                         ? matched[0]
                         : {
-                            name: orgId,
-                            seller_id: orgId,
-                            seller_type: 'unknown',
-                        };
+                              name: orgId,
+                              seller_id: orgId,
+                              seller_type: 'unknown',
+                          };
                 orgHtmlList.push(
                     `<code>${org.name} (${org.seller_id}) - ${org.seller_type}</code>`,
                 );
